@@ -1,0 +1,46 @@
+---
+import NavBar from "../components/NavBar.astro";
+import Layout from "../layouts/Layout.astro";
+import DropDown from "../components/DropDown.astro";
+import Boton from "../components/Boton.astro";
+---
+<Layout>
+    <div class="bg-[#8eb79f] flex flex-row">
+        <div id="ContenedorIzquierdo">
+            <NavBar />
+        </div>
+        <div id="ContenedorDerecho" class="flex flex-col w-full p-3">
+            <div id = "EncabezadoTabla" class="w-full h-1/9 flex mb-3">
+                <div class="flex flex-1 items-center justify-left">
+                    <span class="mr-8 text-3xl font-sans">Productos y servicio</span>
+                    <div id="BarraBusqueda" class="flex items-center">
+                        <input type="search" class="rounded-2xl text-sm">
+                    </div>
+                </div>
+                <div class="flex flex-1 items-center justify-end">
+                    <Boton> <slot>Exportar</slot> </Boton>
+                    <Boton> <slot>Nuevo item</slot></Boton>
+                </div>
+            </div>
+            <table id="default-table">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th><input type="checkbox" /> </th>
+                        <th><span> Nombre </span> </th>
+                        <th><span> Descripción </span></th>
+                        <th><span> Precio </span></th>
+                        <th><span></span></th>
+                    </tr>
+                </thead>
+            <tbody>
+                <tr class="bg-[#B9DFCF]">
+                    <td> <input type="checkbox" /> </td>
+                    <td>Ondas de choque</td>
+                    <td>Aparato de ondas de choque</td>
+                    <td>$300</td>
+                    <td><DropDown></DropDown></td>
+                </tr>  
+        </tbody>
+        </table>
+    </div>
+</Layout>

@@ -1,0 +1,51 @@
+---
+const iconos = [
+    { icon: "fa-bars", label: "Menú", href: "#" },
+    { icon: "fa-house", label: "Inicio", href: "/DashBoardEmpleado" },
+    { icon: "fa-user-plus", label: "Registrar paciente", href: "/Paciente" },
+    { icon: "fa-cart-plus", label: "Productos y servicios", href: "/ProductoServicio" },
+    { icon: "fa-calendar-days", label: "Agenda", href: "/Agenda" },
+    { icon: "fa-box-archive", label: "Historial de citas", href: "/HistorialCita" },
+    { icon: "fa-money-bill", label: "Pagos", href: "/Pago" },
+    { icon: "fa-universal-access", label: "Roles y permisos", href: "/RolesPermiso" },
+    { icon: "fa-user-nurse", label: "Empleados", href: "/Empleado" },
+    { icon: "fa-gear", label: "Configuración", href: "/configuracion" },
+];
+---
+<div id="Contenedor" class="transition-all duration-300 w-16 h-screen bg-[#E7FFEF]" tabindex="0">
+    <ol id="NavList" class="w-full h-full flex flex-col">
+        {iconos.map((item, idx) => (
+        <li
+            id={idx === 0 ? "IconMenu" : undefined}
+            class="flex-1 flex items-center justify-center cursor-pointer group"
+        >
+            {idx === 0 ? (
+                <a href={item.href} onclick="toggleNavBar(); return false;" class="flex items-center w-full h-full justify-center">
+                    <i class={`fa-solid ${item.icon} fa-xl`}></i>
+                    <span class="ml-4 hidden label">{item.label}</span>
+                </a>
+            ) : (
+                <a href={item.href} class="flex items-center w-full h-full justify-center">
+                    <i class={`fa-solid ${item.icon} fa-xl`}></i>
+                    <span class="ml-4 hidden label">{item.label}</span>
+                </a>
+            )}
+        </li>
+        ))}
+    </ol>
+    <script type="text/javascript" is:inline>
+        function toggleNavBar() {
+            const cont = document.getElementById('Contenedor');
+            const labels = document.querySelectorAll('.label');
+            if (cont.classList.contains('w-16')) {
+                cont.classList.remove('w-16');
+                cont.classList.add('w-48');
+                labels.forEach(l => l.classList.remove('hidden'));
+            } else {
+                cont.classList.remove('w-48');
+                cont.classList.add('w-16');
+                labels.forEach(l => l.classList.add('hidden'));
+            }
+        }
+    </script>
+</div>

@@ -1,0 +1,244 @@
+@import "tailwindcss";
+@source "../../node_modules/flowbite";
+@import "flowbite/src/themes/default";
+@plugin "flowbite/plugin";
+
+
+/*_________________Estilos para la barra de navegación______________________________*/
+li {
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2F5D50; /* Cambia este valor al color que desees */
+}
+
+li:hover{
+    background-color:#A8D5BA80;
+}
+
+/*___________________________________________________________________________________*/
+
+#Contenedor {
+    transition: width 0.1s;
+}
+
+/*_________________________Diseño de las tablas de flowbite__________________________*/
+table {
+    border: 2px solid black;
+}
+
+th {
+    border-bottom: black solid 2px;
+    font-size: 1.2rem;
+    font-family: sans-serif;
+    justify-content: center;
+}
+
+th > span {
+    justify-content: center;
+}
+
+td {
+    text-align: center;
+    font-size: 1.1rem;
+    font-family: sans-serif;
+}
+
+/*___________________________________________________________________________________*/
+/*_________________________Estilos para formularios de autenticación_________________*/
+.auth-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #234D20 0%, #2F5D50 100%);
+}
+
+.auth-card {
+    background: #E7FFEF;
+    border: 2px solid #2F5D50;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.auth-input {
+    border: 1px solid #A8D5BA;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.auth-input:focus {
+    border-color: #234D20;
+    box-shadow: 0 0 0 3px rgba(35, 77, 32, 0.1);
+    outline: none;
+}
+
+.auth-button {
+    background: #234D20;
+    color: white;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.auth-button:hover {
+    background: #1a3a15;
+    transform: translateY(-2px);
+}
+
+.auth-button:disabled {
+    background: #A8D5BA;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/*_________________________Estilos para mensajes de estado__________________________*/
+.message-success {
+    background: #D1FAE5;
+    border: 1px solid #10B981;
+    color: #065F46;
+}
+
+.message-error {
+    background: #FEE2E2;
+    border: 1px solid #EF4444;
+    color: #991B1B;
+}
+
+.message-warning {
+    background: #FEF3C7;
+    border: 1px solid #F59E0B;
+    color: #92400E;
+}
+
+.message-info {
+    background: #DBEAFE;
+    border: 1px solid #3B82F6;
+    color: #1E40AF;
+}
+
+/*_________________________Estilos para dashboards__________________________________*/
+.dashboard-card {
+    background: #E7FFEF;
+    border: 1px solid #A8D5BA;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-stat {
+    background: linear-gradient(135deg, #234D20, #2F5D50);
+    color: white;
+    border-radius: 10px;
+}
+
+/*_________________________Estilos para tablas y listas_____________________________*/
+.table-header {
+    background: #2F5D50;
+    color: white;
+}
+
+.status-pending {
+    background: #FEF3C7;
+    color: #92400E;
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-size: 0.875rem;
+}
+
+.status-confirmed {
+    background: #D1FAE5;
+    color: #065F46;
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-size: 0.875rem;
+}
+
+.status-cancelled {
+    background: #FEE2E2;
+    color: #991B1B;
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-size: 0.875rem;
+}
+
+/*_________________________Estilos para calendario__________________________________*/
+.calendar-day {
+    border: 1px solid #A8D5BA;
+    min-height: 120px;
+    padding: 8px;
+}
+
+.calendar-day:hover {
+    background: #F0F9F4;
+}
+
+.calendar-event {
+    background: #234D20;
+    color: white;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin: 2px 0;
+    font-size: 0.75rem;
+}
+
+/*___________________________________________________________________________________*/
+
+/* Estilos para la tabla de pagos */
+table {
+    border: 2px solid black;
+}
+
+th {
+    border-bottom: black solid 2px;
+    font-size: 1.2rem;
+    font-family: sans-serif;
+    justify-content: center;
+}
+
+th > span {
+    justify-content: center;
+}
+
+td {
+    text-align: center;
+    font-size: 1.1rem;
+    font-family: sans-serif;
+    padding: 8px;
+}
+
+/* vista configuracion*/
+/* Estilos específicos para la vista de configuración */
+.config-section {
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.config-section:last-child {
+    border-bottom: none;
+}
+
+/* Estilos para los interruptores de toggle */
+.toggle-checkbox:checked {
+    right: 0;
+    border-color: #2F5D50;
+}
+
+.toggle-checkbox:checked + .toggle-label {
+    background-color: #2F5D50;
+}
+
+/* Estilos para el menú lateral activo */
+.menu-item.active {
+    background-color: #2F5D50;
+    color: white;
+}
+
+.menu-item:hover {
+    background-color: #f3f4f6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+}

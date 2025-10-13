@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="/src/styles/global.css">
+	<!--Etiqueta de fontAwesome-->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<title>{Astro.props.title || "Inicio de sesión"}</title>
+</head>
+<body>
+	<header> <slot name="header"/> </header>
+	<main> <slot/> </main>
+	<footer> <slot name="footer"/> </footer>
+</body>
+</html>

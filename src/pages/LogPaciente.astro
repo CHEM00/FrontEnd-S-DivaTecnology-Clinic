@@ -1,0 +1,39 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
+// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+---
+<Layout>
+	<div class="flex flex-col md:flex-row h-screen overflow-hidden">
+		<div id="ContenedorIzquierdo" class="w-full md:w-1/2 h-64 md:h-screen bg-[#f1f1f1] flex items-center justify-center">
+			<img src="LogoJess.png" alt="Logo de la clinica" class="" />
+		</div>
+		<div id="ContenedorDerecho" class="w-full md:w-1/2 h-auto md:h-screen bg-[#234D20] flex items-center justify-center py-8 md:py-0">
+			<form class="border border-black w-full max-w-md bg-gray-100 rounded-md shadow-2xl mx-4">
+				<div class="flex flex-col items-center justify-center space-y-4 p-6">
+					<span class="text-2xl font-semibold mb-4">Inicio de sesión</span>
+					<div class="w-full flex flex-col space-y-2">
+						<label class="text-sm font-medium" for="correo">Ingrese su código de paciente</label>
+						<input
+							id="codigo"
+							type="text"
+							placeholder="1234567890"
+							class="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#234D20]"
+						/>
+                        <p>Si no conoce su código de paciente, solicitelo a la clinica</p>
+					</div>
+                    <div class="w-full flex justify-between">
+                        <a href="/" class="mt-4 px-6 py-2 bg-[#234D20] text-white rounded hover:bg-[#1a3a15] transition flex items-center justify-center h-10">
+                            Regresar
+                        </a>
+					    <button class="mt-4 px-6 py-2 bg-[#234D20] text-white rounded hover:bg-[#1a3a15] transition">
+						    Iniciar sesión
+					    </button>
+                    </div>
+				</div>
+			</form>
+		</div>
+	</div>
+</Layout>
+

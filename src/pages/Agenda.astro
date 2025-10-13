@@ -1,0 +1,202 @@
+---
+import NavBar from '../components/NavBar.astro';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+	<div class="flex h-screen bg-gray-50">
+		<NavBar />
+		<div class="flex-1 flex flex-col overflow-hidden">
+			<header class="bg-white shadow-sm border-b border-gray-200">
+				<div class="flex justify-between items-center px-6 py-4">
+					<h1 class="text-2xl font-bold text-[#2F5D50]">AGENDA</h1>
+					<div class="flex items-center space-x-4">
+						<span class="text-sm text-gray-600">Bienvenido</span>
+						<button onclick="logout()" class="auth-button px-4 py-2 text-sm">
+							Cerrar Sesión
+						</button>
+					</div>
+				</div>
+			</header>
+
+			<main class="flex-1 overflow-y-auto p-6">
+				<!-- Barra de herramientas -->
+				<div class="flex justify-between items-center mb-6">
+					<div class="flex items-center space-x-4">
+						<h2 class="text-xl font-semibold text-[#2F5D50]">9 JUNIO 2025</h2>
+					</div>
+					<button onclick="abrirModalCita()" class="auth-button px-4 py-2 text-sm flex items-center">
+						<i class="fa-solid fa-calendar-plus mr-2"></i>
+						NUEVA CITA
+					</button>
+				</div>
+
+				<!-- Vista de calendario mensual -->
+				<div class="dashboard-card p-6 mb-6">
+					<!-- Encabezado del calendario -->
+					<div class="grid grid-cols-7 gap-1 mb-4">
+						<div class="text-center font-bold text-[#2F5D50] p-2">LUNES</div>
+						<div class="text-center font-bold text-[#2F5D50] p-2">MARTES</div>
+						<div class="text-center font-bold text-[#2F5D50] p-2">MIÉRCOLES</div>
+						<div class="text-center font-bold text-[#2F5D50] p-2">JUEVES</div>
+						<div class="text-center font-bold text-[#2F5D50] p-2">VIERNES</div>
+						<div class="text-center font-bold text-[#2F5D50] p-2">SÁBADO</div>
+						<div class="text-center font-bold text-[#2F5D50] p-2">DOMINGO</div>
+					</div>
+
+					<!-- Días del mes -->
+					<div class="grid grid-cols-7 gap-1">
+						<!-- Primera semana -->
+						<div class="calendar-day">
+							<div class="text-right text-sm font-medium">1</div>
+						</div>
+						<div class="calendar-day">
+							<div class="text-right text-sm font-medium">2</div>
+						</div>
+						<div class="calendar-day">
+							<div class="text-right text-sm font-medium">3</div>
+						</div>
+						<div class="calendar-day">
+							<div class="text-right text-sm font-medium">4</div>
+						</div>
+						<div class="calendar-day">
+							<div class="text-right text-sm font-medium">5</div>
+						</div>
+						<div class="calendar-day">
+							<div class="text-right text-sm font-medium">6</div>
+						</div>
+						<div class="calendar-day">
+							<div class="text-right text-sm font-medium">7</div>
+						</div>
+						
+						<!-- Segunda semana -->
+						<div class="calendar-day">
+							<div class="text-right text-sm font-medium">8</div>
+						</div>
+						<div class="calendar-day bg-blue-50">
+							<div class="text-right text-sm font-medium text-blue-600">9</div>
+							<div class="calendar-event">10:00 AM - PACIENTE 1</div>
+							<div class="calendar-event">11:00 AM - PACIENTE 2</div>
+						</div>
+						<div class="calendar-day">
+							<div class="text-right text-sm font-medium">10</div>
+						</div>
+						<div class="calendar-day">
+							<div class="text-right text-sm font-medium">11</div>
+						</div>
+						<div class="calendar-day">
+							<div class="text-right text-sm font-medium">12</div>
+						</div>
+						<div class="calendar-day">
+							<div class="text-right text-sm font-medium">13</div>
+						</div>
+						<div class="calendar-day">
+							<div class="text-right text-sm font-medium">14</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Lista de citas del día -->
+				<div class="dashboard-card p-6">
+					<h3 class="text-lg font-semibold text-[#2F5D50] mb-4">Citas del Día - 9 Junio 2025</h3>
+					<div class="space-y-3">
+						<div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+							<div>
+								<p class="font-medium text-[#2F5D50]">10:00 AM</p>
+								<p class="text-sm text-gray-600">PACIENTE 1</p>
+							</div>
+							<span class="status-pending">PENDIENTE</span>
+						</div>
+						<div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+							<div>
+								<p class="font-medium text-[#2F5D50]">10:00 AM</p>
+								<p class="text-sm text-gray-600">PACIENTE 2</p>
+							</div>
+							<span class="status-pending">PENDIENTE</span>
+						</div>
+						<div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+							<div>
+								<p class="font-medium text-[#2F5D50]">11:00 AM</p>
+								<p class="text-sm text-gray-600">PACIENTE 3</p>
+							</div>
+							<span class="status-confirmed">CONFIRMADA</span>
+						</div>
+					</div>
+				</div>
+			</main>
+		</div>
+	</div>
+
+	<!-- Modal de nueva cita -->
+	<div id="modalCita" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+		<div class="bg-white rounded-lg p-6 w-full max-w-2xl">
+			<div class="flex justify-between items-center mb-4">
+				<h3 class="text-xl font-bold text-[#2F5D50]">NUEVA CITA</h3>
+				<button onclick="cerrarModalCita()" class="text-gray-500 hover:text-gray-700">
+					<i class="fa-solid fa-times text-xl"></i>
+				</button>
+			</div>
+			
+			<form class="space-y-4">
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div>
+						<label class="block text-sm font-medium text-[#2F5D50] mb-2">PACIENTE</label>
+						<select class="auth-input w-full px-3 py-2" required>
+							<option value="">Seleccionar paciente</option>
+							<option value="1">JUANA MATEO</option>
+							<option value="2">IAN</option>
+							<option value="3">JACQUELINE</option>
+						</select>
+					</div>
+					<div>
+						<label class="block text-sm font-medium text-[#2F5D50] mb-2">FECHA</label>
+						<input type="date" class="auth-input w-full px-3 py-2" required>
+					</div>
+					<div>
+						<label class="block text-sm font-medium text-[#2F5D50] mb-2">HORA</label>
+						<input type="time" class="auth-input w-full px-3 py-2" required>
+					</div>
+					<div>
+						<label class="block text-sm font-medium text-[#2F5D50] mb-2">SERVICIO</label>
+						<select class="auth-input w-full px-3 py-2" required>
+							<option value="">Seleccionar servicio</option>
+							<option value="1">ONDAS DE CHOQUE</option>
+							<option value="2">BOTAS DE PRESOTERAPIA</option>
+							<option value="3">VENDAJE NEUROMUSCULAR</option>
+						</select>
+					</div>
+					<div class="md:col-span-2">
+						<label class="block text-sm font-medium text-[#2F5D50] mb-2">NOTAS</label>
+						<textarea rows="3" class="auth-input w-full px-3 py-2"></textarea>
+					</div>
+				</div>
+				
+				<div class="flex justify-end space-x-3 pt-4">
+					<button type="button" onclick="cerrarModalCita()" class="auth-button px-6 py-2 bg-gray-500">
+						CANCELAR
+					</button>
+					<button type="submit" class="auth-button px-6 py-2">
+						GUARDAR
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<script>
+		function logout() {
+			localStorage.removeItem('token');
+			window.location.href = '/';
+		}
+
+		function abrirModalCita() {
+			document.getElementById('modalCita').classList.remove('hidden');
+		}
+
+		function cerrarModalCita() {
+			document.getElementById('modalCita').classList.add('hidden');
+		}
+
+		
+	</script>
+</Layout>
