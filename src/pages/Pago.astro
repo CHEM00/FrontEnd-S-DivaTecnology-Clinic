@@ -6,63 +6,69 @@ import Boton from "../components/Boton.astro";
 ---
 
 <Layout title="Pagos">
-    <div class="bg-[#8eb79f] flex flex-row">
-        <div id="ContenedorIzquierdo">
-            <NavBar />
-        </div>
-        <div id="ContenedorDerecho" class="flex flex-col w-full p-3">
-            <div id="EncabezadoTabla" class="w-full h-1/9 flex mb-3">
-                <div class="flex flex-1 items-center justify-left">
-                    <span class="mr-8 text-3xl font-sans">Pagos</span>
-                    <div id="BarraBusqueda" class="flex items-center">
-                        <input type="search" class="rounded-2xl text-sm p-2" placeholder="Buscar pagos...">
-                    </div>
-                </div>
-                <div class="flex flex-1 items-center justify-end">
-                    <Boton> <slot>Exportar</slot> </Boton>
-                    <Boton> <slot>Nuevo pago</slot></Boton>
-                </div>
-            </div>
-            <table id="default-table" class="w-full">
-                <thead class="bg-gray-200">
-                    <tr>
-                        <th><input type="checkbox" /> </th>
-                        <th><span> Paciente </span> </th>
-                        <th><span> Producto/Servicio </span></th>
-                        <th><span> Precio </span></th>
-                        <th><span> IVA </span></th>
-                        <th><span> Subtotal </span></th>
-                        <th><span> Total </span></th>
-                        <th><span></span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Ejemplo de fila de datos -->
-                    <tr class="bg-[#B9DFCF]">
-                        <td> <input type="checkbox" /> </td>
-                        <td>Juan Pérez</td>
-                        <td>Ondas de choque</td>
-                        <td>$300.00</td>
-                        <td>$48.00</td>
-                        <td>$300.00</td>
-                        <td>$348.00</td>
-                        <td><DropDown></DropDown></td>
-                    </tr>
-                    <!-- Otra fila de ejemplo -->
-                    <tr class="bg-white">
-                        <td> <input type="checkbox" /> </td>
-                        <td>María García</td>
-                        <td>Consulta médica</td>
-                        <td>$500.00</td>
-                        <td>$80.00</td>
-                        <td>$500.00</td>
-                        <td>$580.00</td>
-                        <td><DropDown></DropDown></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+  <div class="pagos-container">
+    <div id="ContenedorIzquierdo">
+      <NavBar />
     </div>
+
+    <div class="pagos-content">
+      <!-- CONTENEDOR DE TÍTULO, BUSCADOR Y BOTONES -->
+      <div class="pagos-header">
+        <h1 class="pagos-title">Pagos</h1>
+
+        <div class="pagos-controls">
+          <input
+            type="search"
+            class="pagos-search-input"
+            placeholder="Buscar pagos..."
+          />
+
+          <div class="pagos-buttons">
+            <button class="btn-action">Exportar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLA DE PAGOS -->
+      <div class="pagos-table-wrapper">
+        <table class="pagos-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" /></th>
+              <th>Paciente</th>
+              <th>Producto/Servicio</th>
+              <th>Precio</th>
+              <th>IVA</th>
+              <th>Subtotal</th>
+              <th>Total</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="checkbox" /></td>
+              <td>Juan Pérez</td>
+              <td>Ondas de choque</td>
+              <td>$300.00</td>
+              <td>$48.00</td>
+              <td>$300.00</td>
+              <td>$348.00</td>
+              <td><button class="btn-action">Acciones</button></td>
+            </tr>
+
+            <tr>
+              <td><input type="checkbox" /></td>
+              <td>María García</td>
+              <td>Consulta médica</td>
+              <td>$500.00</td>
+              <td>$80.00</td>
+              <td>$500.00</td>
+              <td>$580.00</td>
+              <td><button class="btn-action">Acciones</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </Layout>
-
-
