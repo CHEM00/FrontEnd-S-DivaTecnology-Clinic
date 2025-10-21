@@ -3,11 +3,12 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout>	
+	
 	<div class="flex flex-col md:flex-row h-screen overflow-hidden">
-		<div id="ContenedorIzquierdo" class="w-full md:w-1/2 h-64 md:h-screen bg-[#f1f1f1] flex items-center justify-center">
+		<div id="ContenedorIzquierdo" class="w-full md:w-1/2 h-64 md:h-screen bg-[#f1f1f1ec] flex items-center justify-center">
 			<img src="LogoJess.png" alt="Logo de la clinica" class="" />
 		</div>
-		<div id="ContenedorDerecho" class="w-full md:w-1/2 h-auto md:h-screen bg-[#234D20] flex items-center justify-center py-8 md:py-0">
+		<div id="ContenedorDerecho" class="w-full md:w-1/2 h-auto md:h-screen bg-[#234d20e1] flex items-center justify-center py-8 md:py-0">
 			<form id="loginForm" class="border border-black w-full max-w-md bg-gray-100 rounded-md shadow-2xl mx-4">
 				<div class="flex flex-col items-center justify-center space-y-4 p-6">
 					<span class="text-2xl font-medium mb-4">Inicio de sesión médico</span>
@@ -17,9 +18,11 @@ import Layout from '../layouts/Layout.astro';
 					<div class="w-full flex flex-col space-y-2">
 						
 					</div>
+					<a href="/Paciente" class="w-full flex flex-col space-y-2">
 					<button type="submit" class="mt-4 px-6 py-2 bg-[#234D20] text-white rounded hover:bg-[#1a3a15] transition">
 						Iniciar sesión
 					</button>
+					</a>
 				</div>
 				<div class="m-4 text-center">
 					<p class="text-sm text-gray-600">Acceso exclusivo para personal médico autorizado</p>
@@ -28,37 +31,4 @@ import Layout from '../layouts/Layout.astro';
 			</form>
 		</div>
 	</div>
-
-	<script>
-		// Manejo del formulario de login en caso se maneje con API
-		document.getElementById('loginForm').addEventListener('submit', async (e) => {
-			e.preventDefault();
-			
-			const correo = document.getElementById('correo').value;
-			const contrasena = document.getElementById('contrasena').value;
-
-			try {
-				const response = await fetch('/api/auth/login', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({ correo, contrasena })
-				});
-
-				const data = await response.json();
-
-				if (response.ok) {
-					// Almacenar el JWT y redirigir
-					localStorage.setItem('jwt', data.token);
-					window.location.href = '/DashBoardAdmin';
-				} else {
-					alert(data.message || 'Error en el inicio de sesión');
-				}
-			} catch (error) {
-				console.error('Error:', error);
-				alert('Error de conexión');
-			}
-		});
-	</script>
 </Layout>

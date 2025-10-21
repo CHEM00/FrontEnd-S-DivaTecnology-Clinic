@@ -3,10 +3,15 @@ import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 import DropDown from "../components/DropDown.astro";
 import Boton from "../components/Boton.astro";
+import axios from 'axios';
+
+const table = await axios.get('http://localhost:3000/api/v1/Pacientes').then(res => res.data);
+
 ---
 
+
 <Layout title="Pacientes">
-    <div class="bg-[#8eb79f] flex flex-row">
+    <div class="flex flex-row">
         <div id="ContenedorIzquierdo">
             <NavBar />
         </div>
@@ -24,81 +29,30 @@ import Boton from "../components/Boton.astro";
                 </div>
             </div>
             <table id="default-table">
-                <thead class="bg-gray-200">
+                <thead class="bg-[#234d20] text-white">
                     <tr>
                         <th>
                             <input type="checkbox" /> </th>
-                        <th><span> Foto </span> </th>
-                        <th><span> Nombre </span></th>
-                        <th><span> Teléfono </span></th>
-                        <th><span> Reagendado </span></th>
-                        <th><span> Próxima cita </span></th>
-                        <th> Última cita </th>
+                        <th>{Object.keys(table[0])[1]}</th>
+                        <th>{Object.keys(table[0])[2]}</th>
+                        <th>{Object.keys(table[0])[3]}</th>
+                        <th>{Object.keys(table[0])[4]}</th>
+                        <th>{Object.keys(table[0])[11]}</th>
                         <th><span></span></th>
                     </tr>
                 </thead>
             <tbody>
-                <tr class="bg-[#B9DFCF]">
-                    <td> <input type="checkbox" /> </td>
-                    <td> <img src="LogoJess.png" alt="Foto de Juan Pérez" class="w-20 h-20 rounded-full object-cover mx-auto"/> </td>
-                    <td>Martin</td>
-                    <td>1234567890</td>
-                    <td><span class="bg-red-100 text-red-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded-lg dark:bg-red-900 dark:text-red-300">No reagendado</span></td>
-                    <td>N/A</td>
-                    <td>18-06-2025</td>
-                    <td><DropDown></DropDown></td>
-                </tr>
-                <tr class="bg-[#EBFAE6]">
-                    <td> <input type="checkbox" /> </td>
-                    <td> <img src="LogoJess.png" alt="Foto de Juan Pérez" class="w-20 h-20 rounded-full object-cover mx-auto"/> </td>
-                    <td>Martin</td>
-                    <td>1234567890</td>
-                    <td><span class="bg-red-100 text-red-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded-lg dark:bg-red-900 dark:text-red-300">No reagendado</span></td>
-                    <td>N/A</td>
-                    <td>18-06-2025</td>
-                    <td><DropDown></DropDown></td>
-                </tr>
-                <tr class="bg-[#B9DFCF]">
-                    <td> <input type="checkbox" /> </td>
-                    <td> <img src="LogoJess.png" alt="Foto de Juan Pérez" class="w-20 h-20 rounded-full object-cover mx-auto"/> </td>
-                    <td>Martin</td>
-                    <td>1234567890</td>
-                    <td><span class="bg-red-100 text-red-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded-lg dark:bg-red-900 dark:text-red-300">No reagendado</span></td>
-                    <td>N/A</td>
-                    <td>18-06-2025</td>
-                    <td><DropDown></DropDown></td>
-                </tr>
-                <tr class="bg-[#EBFAE6]">
-                    <td> <input type="checkbox" /> </td>
-                    <td> <img src="LogoJess.png" alt="Foto de Juan Pérez" class="w-20 h-20 rounded-full object-cover mx-auto"/> </td>
-                    <td>Martin</td>
-                    <td>1234567890</td>
-                    <td><span class="bg-red-100 text-red-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded-lg dark:bg-red-900 dark:text-red-300">No reagendado</span></td>
-                    <td>N/A</td>
-                    <td>18-06-2025</td>
-                    <td><DropDown></DropDown></td>
-                </tr>
-                <tr class="bg-[#B9DFCF]">
-                    <td> <input type="checkbox" /> </td>
-                    <td> <img src="LogoJess.png" alt="Foto de Juan Pérez" class="w-20 h-20 rounded-full object-cover mx-auto"/> </td>
-                    <td>Martin</td>
-                    <td>1234567890</td>
-                    <td><span class="bg-red-100 text-red-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded-lg dark:bg-red-900 dark:text-red-300">No reagendado</span></td>
-                    <td>N/A</td>
-                    <td>18-06-2025</td>
-                    <td><DropDown></DropDown></td>
-                </tr>
-                <tr class="bg-[#EBFAE6]">
-                    <td> <input type="checkbox" /> </td>
-                    <td> <img src="LogoJess.png" alt="Foto de Juan Pérez" class="w-20 h-20 rounded-full object-cover mx-auto"/> </td>
-                    <td>Martin</td>
-                    <td>1234567890</td>
-                    <td><span class="bg-red-100 text-red-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded-lg dark:bg-red-900 dark:text-red-300">No reagendado</span></td>
-                    <td>N/A</td>
-                    <td>18-06-2025</td>
-                    <td><DropDown></DropDown></td>
-                </tr>   
-        </tbody>
+                {table.map((paciente) => (
+                    <tr class="bg-white">
+                        <td><input type="checkbox" /></td>
+                        <td>{paciente.Nombre}</td>
+                        <td>{paciente.Apellido}</td>
+                        <td>{paciente.Telefono}</td>
+                        <td>{paciente.Correo}</td>
+                        <td>{paciente.Codigo}</td>
+                    </tr>
+                ))}
+            </tbody>
         </table>
         </div>
     </div>

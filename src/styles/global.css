@@ -242,3 +242,7 @@ td {
         grid-template-columns: 1fr;
     }
 }
+
+#ContenedorFichas {
+    box-sizing: border-box;
+}

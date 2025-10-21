@@ -1,0 +1,20 @@
+---
+import axios from 'axios';
+const Paciente = await axios.get('http://localhost:3000/api/v1/Pacientes').then(res => res.data);
+---
+<div class="w-full h-24 bg-[#11301E] flex items-center justify-between ">
+    <h1 class="font-serif text-2xl text-white ml-10">Bienvenido {Paciente[0].Nombre} {Paciente[0].Apellido}</h1>
+    <div>
+        <div class="mr-10">
+            <button id="Logout"  class="text-white border-1  border-white px-4 py-2 rounded hover:bg-white hover:text-[#2F5D50] transition">
+                Cerrar sesión
+            </button>
+        </div>
+    </div>
+</div>
+<script type="module">
+    const btn = document.getElementById('Logout');
+    btn.addEventListener('click', () => {
+        window.location.href = '/';
+    });
+</script>
