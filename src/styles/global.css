@@ -428,65 +428,7 @@ td {
     color: #6b7280;
 }
 
-/* Estilos para la lista de citas */
-.appointments-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
 
-.appointment-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem;
-    background-color: #f9fafb;
-    border-radius: 0.5rem;
-}
-
-.appointment-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.appointment-time {
-    font-weight: 500;
-    color: #2F5D50;
-}
-
-.appointment-patient {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    color: #6b7280;
-}
-
-/* Estilos para las acciones rápidas */
-.quick-action-card {
-    background: #E7FFEF;
-    border: 1px solid #A8D5BA;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 1rem;
-    text-align: center;
-    transition: box-shadow 0.3s;
-}
-
-.quick-action-card:hover {
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-}
-
-.quick-action-icon {
-    font-size: 1.5rem;
-    line-height: 2rem;
-    color: #234D20;
-    margin-bottom: 0.5rem;
-}
-
-.quick-action-text {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    font-weight: 500;
-}
 
 /* Estilos para el dashboard empleado con fondo igual a pagos */
 .dashboard-container {
@@ -914,4 +856,76 @@ td {
   .pagos-title {
     font-size: 1.3rem;
   }
+}
+
+/*estilos de la vista hisotiral de citas*/
+/* ==== HISTORIAL DE CITAS (usa mismo esquema que pagos) ==== */
+
+.historial-pagination {
+  @apply flex items-center justify-between mt-6 flex-wrap gap-4;
+}
+
+.historial-select {
+  @apply border border-[#a8d5ba] rounded-full px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#234d20];
+}
+
+/* Ajuste general para celdas */
+.pagos-table td, .pagos-table th {
+  @apply text-center;
+}
+
+/* Estados de citas (ya existen pero se afinan) */
+.status-pending,
+.status-confirmed,
+.status-cancelled {
+  display: inline-block;
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.status-pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-confirmed {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-cancelled {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+/* Encabezado de la tabla */
+.table-header th {
+  background-color: #234d20; /* Mantiene tu verde institucional */
+  color: #FFFFFF; /* 🔹 Letras blancas */
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* ==== HEADER DE HISTORIAL DE CITAS ==== */
+.pagos-content header {
+  width: 100%;
+  background-color: #ffffff;
+  border-bottom: 1px solid #d1d5db; /* gris claro */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  padding: 1rem 2rem;
+}
+
+/* Asegura que ocupe toda la cabecera visible */
+.pagos-container {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.pagos-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
