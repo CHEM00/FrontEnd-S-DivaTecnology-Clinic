@@ -1,11 +1,12 @@
 ---
 import NavBar from '../components/NavBar.astro';
 import Layout from '../layouts/Layout.astro';
+import Boton from '../components/Boton.astro';
+import { Dropdown } from 'flowbite';
 ---
 
 <Layout>
-	<div class="pagos-container">
-		<!-- Panel lateral izquierdo -->
+	<div class="flex h-screen bg-[#9dd88e11]">
 		<NavBar />
 
 		<!-- Contenido principal -->
@@ -32,28 +33,10 @@ import Layout from '../layouts/Layout.astro';
 			</header>
 
 			<main class="flex-1 overflow-y-auto p-6">
-				<!-- 🔍 BARRA DE HERRAMIENTAS -->
-				<div class="pagos-header">
-					
-
-					<div class="pagos-controls">
-						
-						<!-- Botón de exportación con menú desplegable -->
-						<div class="relative">
-							
-							<!-- Menú oculto que se muestra al hacer clic -->
-							<div class="hidden absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg py-2 z-10">
-								<a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">PDF</a>
-								<a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">XML</a>
-								<a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">JSON</a>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- 📋 TABLA DE CITAS -->
-				<div class="pagos-table-wrapper">
-					<table class="pagos-table w-full">
+				<!-- Barra de herramientas -->
+				<!-- Tabla de citas -->
+				<div class="overflow-hidden">
+					<table class="w-full">
 						<thead>
 							<tr class="table-header">
 								<th>Fecha</th>
@@ -103,13 +86,14 @@ import Layout from '../layouts/Layout.astro';
 						</tbody>
 					</table>
 				</div>
-
-				<!-- 📄 PAGINACIÓN -->
-				<div class="historial-pagination">
-					<div class="text-sm text-gray-600">1–10 de 99</div>
-					<div class="flex items-center gap-3">
-						<span class="text-sm text-gray-600">Filas por página:</span>
-						<select class="historial-select">
+				<!-- Paginación -->
+				<div class="flex items-center justify-between mt-6">
+					<div class="text-sm text-gray-600">
+						1-10 DE 99
+					</div>
+					<div class="flex items-center space-x-4">
+						<span class="text-sm text-gray-600">FILAS POR PAGINA:</span>
+						<select class="auth-input px-3 py-1 text-sm">
 							<option>10</option>
 							<option>25</option>
 							<option>50</option>

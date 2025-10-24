@@ -7,10 +7,11 @@
 	<!--Etiqueta de fontAwesome-->
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<title>{Astro.props.title || "Inicio de sesión"}</title>
+	<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
-	<header> <slot name="header"/> </header>
-	<main> <slot/> </main>
+	<header> <slot name="headers"/> </header>
+	<main class="h-screen bg-[#F7F9FA]"> <slot/> </main>
 	<footer> <slot name="footer"/> </footer>
 </body>
 </html>

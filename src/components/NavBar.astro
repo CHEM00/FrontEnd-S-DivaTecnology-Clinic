@@ -21,11 +21,11 @@ const iconos = [
         >
             {idx === 0 ? (
                 <a href={item.href} onclick="toggleNavBar(); return false;" class="flex items-center w-full h-full justify-center">
-                    <i class={`fa-solid ${item.icon} fa-xl`}></i>
+                    <i class={`fa-solid text-white ${item.icon} fa-xl`}></i>
                     <span class="ml-4 hidden label">{item.label}</span>
                 </a>
             ) : (
-                <a href={item.href} class="flex items-center w-full h-full justify-center">
+                <a href={item.href} class="flex items-center w-full h-full justify-center text-[#FFFFFF]">
                     <i class={`fa-solid ${item.icon} fa-xl`}></i>
                     <span class="ml-4 hidden label">{item.label}</span>
                 </a>
