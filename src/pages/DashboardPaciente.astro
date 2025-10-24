@@ -1,233 +1,57 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import TopTag from '../components/TopTag.astro';
+import FichaClinica from '../components/FichaClinica.astro';
 ---
 <Layout>
   <TopTag/>
-  <div id="ContenedorGrids" class="m-10 w-auto h-auto grid-cols-2 gap-4 grid">
-      <div class="w-full h-full bg-gray-200 border flex flex-col p-2 rounded-lg">
+  <main>
+    <div id="ContenedorGrids" class="m-10 mt-18 w-auto h-auto grid-cols-2 gap-4 grid">
+      <div class="w-full h-full shadow-md border-gray-300 border flex flex-col p-2 rounded-lg">
         <div class="flex items-center gap-2 w-full">
-          <span class="ml-4">Fichas clínicas</span>
+          <span class="ml-4 text-2xl">Fichas clínicas</span>
+          <div>
+            <input type="text" class="border border-gray-400 p-1 ml-4" placeholder="Filtrar por                   ⬇️">
+          </div>
           <div class="flex gap-2 ml-auto items-center">
             <button class="rounded px-2 py-1">‹</button>
             <span>1</span>
             <button class="rounded px-2 py-1">›</button>
           </div>
         </div>
-
         <div class="mt-4 flex-1 min-h-0 w-full p-2">
           <!-- Grid de 2 filas que ocupa todo el espacio restante -->
-          <div class="grid grid-cols-1 gap-4 h-1/2 min-h-0" id="ContenedorFichas">
-            <div class="p-3 border rounded-2xl bg-[#FFFFFF] hover:bg-[#2e4d1d]"> <p>Cita 1: 2025-01-01 </p> <br> <p>Fecha: 2025-01-01</p></div>
-            <div class="p-4 border rounded-2xl bg-[#FFFFFF]"> <p>Cita 2: 2025-01-02 </p> <br> <p>Fecha: 2025-01-02</p></div>
-            <div class="p-4 border rounded-2xl bg-[#FFFFFF]"> <p>Cita 3: 2025-01-03 </p> <br> <p>Fecha: 2025-01-03</p></div>
-            <div class="p-4 border rounded-2xl bg-[#FFFFFF]"> <p>Cita 4: 2025-01-04 </p> <br> <p>Fecha: 2025-01-04</p></div>
-            <div class="p-4 border rounded-2xl bg-[#FFFFFF]"> <p>Cita 5: 2025-01-05 </p> <br> <p>Fecha: 2025-01-05</p></div>
-            <div class="p-4 border rounded-2xl bg-[#FFFFFF]"> <p>Cita 6: 2025-01-06 </p> <br> <p>Fecha: 2025-01-06</p></div>
-            <div class="p-4 border rounded-2xl bg-[#FFFFFF]"> <p>Cita 7: 2025-01-07 </p> <br> <p>Fecha: 2025-01-07</p></div>
+          <div class="grid grid-cols-1 gap-4 h-1/2 min-h-0">
+            <!-- El grid para no deformarse y desborden las fichas clinicas, solo soporta una cantidad de 8 fichas sobre el grid -->
+            <FichaClinica cita="Cita 1" fecha="2025-01-01" />
+            <FichaClinica cita="Cita 2" fecha="2025-01-02" />
+            <FichaClinica cita="Cita 3" fecha="2025-01-03" />
+            <FichaClinica cita="Cita 4" fecha="2025-01-04" />
+            <FichaClinica cita="Cita 5" fecha="2025-01-05" />
+            <FichaClinica cita="Cita 6" fecha="2025-01-06" />
+            <FichaClinica cita="Cita 7" fecha="2025-01-07" />
+            <FichaClinica cita="Cita 8" fecha="2025-01-08" />
           </div>
         </div>
       </div>
-    <div class="h-[calc(90vh-8rem)] bg-gray-200"> <!-- Este es el contenedor generar de la derecho -->
+    <div class="h-[calc(90vh-8rem)] border border-gray-200 shadow-md"> <!-- Este es el contenedor general de la derecho -->
       <div> 
-        <div class="flex items-center gap-2 w-full p-2">
-          <span class="text-lg font-semibold ml-4">Previsualización</span>
-        </div>
-        <div class="p-4 h-[calc(90vh-10rem)]">
-          <div class="w-full h-full border rounded bg-white flex items-center justify-center">
-            <span class="text-gray-500">No hay archivo seleccionado</span>
-          </div>
+      <div class="flex items-center gap-2 w-full p-2">
+        <span class="text-lg font-semibold ml-2">Previsualización</span>
+        <button class="ml-auto bg-[#2F5D50] text-white px-3 py-1 rounded hover:bg-[#23483c] transition"
+            type="button">
+        Descargar
+        </button>
+      </div>
+      <div class="p-2 h-[calc(88vh-10rem)]">
+        <div class="w-full h-full border border-gray-400 rounded flex items-center justify-center">
+        <span class="text-black">No hay archivo seleccionado</span>
         </div>
       </div>
+      </div>
+    </div>
   </div>
 </div>
-  
-
-  
+  </main>
 </Layout>
 
-  
-<!--const Paciente = await axios.get('http://localhost:3000/api/v1/Pacientes').then(r => r.data).catch(() => []);
-// const HistorialClinico = await axios.get('http://localhost:3000/api/v1/HistorialClinico').then(r => r.data).catch(() => []);
-
-// const grouped = (HistorialClinico || []).reduce((acc, item) => {
-//   const key = item.Diagnostico || 'Sin diagnóstico';
-//   acc[key] = acc[key] || [];
-//   acc[key].push(item);
-//   return acc;
-// }, {});
-// const DIAG_KEYS = Object.keys(grouped);
-// const pacienteNombre = `${Paciente?.[0]?.Nombre ?? ''} ${Paciente?.[0]?.Apellido ?? ''}`;
-// ---
-// <Layout title={pacienteNombre} class="bg-green-50">
-//   <div class="min-h-screen flex flex-col">
-//     <TopTag />
-
-//     <div class="flex flex-1 flex-col md:flex-row gap-4 p-4">
-//       <aside class="w-full md:w-80 lg:w-72 bg-white/95 border border-green-200 rounded-lg shadow-lg overflow-auto p-4">
-//         <h2 class="text-lg font-semibold text-green-800 mb-3">Fichas clínicas</h2>
-
-//         <div id="diagnosticos-list" class="flex flex-col gap-2 mb-4">
-//           {DIAG_KEYS.length === 0 ? (
-//             <div class="text-sm text-gray-500">No hay fichas disponibles</div>
-//           ) : (
-//             DIAG_KEYS.map((k, idx) => (
-//               <button
-//                 type="button"
-//                 class={`text-left rounded px-3 py-2 w-full ${idx === 0 ? 'bg-green-100 text-green-800 font-medium' : 'hover:bg-green-50 text-green-700'}`}
-//                 data-idx={idx}
-//               >
-//                 <div class="flex justify-between items-center">
-//                   <span>{k}</span>
-//                   <small class="text-xs text-gray-500">({grouped[k].length})</small>
-//                 </div>
-//               </button>
-//             ))
-//           )}
-//         </div>
-
-//         <div id="fichas-wrapper" class="space-y-4">
-//           {DIAG_KEYS.map((k, idx) => (
-//             <div class="diag-group" data-idx={idx} style={idx === 0 ? '' : 'display:none'}>
-//               <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-3">
-//                 {grouped[k].map((it) => {
-//                   const numero = it.NumeroCita ?? it.NumeroCita ?? '—';
-//                   const fechaRaw = it.Fecha || it.fecha || it.createdAt;
-//                   const fecha = fechaRaw ? new Date(fechaRaw).toLocaleString() : 'Sin fecha';
-//                   return (
-//                     <article
-//                       class="cursor-pointer bg-white border border-green-100 rounded-md p-3 shadow-sm hover:shadow-md transition flex flex-col justify-between"
-//                       data-numero={numero}
-//                       data-fecha={fechaRaw ?? ''}
-//                       data-fisio={it.NombreFisio ?? ''}
-//                       data-diagnostico={k}
-//                       data-nota={it.NotaTerapeutica ?? ''}
-//                       role="button"
-//                       tabindex="0"
-//                     >
-//                       <div class="flex items-center justify-between mb-2">
-//                         <div class="text-sm text-gray-500">Cita</div>
-//                         <div class="text-xs text-gray-500">{fecha}</div>
-//                       </div>
-//                       <div class="text-2xl font-bold text-green-700">{String(numero)}</div>
-//                     </article>
-//                   );
-//                 })}
-//               </div>
-//             </div>
-//           ))}
-//         </div>
-
-//         <div id="diagnostic-nav" class="mt-4 flex items-center justify-between">
-//           <button id="diag-prev" class="px-3 py-1 rounded border text-sm text-gray-700 hover:bg-green-50">Anterior</button>
-//           <div id="diag-label" class="text-sm text-gray-600">0 / 0</div>
-//           <button id="diag-next" class="px-3 py-1 rounded border text-sm text-gray-700 hover:bg-green-50">Siguiente</button>
-//         </div>
-//       </aside>
-
-//       <main class="flex-1 bg-white/85 border border-green-200 rounded-lg p-4 flex flex-col shadow-inner">
-//         <div class="flex-1 flex flex-col">
-//           <div class="flex items-center justify-between mb-3">
-//             <h2 id="preview-title" class="text-lg font-semibold text-green-800">Previsualización</h2>
-//             <div class="text-sm text-gray-500">Selecciona una ficha a la izquierda</div>
-//           </div>
-
-//           <div id="preview-area" class="flex-1 border border-green-200 rounded-md overflow-hidden bg-white flex items-start justify-center shadow-sm p-4">
-//             <iframe id="pdf-preview" src="" class="w-full h-full rounded-md" style="min-height:300px; display:none;" title="Vista previa PDF"></iframe>
-
-//             <div id="preview-placeholder" class="text-center p-6 text-green-600/80">
-//               <p class="mb-2">No hay archivo seleccionado</p>
-//               <p class="text-xs">Haz click en una ficha para ver la previsualización aquí.</p>
-//             </div>
-
-//             <div id="preview-details" class="hidden w-full">
-//               <div class="mb-2">
-//                 <div class="text-sm text-gray-500">Número de cita</div>
-//                 <div id="detail-numero" class="text-2xl font-bold text-green-800"></div>
-//               </div>
-//               <div class="mb-2">
-//                 <div class="text-sm text-gray-500">Fecha</div>
-//                 <div id="detail-fecha" class="text-sm text-gray-700"></div>
-//               </div>
-//               <div class="mb-2">
-//                 <div class="text-sm text-gray-500">Fisioterapeuta</div>
-//                 <div id="detail-fisio" class="text-sm text-gray-700"></div>
-//               </div>
-//               <div class="mb-2">
-//                 <div class="text-sm text-gray-500">Diagnóstico</div>
-//                 <div id="detail-diagnostico" class="text-sm text-gray-700"></div>
-//               </div>
-//               <div class="mb-2">
-//                 <div class="text-sm text-gray-500">Nota terapéutica</div>
-//                 <div id="detail-nota" class="text-sm text-gray-700 whitespace-pre-line"></div>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-
-//         <div class="mt-4 flex items-center justify-end gap-3">
-//           <button id="guardar-btn" class="bg-green-700 text-white px-4 py-2 rounded-md shadow hover:bg-green-800 disabled:opacity-60" disabled>Guardar</button>
-//         </div>
-//       </main>
-//     </div>
-//   </div>
-
-//   <script type="module">
-//     // navegación simple entre diagnósticos y click en tarjeta
-//     const diagGroups = Array.from(document.querySelectorAll('.diag-group'));
-//     const diagButtons = Array.from(document.querySelectorAll('[data-idx]'));
-//     const prevBtn = document.getElementById('diag-prev');
-//     const nextBtn = document.getElementById('diag-next');
-//     const diagLabel = document.getElementById('diag-label');
-
-//     let current = 0;
-//     const total = diagGroups.length;
-
-//     function updateNav() {
-//       diagGroups.forEach((g, i) => g.style.display = i === current ? '' : 'none');
-//       diagButtons.forEach(b => b.classList.remove('bg-green-100','text-green-800','font-medium'));
-//       const activeBtn = document.querySelector(`[data-idx="${current}"]`);
-//       if (activeBtn) activeBtn.classList.add('bg-green-100','text-green-800','font-medium');
-//       diagLabel.textContent = `${current + 1} / ${Math.max(1, total)}`;
-//       prevBtn.disabled = current === 0;
-//       nextBtn.disabled = current >= total - 1;
-//     }
-
-//     diagButtons.forEach(b => b.addEventListener('click', () => {
-//       const idx = Number(b.getAttribute('data-idx') || 0);
-//       current = idx;
-//       updateNav();
-//     }));
-
-//     prevBtn.addEventListener('click', () => { if (current > 0) { current--; updateNav(); } });
-//     nextBtn.addEventListener('click', () => { if (current < total - 1) { current++; updateNav(); } });
-
-//     // click en tarjeta: mostrar detalles (sin JSON.parse)
-//     document.querySelectorAll('article[data-numero]').forEach(card => {
-//       card.addEventListener('click', () => {
-//         const numero = card.dataset.numero || '—';
-//         const fechaRaw = card.dataset.fecha || '';
-//         const fecha = fechaRaw ? new Date(fechaRaw).toLocaleString() : 'Sin fecha';
-//         const fisio = card.dataset.fisio || '—';
-//         const diagnostico = card.dataset.diagnostico || '—';
-//         const nota = card.dataset.nota || '—';
-
-//         document.getElementById('preview-title').textContent = `Cita ${numero}`;
-//         document.getElementById('preview-placeholder').style.display = 'none';
-//         document.getElementById('pdf-preview').style.display = 'none';
-//         const details = document.getElementById('preview-details');
-//         details.classList.remove('hidden');
-//         document.getElementById('detail-numero').textContent = numero;
-//         document.getElementById('detail-fecha').textContent = fecha;
-//         document.getElementById('detail-fisio').textContent = fisio;
-//         document.getElementById('detail-diagnostico').textContent = diagnostico;
-//         document.getElementById('detail-nota').textContent = nota;
-//         document.getElementById('guardar-btn').disabled = true;
-//       });
-//     });
-
-//     // inicializar
-//     updateNav();
-//   </script>
-// </Layout>
--->
