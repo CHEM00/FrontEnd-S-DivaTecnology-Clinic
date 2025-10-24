@@ -10,11 +10,11 @@ li {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #2F5D50; /* Cambia este valor al color que desees */
+    color: #ffffff; /* Cambia este valor al color que desees */
 }
 
 li:hover{
-    background-color:#A8D5BA80;
+    background-color:#11030E;
 }
 
 /*___________________________________________________________________________________*/
