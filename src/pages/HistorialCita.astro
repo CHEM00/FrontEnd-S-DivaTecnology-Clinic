@@ -4,14 +4,26 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout>
-	<div class="flex h-screen bg-gray-50">
+	<div class="pagos-container">
+		<!-- Panel lateral izquierdo -->
 		<NavBar />
+
+		<!-- Contenido principal -->
 		<div class="flex-1 flex flex-col overflow-hidden">
-			<header class="bg-white shadow-sm border-b border-gray-200">
-				<div class="flex justify-between items-center px-6 py-4">
-					<h1 class="text-2xl font-bold text-[#2F5D50]">HISTORIAL DE CITAS</h1>
+			<header class="bg-gray-100 shadow-sm border-b border-gray-200">
+				<div class="flex items-center justify-between px-6 py-4">
+					<div id="TituloTabla" class="flex">
+						<h1 class="text-2xl font-bold text-[#2F5D50]">HISTORIAL DE CITAS</h1>
+						<div class="flex ml-5 space-x-4">
+							<input 
+								type="text" 
+								placeholder="Buscar..." 
+								class="auth-input px-4 py-2 w-64"
+							>
+						</div>
+					</div>
 					<div class="flex items-center space-x-4">
-						<span class="text-sm text-gray-600">Bienvenido</span>
+						<span class="text-sm text-gray-600 justify-items-end">Bienvenido</span>
 						<button onclick="logout()" class="auth-button px-4 py-2 text-sm">
 							Cerrar Sesión
 						</button>
@@ -20,24 +32,16 @@ import Layout from '../layouts/Layout.astro';
 			</header>
 
 			<main class="flex-1 overflow-y-auto p-6">
-				<!-- Barra de herramientas -->
-				<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
-					<div class="flex items-center space-x-4">
-						<input 
-							type="text" 
-							placeholder="Buscar..." 
-							class="auth-input px-4 py-2 w-64"
-						>
-					</div>
-					<div class="flex items-center space-x-3">
-						<!-- Exportar Dropdown -->
+				<!-- 🔍 BARRA DE HERRAMIENTAS -->
+				<div class="pagos-header">
+					
+
+					<div class="pagos-controls">
+						
+						<!-- Botón de exportación con menú desplegable -->
 						<div class="relative">
-							<button class="auth-button px-4 py-2 text-sm flex items-center">
-								EXPORTAR
-								<svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-								</svg>
-							</button>
+							
+							<!-- Menú oculto que se muestra al hacer clic -->
 							<div class="hidden absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg py-2 z-10">
 								<a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">PDF</a>
 								<a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">XML</a>
@@ -47,85 +51,73 @@ import Layout from '../layouts/Layout.astro';
 					</div>
 				</div>
 
-				<!-- Tabla de citas -->
-				<div class="dashboard-card overflow-hidden">
-					<table class="w-full">
+				<!-- 📋 TABLA DE CITAS -->
+				<div class="pagos-table-wrapper">
+					<table class="pagos-table w-full">
 						<thead>
 							<tr class="table-header">
-								<th class="px-6 py-4 text-left text-white font-semibold">FECHA</th>
-								<th class="px-6 py-4 text-left text-white font-semibold">NOMBRE DEL PACIENTE</th>
-								<th class="px-6 py-4 text-left text-white font-semibold">MOTIVO DE CONSULTA</th>
-								<th class="px-6 py-4 text-left text-white font-semibold">ESTATUS DE LA CONSULTA</th>
-								<th class="px-6 py-4 text-left text-white font-semibold">ACCIONES</th>
+								<th>Fecha</th>
+								<th>Nombre del Paciente</th>
+								<th>Motivo de Consulta</th>
+								<th>Estatus</th>
+								<th>Acciones</th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-gray-200">
 							<tr>
-								<td class="px-6 py-4">09 - 06 - 2025</td>
-								<td class="px-6 py-4">IAN</td>
-								<td class="px-6 py-4">ONDAS DE CHOQUE</td>
-								<td class="px-6 py-4">
-									<span class="status-pending">PENDIENTE</span>
-								</td>
-								<td class="px-6 py-4">
+								<td>09/06/2025</td>
+								<td>Ian</td>
+								<td>Ondas de Choque</td>
+								<td><span class="status-pending">Pendiente</span></td>
+								<td>
 									<div class="relative">
-										<button class="auth-button px-3 py-1 text-sm">
-											ACCIONES
-										</button>
+										<button class="auth-button px-3 py-1 text-sm">Acciones</button>
 										<div class="hidden absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg py-2 z-10">
-											<a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">ABRIR</a>
-											<a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">EDITAR</a>
-											<a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 text-red-600">ELIMINAR</a>
+											<a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">Abrir</a>
+											<a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">Editar</a>
+											<a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 text-red-600">Eliminar</a>
 										</div>
 									</div>
 								</td>
 							</tr>
+
 							<tr>
-								<td class="px-6 py-4">09 - 06 - 2025</td>
-								<td class="px-6 py-4">JACQUELINE</td>
-								<td class="px-6 py-4">TERAPIA NORMAL</td>
-								<td class="px-6 py-4">
-									<span class="status-confirmed">CONFIRMADA</span>
-								</td>
-								<td class="px-6 py-4">
-									<button class="auth-button px-3 py-1 text-sm">
-										ACCIONES
-									</button>
+								<td>09/06/2025</td>
+								<td>Jacqueline</td>
+								<td>Terapia Normal</td>
+								<td><span class="status-confirmed">Confirmada</span></td>
+								<td>
+									<button class="auth-button px-3 py-1 text-sm">Acciones</button>
 								</td>
 							</tr>
+
 							<tr>
-								<td class="px-6 py-4">09 - 06 - 2025</td>
-								<td class="px-6 py-4">JESSIKA</td>
-								<td class="px-6 py-4">PLANTILLAS</td>
-								<td class="px-6 py-4">
-									<span class="status-cancelled">CANCELADA</span>
-								</td>
-								<td class="px-6 py-4">
-									<button class="auth-button px-3 py-1 text-sm">
-										ACCIONES
-									</button>
+								<td>09/06/2025</td>
+								<td>Jessika</td>
+								<td>Plantillas</td>
+								<td><span class="status-cancelled">Cancelada</span></td>
+								<td>
+									<button class="auth-button px-3 py-1 text-sm">Acciones</button>
 								</td>
 							</tr>
 						</tbody>
 					</table>
 				</div>
 
-				<!-- Paginación -->
-				<div class="flex items-center justify-between mt-6">
-					<div class="text-sm text-gray-600">
-						1-10 DE 99
-					</div>
-					<div class="flex items-center space-x-4">
-						<span class="text-sm text-gray-600">FILAS POR PAGINA:</span>
-						<select class="auth-input px-3 py-1 text-sm">
+				<!-- 📄 PAGINACIÓN -->
+				<div class="historial-pagination">
+					<div class="text-sm text-gray-600">1–10 de 99</div>
+					<div class="flex items-center gap-3">
+						<span class="text-sm text-gray-600">Filas por página:</span>
+						<select class="historial-select">
 							<option>10</option>
 							<option>25</option>
 							<option>50</option>
 						</select>
-						<div class="flex items-center space-x-2">
-							<button class="auth-button px-3 py-1 text-sm">⟨</button>
+						<div class="flex items-center gap-2">
+							<button class="btn-action px-3 py-1 text-sm">⟨</button>
 							<span class="text-sm text-gray-600">1/10</span>
-							<button class="auth-button px-3 py-1 text-sm">⟩</button>
+							<button class="btn-action px-3 py-1 text-sm">⟩</button>
 						</div>
 					</div>
 				</div>
@@ -133,27 +125,40 @@ import Layout from '../layouts/Layout.astro';
 		</div>
 	</div>
 
+	<!-- ======================= -->
+	<!-- 🔧 SCRIPT ORIGINAL (DOCUMENTADO) -->
+	<!-- ======================= -->
 	<script>
+		/**
+		 * 🔐 Función de cierre de sesión.
+		 * Elimina el token JWT almacenado en localStorage y redirige al inicio.
+		 */
 		function logout() {
 			localStorage.removeItem('token');
 			window.location.href = '/';
 		}
 
-		// Dropdown functionality
+		/**
+		 * 🧭 Evento principal del documento:
+		 * - Recupera el token almacenado (si existe)
+		 * - Configura los dropdowns (botones de acciones y exportar)
+		 * - Cierra los dropdowns si se hace clic fuera
+		 */
 		document.addEventListener('DOMContentLoaded', function() {
+			// Recupera el token JWT del almacenamiento local
 			const token = localStorage.getItem('token');
 			
 
-			// Configurar dropdowns
+			// Configura los eventos de los botones con menú desplegable
 			document.querySelectorAll('.relative button').forEach(button => {
 				button.addEventListener('click', function(e) {
-					e.stopPropagation();
-					const dropdown = this.nextElementSibling;
-					dropdown.classList.toggle('hidden');
+					e.stopPropagation(); // Evita que el clic cierre el menú inmediatamente
+					const dropdown = this.nextElementSibling; // Selecciona el div oculto
+					dropdown.classList.toggle('hidden'); // Alterna la visibilidad del menú
 				});
 			});
 
-			// Cerrar dropdowns al hacer clic fuera
+			// Cierra todos los menús desplegables al hacer clic fuera
 			document.addEventListener('click', function() {
 				document.querySelectorAll('.relative > div').forEach(dropdown => {
 					dropdown.classList.add('hidden');

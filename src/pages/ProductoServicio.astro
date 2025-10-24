@@ -1,46 +1,121 @@
 ---
 import NavBar from "../components/NavBar.astro";
 import Layout from "../layouts/Layout.astro";
-import DropDown from "../components/DropDown.astro";
-import Boton from "../components/Boton.astro";
 ---
-<Layout>
-    <div class="bg-[#8eb79f] flex flex-row">
-        <div id="ContenedorIzquierdo">
-            <NavBar />
-        </div>
-        <div id="ContenedorDerecho" class="flex flex-col w-full p-3">
-            <div id = "EncabezadoTabla" class="w-full h-1/9 flex mb-3">
-                <div class="flex flex-1 items-center justify-left">
-                    <span class="mr-8 text-3xl font-sans">Productos y servicio</span>
-                    <div id="BarraBusqueda" class="flex items-center">
-                        <input type="search" class="rounded-2xl text-sm">
-                    </div>
-                </div>
-                <div class="flex flex-1 items-center justify-end">
-                    <Boton> <slot>Exportar</slot> </Boton>
-                    <Boton> <slot>Nuevo item</slot></Boton>
-                </div>
-            </div>
-            <table id="default-table">
-                <thead class="bg-gray-200">
-                    <tr>
-                        <th><input type="checkbox" /> </th>
-                        <th><span> Nombre </span> </th>
-                        <th><span> Descripción </span></th>
-                        <th><span> Precio </span></th>
-                        <th><span></span></th>
-                    </tr>
-                </thead>
-            <tbody>
-                <tr class="bg-[#B9DFCF]">
-                    <td> <input type="checkbox" /> </td>
-                    <td>Ondas de choque</td>
-                    <td>Aparato de ondas de choque</td>
-                    <td>$300</td>
-                    <td><DropDown></DropDown></td>
-                </tr>  
-        </tbody>
-        </table>
-    </div>
+
+<Layout title="Productos y Servicios">
+	<div class="pagos-container">
+		<!-- Panel lateral izquierdo -->
+		<NavBar />
+
+		<!-- Contenido principal -->
+		<div class="flex-1 flex flex-col overflow-hidden">
+			<header class="bg-gray-100 shadow-sm border-b border-gray-200">
+				<div class="flex items-center justify-between px-6 py-4">
+					<div id="TituloTabla" class="flex">
+						<h1 class="text-2xl font-bold text-[#2F5D50]">PRODUCTOS Y SERVICIOS</h1>
+						<div class="flex ml-5 space-x-4">
+							<input 
+								type="text" 
+								placeholder="Buscar..." 
+								class="auth-input px-4 py-2 w-64"
+							>
+						</div>
+					</div>
+					<div class="flex items-center space-x-4">
+						<span class="text-sm text-gray-600 justify-items-end">Bienvenido</span>
+						<button onclick="logout()" class="auth-button px-4 py-2 text-sm">
+							Cerrar Sesión
+						</button>
+					</div>
+				</div>
+			</header>
+
+			<main class="flex-1 overflow-y-auto p-6">
+				<!-- TABLA DE PRODUCTOS Y SERVICIOS -->
+				<div class="pagos-table-wrapper">
+					<table class="pagos-table w-full">
+						<thead>
+							<tr class="table-header">
+								<th><input type="checkbox" /></th>
+								<th>Nombre</th>
+								<th>Descripción</th>
+								<th>Precio</th>
+								<th>Acciones</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							<tr>
+								<td><input type="checkbox" /></td>
+								<td>Ondas de choque</td>
+								<td>Aparato de ondas de choque</td>
+								<td>$300.00</td>
+								<td>
+									<button class="btn-action">Acciones</button>
+								</td>
+							</tr>
+							<tr>
+								<td><input type="checkbox" /></td>
+								<td>Consulta médica</td>
+								<td>Consulta general con especialista</td>
+								<td>$500.00</td>
+								<td>
+									<button class="btn-action">Acciones</button>
+								</td>
+							</tr>
+							<tr>
+								<td><input type="checkbox" /></td>
+								<td>Plantillas ortopédicas</td>
+								<td>Plantillas personalizadas</td>
+								<td>$150.00</td>
+								<td>
+									<button class="btn-action">Acciones</button>
+								</td>
+							</tr>
+							<tr>
+								<td><input type="checkbox" /></td>
+								<td>Terapia física</td>
+								<td>Sesión de terapia de 60 minutos</td>
+								<td>$200.00</td>
+								<td>
+									<button class="btn-action">Acciones</button>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<!-- PAGINACIÓN Y BOTONES -->
+				<div class="historial-pagination">
+					<div class="text-sm text-gray-600">1–10 de 99</div>
+					<div class="flex items-center gap-3">
+						<!-- Botones Exportar y Nuevo Item -->
+						<div class="flex gap-2">
+							<button class="btn-action">Exportar</button>
+							<button class="btn-action">Nuevo item</button>
+						</div>
+						
+						<span class="text-sm text-gray-600">Filas por página:</span>
+						<select class="historial-select">
+							<option>10</option>
+							<option>25</option>
+							<option>50</option>
+						</select>
+						<div class="flex items-center gap-2">
+							<button class="btn-action px-3 py-1 text-sm">⟨</button>
+							<span class="text-sm text-gray-600">1/10</span>
+							<button class="btn-action px-3 py-1 text-sm">⟩</button>
+						</div>
+					</div>
+				</div>
+			</main>
+		</div>
+	</div>
+
+	<script>
+		function logout() {
+			localStorage.removeItem('token');
+			window.location.href = '/';
+		}
+	</script>
 </Layout>
