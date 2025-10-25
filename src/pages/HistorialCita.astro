@@ -1,18 +1,22 @@
 ---
 import NavBar from '../components/NavBar.astro';
 import Layout from '../layouts/Layout.astro';
-import Boton from '../components/Boton.astro';
-import { Dropdown } from 'flowbite';
+import axios from 'axios';
+const table = await axios.get('http://localhost:3000/api/v1/HistorialClinico').then((res) => res.data);
+const date = (d: Date) => { const dt = new Date(d); return dt.toLocaleDateString('es-MX', { year: 'numeric', month: '2-digit', day: '2-digit' }); };
 ---
 
-<Layout>
-	<div class="flex h-screen bg-[#9dd88e11]">
+<Layout title="Historial de citas">
+	<div class="pagos-container">
+		<!-- Panel lateral izquierdo -->
 		<NavBar />
+
+		<!-- Contenido principal -->
 		<div class="flex-1 flex flex-col overflow-hidden">
-			<header class="bg-gray-100 shadow-sm border-b border-gray-200">
+			<header class="bg-white/80 shadow-sm border-b border-gray-200">
 				<div class="flex items-center justify-between px-6 py-4">
-					<div id="TituloTabla" class="flex">
-						<h1 class="text-2xl font-bold text-[#2F5D50]">HISTORIAL DE CITAS</h1>
+					<div class="flex">
+						<h1>Historial de citas</h1>
 						<div class="flex ml-5 space-x-4">
 							<input 
 								type="text" 
@@ -21,128 +25,57 @@ import { Dropdown } from 'flowbite';
 							>
 						</div>
 					</div>
-					<div class="flex items-center space-x-4">
-						<span class="text-sm text-gray-600 justify-items-end">Bienvenido</span>
-						<button onclick="logout()" class="auth-button px-4 py-2 text-sm">
-							Cerrar Sesión
-						</button>
-					</div>
 				</div>
 			</header>
-
-			<main class="flex-1 overflow-y-auto p-6">
-				<!-- Barra de herramientas -->
-				<!-- Tabla de citas -->
-				<div class="overflow-hidden">
-					<table class="w-full">
-						<thead>
-							<tr class="table-header">
-								<th class="px-6 py-4 text-left text-white font-semibold">FECHA</th>
-								<th class="px-6 py-4 text-left text-white font-semibold">NOMBRE DEL PACIENTE</th>
-								<th class="px-6 py-4 text-left text-white font-semibold">MOTIVO DE CONSULTA</th>
-								<th class="px-6 py-4 text-left text-white font-semibold">ESTATUS DE LA CONSULTA</th>
-								<th class="px-6 py-4 text-left text-white font-semibold">ACCIONES</th>
+            <main>
+                <div id="TableContainer">
+                    <table id="Table">
+				        <thead>
+						    <tr id="TableHeader">
+								<th><input type="checkbox" /></th>
+								<th>Fecha</th>
+								<th>Diagnosticos</th>
+								<th>Nombre del paciente</th>
+								<th>Numero de sesion</th>
+								<th>Nota terapeutica</th>
+								<th>Acciones</th>
 							</tr>
 						</thead>
-						<tbody class="divide-y divide-gray-200">
+						<tbody>
+                            {table.map((Cita) => (
 							<tr>
-								<td class="px-6 py-4">09 - 06 - 2025</td>
-								<td class="px-6 py-4">IAN</td>
-								<td class="px-6 py-4">ONDAS DE CHOQUE</td>
-								<td class="px-6 py-4">
-									<span class="status-pending">PENDIENTE</span>
-								</td>
-								<td class="px-6 py-4">
-									<div class="relative">
-										<button class="auth-button px-3 py-1 text-sm">
-											ACCIONES
-										</button>
-										<div class="hidden absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg py-2 z-10">
-											<a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">ABRIR</a>
-											<a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">EDITAR</a>
-											<a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 text-red-600">ELIMINAR</a>
-										</div>
-									</div>
+								<td><input type="checkbox" /></td>
+								<td>{date(Cita.Fecha)}</td>
+								<td>{Cita.Diagnostico}</td>
+								<td>{Cita.NombrePaciente}</td>
+								<td>{Cita.NumeroCita}</td>
+								<td>{Cita.NotaTerapeutica}</td>
+								<td>
+									<button class="btn-action">Acciones</button>
 								</td>
 							</tr>
-							<tr>
-								<td class="px-6 py-4">09 - 06 - 2025</td>
-								<td class="px-6 py-4">JACQUELINE</td>
-								<td class="px-6 py-4">TERAPIA NORMAL</td>
-								<td class="px-6 py-4">
-									<span class="status-confirmed">CONFIRMADA</span>
-								</td>
-								<td class="px-6 py-4">
-									<button class="auth-button px-3 py-1 text-sm">
-										ACCIONES
-									</button>
-								</td>
-							</tr>
-							<tr>
-								<td class="px-6 py-4">09 - 06 - 2025</td>
-								<td class="px-6 py-4">JESSIKA</td>
-								<td class="px-6 py-4">PLANTILLAS</td>
-								<td class="px-6 py-4">
-									<span class="status-cancelled">CANCELADA</span>
-								</td>
-								<td class="px-6 py-4">
-									<button class="auth-button px-3 py-1 text-sm">
-										ACCIONES
-									</button>
-								</td>
-							</tr>
+                            ))}
 						</tbody>
 					</table>
-				</div>
-				<!-- Paginación -->
-				<div class="flex items-center justify-between mt-6">
-					<div class="text-sm text-gray-600">
-						1-10 DE 99
-					</div>
-					<div class="flex items-center space-x-4">
-						<span class="text-sm text-gray-600">FILAS POR PAGINA:</span>
-						<select class="auth-input px-3 py-1 text-sm">
+				<!-- PAGINACIÓN Y BOTONES -->
+				<div class="historial-pagination">
+					<div class="text-sm text-gray-600">1–10 de 99</div>
+					<div class="flex items-center gap-3">
+						<span class="text-sm text-gray-600">Filas por página:</span>
+						<select class="historial-select">
 							<option>10</option>
 							<option>25</option>
 							<option>50</option>
 						</select>
-						<div class="flex items-center space-x-2">
-							<button class="auth-button px-3 py-1 text-sm">⟨</button>
+						<div class="flex items-center gap-2">
+							<button class="btn-action px-3 py-1 text-sm">⟨</button>
 							<span class="text-sm text-gray-600">1/10</span>
-							<button class="auth-button px-3 py-1 text-sm">⟩</button>
+							<button class="btn-action px-3 py-1 text-sm">⟩</button>
 						</div>
 					</div>
 				</div>
+                </div>	
 			</main>
 		</div>
 	</div>
-
-	<script>
-		function logout() {
-			localStorage.removeItem('token');
-			window.location.href = '/';
-		}
-
-		// Dropdown functionality
-		document.addEventListener('DOMContentLoaded', function() {
-			const token = localStorage.getItem('token');
-			
-
-			// Configurar dropdowns
-			document.querySelectorAll('.relative button').forEach(button => {
-				button.addEventListener('click', function(e) {
-					e.stopPropagation();
-					const dropdown = this.nextElementSibling;
-					dropdown.classList.toggle('hidden');
-				});
-			});
-
-			// Cerrar dropdowns al hacer clic fuera
-			document.addEventListener('click', function() {
-				document.querySelectorAll('.relative > div').forEach(dropdown => {
-					dropdown.classList.add('hidden');
-				});
-			});
-		});
-	</script>
 </Layout>
