@@ -247,6 +247,846 @@ td {
     }
 }
 
-#ContenedorFichas {
-    box-sizing: border-box;
+/* Estilos para el dashboard empleado con nuevos colores */
+.dashboard-container {
+    background-color: #c0b3b360;
+}
+
+.dashboard-header {
+    background-color: #1b5031;
+}
+
+.dashboard-header h1 {
+    color: white;
+    font-size: 1.5rem;
+    line-height: 2rem;
+    font-weight: bold;
+}
+
+.dashboard-header .welcome-text {
+    color: #e5e7eb;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.dashboard-header .logout-button {
+    background-color: white;
+    color: #11301E;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    border-radius: 0.375rem;
+    transition: background-color 0.3s;
+}
+
+.dashboard-header .logout-button:hover {
+    background-color: #f3f4f6;
+}
+
+/* Estilos para el contenido principal del dashboard */
+.dashboard-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.dashboard-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+    .dashboard-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .dashboard-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.dashboard-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .dashboard-actions-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Estilos para las tarjetas de estadísticas */
+.dashboard-stat-card {
+    background: linear-gradient(135deg, #234D20, #2F5D50);
+    color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+}
+
+.dashboard-stat-content {
+    display: flex;
+    align-items: center;
+}
+
+.dashboard-stat-info {
+    flex: 1;
+}
+
+.dashboard-stat-title {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+.dashboard-stat-value {
+    font-size: 1.875rem;
+    font-weight: bold;
+    line-height: 2.25rem;
+}
+
+.dashboard-stat-subtitle {
+    font-size: 0.75rem;
+    opacity: 0.9;
+    margin-top: 0.25rem;
+}
+
+.dashboard-stat-icon {
+    font-size: 1.5rem;
+    line-height: 2rem;
+}
+
+/* Estilos para las tarjetas de contenido */
+.dashboard-content-card {
+    background: #E7FFEF;
+    border: 1px solid #A8D5BA;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+}
+
+.dashboard-card-title {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+    color: #2F5D50;
+    margin-bottom: 1rem;
+}
+
+/* Estilos para el gráfico de ventas */
+.sales-chart-container {
+    height: 16rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f3f4f6;
+    border-radius: 0.5rem;
+}
+
+.sales-chart-placeholder {
+    text-align: center;
+}
+
+.sales-chart-graphic {
+    width: 12rem;
+    height: 8rem;
+    background: linear-gradient(to right, #234D20, #2F5D50);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.sales-chart-percentage {
+    color: white;
+    font-weight: bold;
+    font-size: 1.5rem;
+    line-height: 2rem;
+}
+
+.sales-chart-text {
+    color: #6b7280;
+}
+
+
+
+/* Estilos para el dashboard empleado con fondo igual a pagos */
+.dashboard-container {
+    background-color: #8eb79f;
+}
+
+.dashboard-header {
+    background-color: #11301E;
+}
+
+.dashboard-header h1 {
+    color: white;
+    font-size: 1.5rem;
+    line-height: 2rem;
+    font-weight: bold;
+}
+
+.dashboard-header .welcome-text {
+    color: #e5e7eb;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.dashboard-header .logout-button {
+    background-color: white;
+    color: #11301E;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    border-radius: 0.375rem;
+    transition: background-color 0.3s;
+}
+
+.dashboard-header .logout-button:hover {
+    background-color: #f3f4f6;
+}
+
+/* Estilos para el contenido principal del dashboard */
+.dashboard-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.dashboard-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+    .dashboard-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .dashboard-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.dashboard-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .dashboard-actions-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Estilos para las tarjetas de estadísticas */
+.dashboard-stat-card {
+    background: linear-gradient(135deg, #234D20, #2F5D50);
+    color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+}
+
+.dashboard-stat-content {
+    display: flex;
+    align-items: center;
+}
+
+.dashboard-stat-info {
+    flex: 1;
+}
+
+.dashboard-stat-title {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+.dashboard-stat-value {
+    font-size: 1.875rem;
+    font-weight: bold;
+    line-height: 2.25rem;
+}
+
+.dashboard-stat-subtitle {
+    font-size: 0.75rem;
+    opacity: 0.9;
+    margin-top: 0.25rem;
+}
+
+.dashboard-stat-icon {
+    font-size: 1.5rem;
+    line-height: 2rem;
+}
+
+/* Estilos para las tarjetas de contenido */
+.dashboard-content-card {
+    background: #E7FFEF;
+    border: 1px solid #A8D5BA;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+}
+
+.dashboard-card-title {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+    color: #2F5D50;
+    margin-bottom: 1rem;
+}
+
+/* Estilos para el gráfico de ventas */
+.sales-chart-container {
+    height: 16rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f3f4f6;
+    border-radius: 0.5rem;
+}
+
+.sales-chart-placeholder {
+    text-align: center;
+}
+
+.sales-chart-graphic {
+    width: 12rem;
+    height: 8rem;
+    background: linear-gradient(to right, #234D20, #2F5D50);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.sales-chart-percentage {
+    color: white;
+    font-weight: bold;
+    font-size: 1.5rem;
+    line-height: 2rem;
+}
+
+.sales-chart-text {
+    color: #6b7280;
+}
+
+/* Estilos para la lista de citas */
+.appointments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.appointment-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+}
+
+.appointment-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.appointment-time {
+    font-weight: 500;
+    color: #2F5D50;
+}
+
+.appointment-patient {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: #6b7280;
+}
+
+/* Estilos para las acciones rápidas */
+.quick-action-card {
+    background: #E7FFEF;
+    border: 1px solid #A8D5BA;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+    text-align: center;
+    transition: box-shadow 0.3s;
+}
+
+.quick-action-card:hover {
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.quick-action-icon {
+    font-size: 1.5rem;
+    line-height: 2rem;
+    color: #234D20;
+    margin-bottom: 0.5rem;
+}
+
+.quick-action-text {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+}
+
+/* Estilos para la vista de pagos */
+/* ==== NUEVO DISEÑO PARA PAGOS ==== */
+
+.pagos-container {
+  background-color: #F7F9FA;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  min-height: 100vh;
+}
+
+.pagos-content {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  background-color: #F7F9FA;
+  border-radius: 1.5rem 0 0 1.5rem;
+}
+
+/* === ENCABEZADO CON GRID MEJORADO === */
+.pagos-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.pagos-title {
+  color: #234d20;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* === CONTROLES === */
+.pagos-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  width: 100%;
+}
+
+.pagos-search-input {
+  border: 1px solid #a8d5ba;
+  border-radius: 9999px;
+  padding: 0.45rem 0.9rem;
+  background: #ffffff;
+  font-size: 0.95rem;
+  width: 100%;
+  max-width: 280px;
+  transition: all 0.2s ease-in-out;
+  margin: 0;
+}
+
+.pagos-search-input:focus {
+  outline: none;
+  border-color: #234d20;
+  box-shadow: 0 0 0 3px rgba(35, 77, 32, 0.15);
+}
+
+/* === BOTONES === */
+.pagos-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.btn-action {
+  background: linear-gradient(135deg, #234d20, #2f5d50);
+  color: #ffffff;
+  font-weight: 500;
+  border: none;
+  border-radius: 9999px;
+  padding: 0.45rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(35, 77, 32, 0.2);
+  white-space: nowrap;
+}
+
+.btn-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(35, 77, 32, 0.3);
+}
+/* Ajuste general de las tablas */
+#TableContainer {
+  padding: calc(var(--spacing) * 8)
+}
+
+#Table {
+  width: 100%;
+  border: none;
+  margin-top: calc(var(--spacing) * 5);
+  border-collapse: collapse;
+  border-radius: 1rem ;
+  overflow: hidden;
+  box-shadow: 0 5px 12px rgba(0,0,0,0.08);
+}
+/*--------------------------------------------------*/
+
+/* Ajuste del encabezado de la tabla */
+#TableHeader {
+  background: #234d20;
+  color: #ffffff;
+}
+
+#TableHeader > th {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+/*--------------------------------------------------*/
+
+
+/* Ajuste de las celdas del contenido */
+#Table > td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+/*--------------------------------------------------*/
+
+/* === RESPONSIVE === */
+@media (max-width: 1024px) {
+  .pagos-header {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .pagos-title {
+    text-align: center;
+  }
+  
+  .pagos-controls {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .pagos-content {
+    padding: 1rem;
+  }
+
+  .pagos-title {
+    font-size: 1.5rem;
+  }
+
+  .pagos-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .pagos-search-input {
+    max-width: 100%;
+  }
+  
+  .pagos-buttons {
+    margin-left: 0;
+    justify-content: center;
+  }
+
+  .btn-action {
+    width: 100%;
+  }
+
+  .pagos-table-wrapper {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .pagos-header {
+    gap: 0.75rem;
+  }
+  
+  .pagos-title {
+    font-size: 1.3rem;
+  }
+}
+
+/*estilos de la vista hisotiral de citas*/
+/* ==== HISTORIAL DE CITAS (usa mismo esquema que pagos) ==== */
+
+.historial-pagination {
+  @apply flex items-center justify-between mt-6 flex-wrap gap-4;
+}
+
+.historial-select {
+  @apply border border-[#a8d5ba] rounded-full px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#234d20];
+}
+
+/* Ajuste general para celdas */
+.pagos-table td, .pagos-table th {
+  @apply text-center;
+}
+
+/* Estados de citas (ya existen pero se afinan) */
+.status-pending,
+.status-confirmed,
+.status-cancelled {
+  display: inline-block;
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.status-pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-confirmed {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-cancelled {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+/* Encabezado de la tabla */
+.table-header th {
+  background-color: #234d20; /* Mantiene tu verde institucional */
+  color: #FFFFFF; /* 🔹 Letras blancas */
+  font-weight: 600;
+  
+}
+
+/* ==== HEADER DE HISTORIAL DE CITAS ==== */
+.pagos-content header {
+  width: 100%;
+  background-color: #ffffff;
+  border-bottom: 1px solid #d1d5db; /* gris claro */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  padding: 1rem 2rem;
+}
+
+/* Asegura que ocupe toda la cabecera visible */
+.pagos-container {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.pagos-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Estilos específicos para productos y servicios */
+  .productos-container {
+    @apply grid grid-cols-[auto_1fr] min-h-screen bg-[#F7F9FA];
+  }
+  
+  .productos-content {
+    @apply flex flex-col p-8 bg-[#F7F9FA] rounded-l-[1.5rem];
+  }
+  
+  .productos-header {
+    @apply grid grid-cols-[auto_1fr_auto] items-center gap-6 mb-6;
+  }
+  
+  .productos-title {
+    @apply text-[#234d20] text-[1.8rem] font-bold whitespace-nowrap m-0;
+  }
+  
+  .productos-controls {
+    @apply flex items-center justify-end gap-4 w-full;
+  }
+  
+  .productos-search-input {
+    @apply border border-[#a8d5ba] rounded-full py-[0.45rem] px-[0.9rem] bg-white text-[0.95rem] w-full max-w-[280px] transition-all duration-200 ease-in-out m-0;
+  }
+  
+  .productos-search-input:focus {
+    @apply outline-none border-[#234d20] shadow-[0_0_0_3px_rgba(35,77,32,0.15)];
+  }
+  
+  .productos-buttons {
+    @apply flex gap-2 ml-auto;
+  }
+  
+  .productos-table-wrapper {
+    @apply bg-white rounded-xl overflow-hidden shadow-[0_5px_12px_rgba(0,0,0,0.08)] mt-8;
+  }
+  
+  .productos-table {
+    @apply w-full border-collapse text-center border-none;
+  }
+  
+  .productos-table thead {
+    @apply bg-[#234d20] text-white;
+  }
+  
+  .productos-table th,
+  .productos-table td {
+    @apply py-3 px-4 border-b border-[#e5e7eb];
+  }
+  
+  .productos-table tbody tr {
+    @apply transition-colors duration-200;
+  }
+  
+  .productos-table tbody tr:hover {
+    @apply bg-[#f3fdf6];
+  }
+  
+  .productos-table input[type="checkbox"] {
+    @apply accent-[#234d20];
+  }
+
+  /* Asegurar que los botones de acciones en la tabla tengan el mismo estilo */
+  .productos-table .btn-action {
+    @apply bg-gradient-to-br from-[#234d20] to-[#2f5d50] text-white font-medium border-none rounded-full py-[0.45rem] px-4 cursor-pointer text-[0.9rem] transition-all duration-200 ease-in-out shadow-[0_2px_5px_rgba(35,77,32,0.2)] whitespace-nowrap;
+  }
+
+  .productos-table .btn-action:hover {
+    @apply -translate-y-0.5 shadow-[0_4px_10px_rgba(35,77,32,0.3)];
+  }
+  /* === UTILIDADES REUTILIZABLES PARA VISTAS SIMILARES === */
+
+/* Estilos base para botones de acción - AHORA MÁS ESPECÍFICOS */
+.btn-action {
+  @apply bg-gradient-to-br from-[#234d20] to-[#2f5d50] text-white font-medium border-none rounded-full py-[0.45rem] px-4 cursor-pointer text-[0.9rem] transition-all duration-200 ease-in-out shadow-[0_2px_5px_rgba(35,77,32,0.2)] whitespace-nowrap;
+}
+
+.btn-action:hover {
+  @apply -translate-y-0.5 shadow-[0_4px_10px_rgba(35,77,32,0.3)];
+}
+
+/* Asegurar que los botones en las tablas tengan el mismo estilo */
+.productos-table .btn-action,
+.pagos-table .btn-action {
+  @apply bg-gradient-to-br from-[#234d20] to-[#2f5d50] text-white font-medium border-none rounded-full py-[0.45rem] px-4 cursor-pointer text-[0.9rem] transition-all duration-200 ease-in-out shadow-[0_2px_5px_rgba(35,77,32,0.2)] whitespace-nowrap;
+}
+
+.productos-table .btn-action:hover,
+.pagos-table .btn-action:hover {
+  @apply -translate-y-0.5 shadow-[0_4px_10px_rgba(35,77,32,0.3)];
+}
+
+/* Responsive para vistas de tabla */
+@media (max-width: 1024px) {
+  .productos-header,
+  .pagos-header {
+    @apply grid-cols-1 gap-4 mb-4;
+  }
+  
+  .productos-title,
+  .pagos-title {
+    @apply text-center;
+  }
+  
+  .productos-controls,
+  .pagos-controls {
+    @apply justify-center;
+  }
+}
+
+@media (max-width: 768px) {
+  .productos-content,
+  .pagos-content {
+    @apply p-4;
+  }
+
+  .productos-title,
+  .pagos-title {
+    @apply text-[1.5rem];
+  }
+
+  .productos-controls,
+  .pagos-controls {
+    @apply flex-col items-stretch gap-3;
+  }
+  
+  .productos-search-input,
+  .pagos-search-input {
+    @apply max-w-full;
+  }
+  
+  .productos-buttons,
+  .pagos-buttons {
+    @apply ml-0 justify-center;
+  }
+
+  .btn-action {
+    @apply w-full;
+  }
+
+  .productos-table-wrapper,
+  .pagos-table-wrapper {
+    @apply overflow-x-auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .productos-header,
+  .pagos-header {
+    @apply gap-3;
+  }
+  
+  .productos-title,
+  .pagos-title {
+    @apply text-[1.3rem];
+  }
 }

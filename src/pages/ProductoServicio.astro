@@ -1,19 +1,22 @@
 ---
 import NavBar from "../components/NavBar.astro";
 import Layout from "../layouts/Layout.astro";
+import axios from "axios";
+
+const table = await axios.get("http://localhost:3000/api/v1/Productos&Servicios").then((res) => res.data);
 ---
 
-<Layout title="Productos y Servicios">
+
+<Layout title="Pagos">
 	<div class="pagos-container">
 		<!-- Panel lateral izquierdo -->
 		<NavBar />
-
 		<!-- Contenido principal -->
 		<div class="flex-1 flex flex-col overflow-hidden">
-			<header class="bg-gray-100 shadow-sm border-b border-gray-200">
+			<header class="bg-white/80 shadow-sm border-b border-gray-200">
 				<div class="flex items-center justify-between px-6 py-4">
-					<div id="TituloTabla" class="flex">
-						<h1 class="text-2xl font-bold text-[#2F5D50]">PRODUCTOS Y SERVICIOS</h1>
+					<div class="flex">
+						<h1>Productos y servicios</h1>
 						<div class="flex ml-5 space-x-4">
 							<input 
 								type="text" 
@@ -22,79 +25,40 @@ import Layout from "../layouts/Layout.astro";
 							>
 						</div>
 					</div>
-					<div class="flex items-center space-x-4">
-						<span class="text-sm text-gray-600 justify-items-end">Bienvenido</span>
-						<button onclick="logout()" class="auth-button px-4 py-2 text-sm">
-							Cerrar Sesión
-						</button>
-					</div>
 				</div>
 			</header>
-
-			<main class="flex-1 overflow-y-auto p-6">
-				<!-- TABLA DE PRODUCTOS Y SERVICIOS -->
-				<div class="pagos-table-wrapper">
-					<table class="pagos-table w-full">
-						<thead>
-							<tr class="table-header">
+            <main>
+                <div id="TableContainer">
+                    <table id="Table">
+				        <thead>
+						    <tr id="TableHeader">
 								<th><input type="checkbox" /></th>
-								<th>Nombre</th>
-								<th>Descripción</th>
+								<th>Nombre del item</th>
 								<th>Precio</th>
+								<th>Descripcion</th>
+								<th>Tipo item</th>
 								<th>Acciones</th>
 							</tr>
 						</thead>
-						<tbody class="divide-y divide-gray-200">
+						<tbody>
+                            {table.map((ProductoServicio) => (
 							<tr>
 								<td><input type="checkbox" /></td>
-								<td>Ondas de choque</td>
-								<td>Aparato de ondas de choque</td>
-								<td>$300.00</td>
+								<td>{ProductoServicio.Nombre}</td>
+								<td>{`$${ProductoServicio.Precio}`}</td>
+								<td>{ProductoServicio.Descripcion}</td>
+								<td>Servicio</td>
 								<td>
 									<button class="btn-action">Acciones</button>
 								</td>
 							</tr>
-							<tr>
-								<td><input type="checkbox" /></td>
-								<td>Consulta médica</td>
-								<td>Consulta general con especialista</td>
-								<td>$500.00</td>
-								<td>
-									<button class="btn-action">Acciones</button>
-								</td>
-							</tr>
-							<tr>
-								<td><input type="checkbox" /></td>
-								<td>Plantillas ortopédicas</td>
-								<td>Plantillas personalizadas</td>
-								<td>$150.00</td>
-								<td>
-									<button class="btn-action">Acciones</button>
-								</td>
-							</tr>
-							<tr>
-								<td><input type="checkbox" /></td>
-								<td>Terapia física</td>
-								<td>Sesión de terapia de 60 minutos</td>
-								<td>$200.00</td>
-								<td>
-									<button class="btn-action">Acciones</button>
-								</td>
-							</tr>
+                            ))}
 						</tbody>
 					</table>
-				</div>
-
 				<!-- PAGINACIÓN Y BOTONES -->
 				<div class="historial-pagination">
-					<div class="text-sm text-gray-600">1–10 de 99</div>
+					<div class="text-sm text-gray-600">1-10 de 99</div>
 					<div class="flex items-center gap-3">
-						<!-- Botones Exportar y Nuevo Item -->
-						<div class="flex gap-2">
-							<button class="btn-action">Exportar</button>
-							<button class="btn-action">Nuevo item</button>
-						</div>
-						
 						<span class="text-sm text-gray-600">Filas por página:</span>
 						<select class="historial-select">
 							<option>10</option>
@@ -108,14 +72,8 @@ import Layout from "../layouts/Layout.astro";
 						</div>
 					</div>
 				</div>
+                </div>	
 			</main>
 		</div>
 	</div>
-
-	<script>
-		function logout() {
-			localStorage.removeItem('token');
-			window.location.href = '/';
-		}
-	</script>
 </Layout>
