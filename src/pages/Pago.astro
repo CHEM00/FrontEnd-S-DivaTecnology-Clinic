@@ -22,21 +22,15 @@ import Layout from "../layouts/Layout.astro";
 							>
 						</div>
 					</div>
-					<div class="flex items-center space-x-4">
-						<span class="text-sm text-gray-600 justify-items-end">Bienvenido</span>
-						<button onclick="logout()" class="auth-button px-4 py-2 text-sm">
-							Cerrar Sesión
-						</button>
-					</div>
 				</div>
 			</header>
 
-			<main class="flex-1 overflow-y-auto p-6">
+			<main>
 				<!-- TABLA DE PAGOS -->
-				<div class="pagos-table-wrapper">
-					<table class="pagos-table w-full">
+				<div id="TableContainer">
+					<table id="Table">
 						<thead>
-							<tr class="table-header">
+							<tr id="TableHeader">
 								<th><input type="checkbox" /></th>
 								<th>Paciente</th>
 								<th>Producto/Servicio</th>
@@ -47,7 +41,7 @@ import Layout from "../layouts/Layout.astro";
 								<th>Acciones</th>
 							</tr>
 						</thead>
-						<tbody class="divide-y divide-gray-200">
+						<tbody>
 							<tr>
 								<td><input type="checkbox" /></td>
 								<td>Juan Pérez</td>
