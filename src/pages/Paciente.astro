@@ -1,143 +1,85 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
-import DropDown from "../components/DropDown.astro";
 import Boton from "../components/Boton.astro";
+import axios from "axios";
+
+const table = await axios.get("http://localhost:3000/api/v1/Pacientes").then((res) => res.data);
 ---
 
+
 <Layout title="Pacientes">
-    <div class="bg-[#8eb79f] flex flex-row">
-        <div id="ContenedorIzquierdo">
-            <NavBar />
-        </div>
-        <div id="ContenedorDerecho" class="flex flex-col w-full p-3">
-            <div id = "EncabezadoTabla" class="w-full h-1/9 flex mb-3">
-                <div class="flex flex-1 items-center justify-left">
-                    <span class="mr-8 text-3xl font-sans">Pacientes</span>
-                    <div id="BarraBusqueda" class="flex items-center">
-                        <input type="search" class="rounded-2xl text-sm">
-                    </div>
-                </div>
-                <div class="flex flex-1 items-center justify-end">
-                    <Boton> <slot>Exportar</slot> </Boton>
-                    <Boton> <slot>Nuevo paciente</slot></Boton>
-                </div>
-            </div>
-            <table id="default-table">
-                <thead class="bg-gray-200">
-                    <tr>
-                        <th>
-                            <input type="checkbox" /> </th>
-                        <th><span> Foto </span> </th>
-                        <th><span> Nombre </span></th>
-                        <th><span> Teléfono </span></th>
-                        <th><span> Reagendado </span></th>
-                        <th><span> Próxima cita </span></th>
-                        <th> Última cita </th>
-                        <th><span></span></th>
-                    </tr>
-                </thead>
-            <tbody>
-                <tr class="bg-[#B9DFCF]">
-                    <td> <input type="checkbox" /> </td>
-                    <td> <img src="LogoJess.png" alt="Foto de Juan Pérez" class="w-20 h-20 rounded-full object-cover mx-auto"/> </td>
-                    <td>Martin</td>
-                    <td>1234567890</td>
-                    <td><span class="bg-red-100 text-red-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded-lg dark:bg-red-900 dark:text-red-300">No reagendado</span></td>
-                    <td>N/A</td>
-                    <td>18-06-2025</td>
-                    <td><DropDown></DropDown></td>
-                </tr>
-                <tr class="bg-[#EBFAE6]">
-                    <td> <input type="checkbox" /> </td>
-                    <td> <img src="LogoJess.png" alt="Foto de Juan Pérez" class="w-20 h-20 rounded-full object-cover mx-auto"/> </td>
-                    <td>Martin</td>
-                    <td>1234567890</td>
-                    <td><span class="bg-red-100 text-red-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded-lg dark:bg-red-900 dark:text-red-300">No reagendado</span></td>
-                    <td>N/A</td>
-                    <td>18-06-2025</td>
-                    <td><DropDown></DropDown></td>
-                </tr>
-                <tr class="bg-[#B9DFCF]">
-                    <td> <input type="checkbox" /> </td>
-                    <td> <img src="LogoJess.png" alt="Foto de Juan Pérez" class="w-20 h-20 rounded-full object-cover mx-auto"/> </td>
-                    <td>Martin</td>
-                    <td>1234567890</td>
-                    <td><span class="bg-red-100 text-red-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded-lg dark:bg-red-900 dark:text-red-300">No reagendado</span></td>
-                    <td>N/A</td>
-                    <td>18-06-2025</td>
-                    <td><DropDown></DropDown></td>
-                </tr>
-                <tr class="bg-[#EBFAE6]">
-                    <td> <input type="checkbox" /> </td>
-                    <td> <img src="LogoJess.png" alt="Foto de Juan Pérez" class="w-20 h-20 rounded-full object-cover mx-auto"/> </td>
-                    <td>Martin</td>
-                    <td>1234567890</td>
-                    <td><span class="bg-red-100 text-red-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded-lg dark:bg-red-900 dark:text-red-300">No reagendado</span></td>
-                    <td>N/A</td>
-                    <td>18-06-2025</td>
-                    <td><DropDown></DropDown></td>
-                </tr>
-                <tr class="bg-[#B9DFCF]">
-                    <td> <input type="checkbox" /> </td>
-                    <td> <img src="LogoJess.png" alt="Foto de Juan Pérez" class="w-20 h-20 rounded-full object-cover mx-auto"/> </td>
-                    <td>Martin</td>
-                    <td>1234567890</td>
-                    <td><span class="bg-red-100 text-red-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded-lg dark:bg-red-900 dark:text-red-300">No reagendado</span></td>
-                    <td>N/A</td>
-                    <td>18-06-2025</td>
-                    <td><DropDown></DropDown></td>
-                </tr>
-                <tr class="bg-[#EBFAE6]">
-                    <td> <input type="checkbox" /> </td>
-                    <td> <img src="LogoJess.png" alt="Foto de Juan Pérez" class="w-20 h-20 rounded-full object-cover mx-auto"/> </td>
-                    <td>Martin</td>
-                    <td>1234567890</td>
-                    <td><span class="bg-red-100 text-red-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded-lg dark:bg-red-900 dark:text-red-300">No reagendado</span></td>
-                    <td>N/A</td>
-                    <td>18-06-2025</td>
-                    <td><DropDown></DropDown></td>
-                </tr>   
-        </tbody>
-        </table>
-        </div>
-    </div>
-    <!------------------------Modal para el registro de paciente ---------------------------->
-    <div id="defaultModal" tabindex = "-1" aria-hidden="true" class="hidden fixed inset-0 items-center justify-center z-50">
-        <div class="bg-[#E7FFEF] p-8 rounded-2xl shadow-2xl w-full max-w-lg border border-black relative">
-            {/* Encabezado */}
-            <div class="flex items-center justify-between mb-6">
-                <span class="font-sans text-2xl font-semibold text-gray-800">Registrar paciente</span>
-                <button data-modal-toggle="defaultModal" class="text-2xl font-bold text-gray-500 hover:text-gray-700 transition-colors duration-200">&times;</button>
-            </div>
-            {/* Contenido */}
-            <div class="flex flex-col items-center">
-                <div class="w-24 h-24 rounded-full shadow-md overflow-hidden mb-6 border-2 border-[#8eb79f] bg-white flex items-center justify-center">
-                    <img src="LogoJess.png" alt="Imagen del paciente" class="object-cover w-full h-full" />
-                </div>
-                <form class="w-full grid grid-cols-2 gap-4">
-                    <input type="text" placeholder="Nombre" class="col-span-1 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8eb79f]" />
-                    <input type="text" placeholder="Correo" class="col-span-1 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8eb79f]" />
-                    <input type="tel" placeholder="Teléfono" class="col-span-1 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8eb79f]" />
-                    <select name="" id="" class="col-span-1 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8eb79f]">
-                        <option value=""></option>
-                        <option value="">Amputación</option>
-                        <option value="">Artristis</option>
-                    </select>
-                    <input type="date"placeholder="Fecha de nacimiento" class="col-span-2 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8eb79f]" />
-                    <div class="col-span-2 flex justify-between mt-4">
-                        <button class="bg-[#8eb79f] text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-[#6fa885] transition-colors duration-200">
-                            Regresar
-                        </button>
-                        <button class="bg-[#8eb79f] text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-[#6fa885] transition-colors duration-200">
-                            Registrar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-<script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.3"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
-</script>
+	<div class="pagos-container">
+		<!-- Panel lateral izquierdo -->
+		<NavBar />
+
+		<!-- Contenido principal -->
+		<div class="flex-1 flex flex-col overflow-hidden">
+			<header class="bg-white/80 shadow-sm border-b border-gray-200">
+				<div class="flex items-center justify-between px-6 py-4">
+					<div class="flex">
+						<h1>Pacientes</h1>
+						<div class="flex ml-5 space-x-4">
+							<input 
+								type="text" 
+								placeholder="Buscar..." 
+								class="auth-input px-4 py-2 w-64"
+							>
+						</div>
+					</div>
+				</div>
+			</header>
+            <main>
+                <div id="TableContainer">
+                    <table id="Table">
+				        <thead>
+						    <tr id="TableHeader">
+								<th><input type="checkbox" /></th>
+								<th>Nombre</th>
+								<th>Apellido paterno</th>
+								<th>Apellido materno</th>
+								<th>Numero de telefono</th>
+								<th>Correo</th>
+								<th>Codigo</th>
+								<th>Acciones</th>
+							</tr>
+						</thead>
+						<tbody>
+                            {table.map((Paciente) => (
+							<tr>
+								<td><input type="checkbox" /></td>
+								<td>{Paciente.Nombre}</td>
+								<td>{Paciente.ApellidoPaterno}</td>
+								<td>{Paciente.ApellidoMaterno}</td>
+								<td>{Paciente.Telefono}</td>
+								<td>{Paciente.Correo}</td>
+								<td>{Paciente.Codigo}</td>
+								<td>
+									<button class="btn-action">Acciones</button>
+								</td>
+							</tr>
+                            ))}
+						</tbody>
+					</table>
+				<!-- PAGINACIÓN Y BOTONES -->
+				<div class="historial-pagination">
+					<div class="text-sm text-gray-600">1–10 de 99</div>
+					<div class="flex items-center gap-3">
+						<span class="text-sm text-gray-600">Filas por página:</span>
+						<select class="historial-select">
+							<option>10</option>
+							<option>25</option>
+							<option>50</option>
+						</select>
+						<div class="flex items-center gap-2">
+							<button class="btn-action px-3 py-1 text-sm">⟨</button>
+							<span class="text-sm text-gray-600">1/10</span>
+							<button class="btn-action px-3 py-1 text-sm">⟩</button>
+						</div>
+					</div>
+				</div>
+                </div>	
+			</main>
+		</div>
+	</div>
 </Layout>

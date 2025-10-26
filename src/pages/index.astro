@@ -1,64 +1,94 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import NavBar from '../components/NavBar.astro';
+import axios from 'axios';
+const table = await axios.get('http://localhost:3000/api/v1/Roles').then((res) => res.data);
 ---
+<Layout title="Historial de citas">
+	<div class="pagos-container">
+		<!-- Panel lateral izquierdo -->
+		<NavBar />
 
-<Layout>	
-	<div class="flex flex-col md:flex-row h-screen overflow-hidden">
-		<div id="ContenedorIzquierdo" class="w-full md:w-1/2 h-64 md:h-screen bg-[#f1f1f1] flex items-center justify-center">
-			<img src="LogoJess.png" alt="Logo de la clinica" class="" />
-		</div>
-		<div id="ContenedorDerecho" class="w-full md:w-1/2 h-auto md:h-screen bg-[#234D20] flex items-center justify-center py-8 md:py-0">
-			<form id="loginForm" class="border border-black w-full max-w-md bg-gray-100 rounded-md shadow-2xl mx-4">
-				<div class="flex flex-col items-center justify-center space-y-4 p-6">
-					<span class="text-2xl font-medium mb-4">Inicio de sesión médico</span>
-					<div class="w-full flex flex-col space-y-2">
-						
+		<!-- Contenido principal -->
+		<div class="flex-1 flex flex-col overflow-hidden">
+			<header class="bg-white/80 shadow-sm border-b border-gray-200">
+				<div class="flex items-center justify-between px-6 py-4">
+					<div class="flex">
+						<h1>Roles y permisos</h1>
+						<div class="flex ml-5 space-x-4">
+							<input 
+								type="text" 
+								placeholder="Buscar..." 
+								class="auth-input px-4 py-2 w-64"
+							>
+						</div>
+                        <div>
+                            <button id="CambiarEstado" class="auth-button px-4 py-2 text-sm ml-4">
+                                Cambiar a permisos
+                            </button>
+                        </div>
 					</div>
-					<div class="w-full flex flex-col space-y-2">
-						
+				</div>
+			</header>
+            <main>
+                <div id="TableContainer">
+                    <table id="Table">
+				        <thead>
+						    <tr id="TableHeader">
+								<th><input type="checkbox" /></th>
+								<th>Nombre</th>
+								<th>Acciones</th>
+							</tr>
+						</thead>
+						<tbody>
+                            {table.map((Roles) => (
+							<tr>
+								<td><input type="checkbox" /></td>
+								<td>{Roles.Nombre}</td>
+								<td>
+									<button class="btn-action">Acciones</button>
+								</td>
+							</tr>
+                            ))}
+						</tbody>
+					</table>
+				<!-- PAGINACIÓN Y BOTONES -->
+				<div class="historial-pagination">
+					<div class="text-sm text-gray-600">1–10 de 99</div>
+					<div class="flex items-center gap-3">
+						<span class="text-sm text-gray-600">Filas por página:</span>
+						<select class="historial-select">
+							<option>10</option>
+							<option>25</option>
+							<option>50</option>
+						</select>
+						<div class="flex items-center gap-2">
+							<button class="btn-action px-3 py-1 text-sm">⟨</button>
+							<span class="text-sm text-gray-600">1/10</span>
+							<button class="btn-action px-3 py-1 text-sm">⟩</button>
+						</div>
 					</div>
-					<button type="submit" class="mt-4 px-6 py-2 bg-[#234D20] text-white rounded hover:bg-[#1a3a15] transition">
-						Iniciar sesión
-					</button>
 				</div>
-				<div class="m-4 text-center">
-					<p class="text-sm text-gray-600">Acceso exclusivo para personal médico autorizado</p>
-					<p class="text-sm mt-2">Si eres paciente, da click <a href="/LogPaciente" class="text-blue-800 underline">aquí</a> para visualizar tu historial clínico</p>
-				</div>
-			</form>
+                </div>	
+			</main>
 		</div>
 	</div>
-
-	<script>
-		// Manejo del formulario de login en caso se maneje con API
-		document.getElementById('loginForm').addEventListener('submit', async (e) => {
-			e.preventDefault();
-			
-			const correo = document.getElementById('correo').value;
-			const contrasena = document.getElementById('contrasena').value;
-
-			try {
-				const response = await fetch('/api/auth/login', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({ correo, contrasena })
-				});
-
-				const data = await response.json();
-
-				if (response.ok) {
-					// Almacenar el JWT y redirigir
-					localStorage.setItem('jwt', data.token);
-					window.location.href = '/DashBoardAdmin';
-				} else {
-					alert(data.message || 'Error en el inicio de sesión');
-				}
-			} catch (error) {
-				console.error('Error:', error);
-				alert('Error de conexión');
-			}
-		});
-	</script>
 </Layout>
+<script type="module">
+	import axios from 'axios';
+	
+	async function CambiarAPermiso() {
+		// fetch permisos and handle the response (extend as needed)
+		try {
+			const Table = await axios.get('http://localhost:3000/api/v1/Permisos');
+		} catch (err) {
+			console.error(err);
+		}
+	}
+	const button = document.getElementById('CambiarEstado');
+	// Guard against null button before adding the listener
+	if (button) {
+		button.addEventListener('click', CambiarAPermiso);
+	}
+
+</script>

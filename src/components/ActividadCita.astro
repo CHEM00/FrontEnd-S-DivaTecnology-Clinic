@@ -1,0 +1,15 @@
+---
+// src/components/ActividadCita.astro
+const { actividad, descripcion, duracion, completada } = Astro.props;
+---
+
+<div class="actividad-cita-item {completada ? 'completada' : ''}">
+    <div class="actividad-cita-checkbox">
+        <input type="checkbox" {completada ? 'checked' : ''} class="actividad-cita-check" />
+    </div>
+    <div class="actividad-cita-info">
+        <p class="actividad-cita-nombre">{actividad}</p>
+        <p class="actividad-cita-descripcion">{descripcion}</p>
+        <p class="actividad-cita-duracion">Duración: {duracion} min</p>
+    </div>
+</div>

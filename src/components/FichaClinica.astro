@@ -1,0 +1,8 @@
+---
+const { cita, fecha } = Astro.props;
+---
+<div class="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-sm transition-transform duration-200 ease-out transform hover:scale-[1.02] hover:shadow-2xl hover:border-white/30 hover:bg-white/20 hover:backdrop-brightness-105 hover:ring-2 hover:ring-indigo-300/25">
+    <p class="text-ms font-medium text-gray-900">{cita}</p>
+    <br />
+    <p class="text-sm text-gray-700">Fecha: {fecha}</p>
+</div>

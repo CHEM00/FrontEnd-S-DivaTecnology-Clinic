@@ -1,0 +1,14 @@
+---
+// src/components/CitaEmpleado.astro
+const { cita, fecha, paciente, hora, estado } = Astro.props;
+---
+
+<div class="cita-empleado-item" data-cita-id="{cita}">
+    <div class="cita-empleado-info">
+        <p class="cita-empleado-paciente">{paciente}</p>
+        <p class="cita-empleado-fecha">{fecha} - {hora}</p>
+    </div>
+    <div class="cita-empleado-estado {estado.toLowerCase()}">
+        {estado}
+    </div>
+</div>

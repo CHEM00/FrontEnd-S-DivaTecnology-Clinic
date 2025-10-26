@@ -1,0 +1,27 @@
+---
+// src/components/HeaderEmpleado.astro
+const { titulo = "Dashboard Empleado", nombreUsuario = "EMPLEADO" } = Astro.props;
+---
+
+<header class="bg-gray-100 shadow-sm border-b border-gray-200">
+    <div class="flex items-center justify-between px-6 py-4">
+        <div class="flex">
+            <h1 class="text-2xl font-bold text-[#2F5D50]">{titulo}</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span class="text-sm text-gray-600">Bienvenido {nombreUsuario}</span>
+            <button onclick="logout()" class="auth-button px-4 py-2 text-sm">
+                Cerrar Sesión
+            </button>
+        </div>
+    </div>
+</header>
+
+<script>
+    function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userRole');
+        window.location.href = '/';
+    }
+</script>
+
