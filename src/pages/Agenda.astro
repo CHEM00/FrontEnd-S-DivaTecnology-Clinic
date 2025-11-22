@@ -1,279 +1,2161 @@
 ---
-// src/pages/Agenda.astro
 import NavBar from '../components/NavBar.astro';
 import Layout from '../layouts/Layout.astro';
 import HeaderEmpleado from '../components/HeaderEmpleado.astro';
+import FormModal from '../components/modals/FormModal.astro';
+
+
+let citas = [];
+let pacientes = [];
+let empleados = [];
+let servicios = [];
+
+try {
+  const [citasRes, pacientesRes, empleadosRes, serviciosRes] = await Promise.all([
+    fetch('http://localhost:3001/api/v1/Citas').then(res => res.ok ? res.json() : []),
+    fetch('http://localhost:3001/api/v1/Pacientes').then(res => res.ok ? res.json() : []),
+    fetch('http://localhost:3001/api/v1/Trabajadores').then(res => res.ok ? res.json() : []),
+    fetch('http://localhost:3001/api/v1/Productos&Servicios').then(res => res.ok ? res.json() : [])
+  ]);
+  
+  citas = citasRes || [];
+  pacientes = pacientesRes || [];
+  empleados = empleadosRes || [];
+  servicios = serviciosRes || [];
+  
+  // Verificar que los datos se cargaron
+console.log('Datos cargados desde API:', {
+  citas: citas.length,
+  pacientes: pacientes.length,
+  empleados: empleados.length,
+  servicios: servicios.length
+});
+  
+  // Verificar estructura de las citas
+if (citas.length > 0) {
+  console.log('Ejemplo de cita cruda:', citas[0]);
+  console.log('Fecha original:', citas[0].currentday);
+  console.log('Fecha formateada:', formatDateToYYYYMMDD(citas[0].currentday));
+}
+// DEBUG: Verificar que los datos se están procesando correctamente
+console.log('=== VERIFICACIÓN DE PROCESAMIENTO DE CITAS ===');
+console.log('Total de citas cargadas:', citas.length);
+} catch (error) {
+  console.error('Error cargando datos:', error);
+}
+
+// Función para formatear fecha (para mostrar en tablas)
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    // Ajustar por timezone
+    const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+    return adjustedDate.toISOString().split('T')[0];
+  } catch (e) {
+    console.error('Error formateando fecha:', dateString, e);
+    return '';
+  }
+};
+
+// Función para formatear fecha a YYYY-MM-DD (mejorada para formato ISO)
+const formatDateToYYYYMMDD = (dateString) => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    // Para fechas ISO como "2025-11-22T06:00:00.000Z"
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch (e) {
+    console.error('Error formateando fecha:', dateString, e);
+    return '';
+  }
+};
+
+// Función para obtener solo el día del mes (1-31)
+const getDayOfMonth = (dateString) => {
+  if (!dateString) return null;
+  try {
+    const date = new Date(dateString);
+    return date.getDate();
+  } catch (e) {
+    console.error('Error obteniendo día del mes:', dateString, e);
+    return null;
+  }
+};
+
+// Función para formatear hora
+const formatTime = (timeString) => {
+  if (!timeString) return '';
+  return timeString.substring(0, 5);
+};
+
+// Función para escapar caracteres problemáticos en JavaScript
+const escapeJS = (str) => {
+  if (!str) return '';
+  return String(str)
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r');
+};
+
+
+
+
+// AGREGAR: Nueva función para agrupar citas por fecha completa (YYYY-MM-DD)
+const citasPorFechaCompleta = {};
+// Y mantener la agrupación por día del mes para compatibilidad
+const citasPorDia = {};
+
+citas.forEach((cita, index) => {
+  if (cita.currentday) {
+    try {
+      // Agrupar por fecha completa (YYYY-MM-DD)
+      const fechaCompleta = formatDateToYYYYMMDD(cita.currentday);
+      
+      if (!fechaCompleta) {
+        console.warn(`Cita ${index} tiene fecha inválida:`, cita.currentday);
+        return;
+      }
+      
+      if (!citasPorFechaCompleta[fechaCompleta]) {
+        citasPorFechaCompleta[fechaCompleta] = [];
+      }
+      citasPorFechaCompleta[fechaCompleta].push(cita);
+      
+      // También agrupar por día del mes para compatibilidad
+      const dia = getDayOfMonth(cita.currentday);
+      if (dia !== null) {
+        if (!citasPorDia[dia]) {
+          citasPorDia[dia] = [];
+        }
+        citasPorDia[dia].push(cita);
+      }
+    } catch (error) {
+      console.error('Error procesando cita:', cita, error);
+    }
+  } else {
+    console.warn(`Cita ${index} no tiene fecha:`, cita);
+  }
+});
+
+console.log('Citas agrupadas por fecha completa:', Object.keys(citasPorFechaCompleta).length);
+console.log('Ejemplo de fechas con citas:', Object.keys(citasPorFechaCompleta).slice(0, 5));
+
+// Obtener fecha actual formateada
+const hoy = new Date();
+const fechaActual = hoy.toLocaleDateString('es-ES', { 
+  day: 'numeric', 
+  month: 'long', 
+  year: 'numeric' 
+}).toUpperCase();
+const mesActualTexto = hoy.toLocaleDateString('es-ES', { 
+  month: 'long', 
+  year: 'numeric' 
+}).toUpperCase();
+
+// Preparar datos para el script
+// Preparar datos para el script - USAR TEMPLATE LITERALS CORRECTAMENTE
+const pacientesJSON = pacientes ? JSON.stringify(pacientes) : '[]';
+const empleadosJSON = empleados ? JSON.stringify(empleados) : '[]';
+const citasPorDiaJSON = citasPorDia ? JSON.stringify(citasPorDia) : '{}';
+const citasPorFechaCompletaJSON = citasPorFechaCompleta ? JSON.stringify(citasPorFechaCompleta) : '{}';
+const citasJSON = citas ? JSON.stringify(citas) : '[]';
+
+// DEBUG: Verificar que los datos se están preparando correctamente
+console.log('Datos preparados para script:', {
+  pacientes: pacientes?.length,
+  empleados: empleados?.length,
+  citas: citas?.length,
+  citasPorFechaCompleta: Object.keys(citasPorFechaCompleta || {}).length
+});
 ---
 
 <Layout title="Agenda">
-    <div class="flex h-screen bg-[#F7F9FA]">
-        <NavBar />
-        <div class="flex-1 flex flex-col overflow-hidden">
+    <div class="agenda-container">
+        <!-- Panel lateral izquierdo -->
+        <div class="h-screen sticky top-0">
+            <NavBar />
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="agenda-main-container">
             <HeaderEmpleado titulo="AGENDA" nombreUsuario="EMPLEADO" />
-            
-            <main class="flex-1 overflow-y-auto p-6">
+
+            <main class="agenda-content">
                 <!-- Barra de herramientas -->
-                <div class="flex justify-between items-center mb-6">
-                    <div class="flex items-center space-x-4">
-                        <h2 class="section-title">9 JUNIO 2025</h2>
+                <div class="agenda-toolbar">
+                    <div class="date-section">
+                        <h2 class="current-date" id="fechaActual">{fechaActual}</h2>
                     </div>
-                    <button onclick="abrirModalCita()" class="btn-primary flex items-center">
-                        <i class="fa-solid fa-calendar-plus mr-2"></i>
-                        NUEVA CITA
-                    </button>
+                    <div class="agenda-buttons">
+                        <button id="verCitasBtn" class="btn-secondary">
+                            <svg class="btn-icon" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                            VER CITAS
+                        </button>
+                        <button id="nuevaCitaBtn" class="btn-primary">
+                            <svg class="btn-icon" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"/>
+                            </svg>
+                            NUEVA CITA
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Grid principal de 2 columnas -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    
-                    <!-- Columna izquierda: Calendario -->
-                    <div class="card-base">
-                        <div class="flex items-center gap-2 w-full mb-4">
-                            <span class="ml-2 section-title">Calendario</span>
-                            <div class="flex gap-2 ml-auto items-center">
-                                <button class="nav-button">‹</button>
-                                <span class="text-sm">Junio 2025</span>
-                                <button class="nav-button">›</button>
-                            </div>
+                <!-- Calendario completo -->
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <div class="calendar-title">
+                            <span>Calendario</span>
                         </div>
-                        
-                        <!-- Encabezado del calendario -->
-                        <div class="grid grid-cols-7 gap-1 mb-2">
-                            <div class="agenda-weekday">LUN</div>
-                            <div class="agenda-weekday">MAR</div>
-                            <div class="agenda-weekday">MIE</div>
-                            <div class="agenda-weekday">JUE</div>
-                            <div class="agenda-weekday">VIE</div>
-                            <div class="agenda-weekday">SAB</div>
-                            <div class="agenda-weekday">DOM</div>
-                        </div>
-
-                        <!-- Días del mes -->
-                        <div class="grid grid-cols-7 gap-1 flex-1">
-                            <!-- Primera semana -->
-                            <div class="agenda-calendar-day">
-                                <div class="day-number">1</div>
-                            </div>
-                            <div class="agenda-calendar-day">
-                                <div class="day-number">2</div>
-                            </div>
-                            <div class="agenda-calendar-day">
-                                <div class="day-number">3</div>
-                            </div>
-                            <div class="agenda-calendar-day">
-                                <div class="day-number">4</div>
-                            </div>
-                            <div class="agenda-calendar-day">
-                                <div class="day-number">5</div>
-                            </div>
-                            <div class="agenda-calendar-day">
-                                <div class="day-number">6</div>
-                            </div>
-                            <div class="agenda-calendar-day">
-                                <div class="day-number">7</div>
-                            </div>
-                            
-                            <!-- Segunda semana -->
-                            <div class="agenda-calendar-day">
-                                <div class="day-number">8</div>
-                            </div>
-                            <div class="current-day">
-                                <div class="current-day-number">9</div>
-                                <div class="agenda-calendar-event">10:00 AM - PACIENTE 1</div>
-                                <div class="agenda-calendar-event">11:00 AM - PACIENTE 2</div>
-                            </div>
-                            <div class="agenda-calendar-day">
-                                <div class="day-number">10</div>
-                            </div>
-                            <div class="agenda-calendar-day">
-                                <div class="day-number">11</div>
-                            </div>
-                            <div class="agenda-calendar-day">
-                                <div class="day-number">12</div>
-                            </div>
-                            <div class="agenda-calendar-day">
-                                <div class="day-number">13</div>
-                            </div>
-                            <div class="agenda-calendar-day">
-                                <div class="day-number">14</div>
-                            </div>
+                        <div class="calendar-controls">
+                            <button class="nav-button" id="mesAnterior">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                            <span class="month-year" id="mesActual">{mesActualTexto}</span>
+                            <button class="nav-button" id="mesSiguiente">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Columna derecha: Citas del día -->
-                    <div class="card-base">
-                        <div class="flex items-center gap-2 w-full mb-4">
-                            <span class="ml-2 section-title">Citas del Día</span>
-                            <div class="ml-auto">
-                                <input type="text" 
-                                       class="border border-gray-400 p-1 rounded text-sm" 
-                                       placeholder="Buscar cita...">
-                            </div>
+                    <!-- Vista de calendario (mes/semana/día) -->
+                    <div class="calendar-view-controls">
+                        <div class="view-buttons">
+                            <button class="view-button active" data-view="mes">Mes</button>
+                            <button class="view-button" data-view="semana">Semana</button>
+                            <button class="view-button" data-view="dia">Día</button>
                         </div>
-                        
-                        <div class="flex-1 min-h-0 w-full">
-                            <!-- Lista de citas -->
-                            <div class="space-y-3 overflow-y-auto max-h-[500px]">
-                                <div class="agenda-cita-item">
-                                    <div>
-                                        <p class="text-primary">10:00 AM</p>
-                                        <p class="text-secondary">PACIENTE 1</p>
-                                    </div>
-                                    <span class="status-pending">PENDIENTE</span>
-                                </div>
-                                <div class="agenda-cita-item">
-                                    <div>
-                                        <p class="text-primary">10:30 AM</p>
-                                        <p class="text-secondary">PACIENTE 2</p>
-                                    </div>
-                                    <span class="status-pending">PENDIENTE</span>
-                                </div>
-                                <div class="agenda-cita-item">
-                                    <div>
-                                        <p class="text-primary">11:00 AM</p>
-                                        <p class="text-secondary">PACIENTE 3</p>
-                                    </div>
-                                    <span class="status-confirmed">CONFIRMADA</span>
-                                </div>
-                            </div>
-                        </div>
+                    </div>
+
+                    <!-- Encabezado de días de la semana -->
+                    <div class="weekdays-grid">
+                        <div class="weekday">LUN</div>
+                        <div class="weekday">MAR</div>
+                        <div class="weekday">MIE</div>
+                        <div class="weekday">JUE</div>
+                        <div class="weekday">VIE</div>
+                        <div class="weekday">SAB</div>
+                        <div class="weekday">DOM</div>
+                    </div>
+
+                    <!-- Grid de días del mes -->
+                    <div class="days-grid" id="daysGrid">
+                        <!-- Días se generarán dinámicamente -->
                     </div>
                 </div>
             </main>
         </div>
     </div>
 
-    <!-- Modal de nueva cita -->
-    <div id="modalCita" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg p-6 w-full max-w-2xl mx-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-[#2F5D50]">NUEVA CITA</h3>
-                <button onclick="cerrarModalCita()" class="text-gray-500 hover:text-gray-700 transition">
-                    <i class="fa-solid fa-times text-xl"></i>
+    <!-- Modal Agregar Cita -->
+    <FormModal
+        id="modalAgregarCita"
+        title="NUEVA CITA"
+        formId="formAgregarCita"
+        submitText="GUARDAR"
+        cancelText="CANCELAR"
+        size="lg"
+    >
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="flex flex-col">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">PACIENTE *</label>
+                <select 
+                    id="agregarIdPatient"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    required
+                >
+                    <option value="">Seleccionar paciente</option>
+                    {pacientes.map(paciente => (
+                        <option value={paciente.id}>
+                            {paciente.firstname} {paciente.lastname} {paciente.motherlastname}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">EMPLEADO *</label>
+                <select 
+                    id="agregarIdEmployed"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    required
+                >
+                    <option value="">Seleccionar empleado</option>
+                    {empleados.map(empleado => (
+                        <option value={empleado.id}>
+                            {empleado.firstname} {empleado.lastname}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">FECHA *</label>
+                <input 
+                    type="date" 
+                    id="agregarCurrentday"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    required
+                >
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">HORA INICIO *</label>
+                <input 
+                    type="time" 
+                    id="agregarInitHour"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    required
+                    step="300"
+                >
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">HORA FIN *</label>
+                <input 
+                    type="time" 
+                    id="agregarEndHour"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    required
+                    step="300"
+                >
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">ESTADO *</label>
+                <select 
+                    id="agregarStatus"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    required
+                >
+                    <option value="wait">En espera</option>
+                    <option value="confirmed">Confirmada</option>
+                    <option value="canceled">Cancelada</option>
+                </select>
+            </div>
+            <div class="flex flex-col col-span-1 md:col-span-2">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">RAZÓN/MOTIVO *</label>
+                <input 
+                    type="text" 
+                    id="agregarReason"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    required
+                    placeholder="Ingrese el motivo de la cita"
+                >
+            </div>
+            <div class="flex flex-col col-span-1 md:col-span-2">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">FOTO (URL)</label>
+                <input 
+                    type="url" 
+                    id="agregarPhoto"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    placeholder="https://ejemplo.com/foto.jpg"
+                >
+            </div>
+        </div>
+    </FormModal>
+
+    <!-- Modal Editar Cita -->
+    <FormModal
+        id="modalEditarCita"
+        title="EDITAR CITA"
+        formId="formEditarCita"
+        submitText="ACTUALIZAR"
+        cancelText="CANCELAR"
+        size="lg"
+    >
+        <input type="hidden" id="editarId">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="flex flex-col">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">PACIENTE *</label>
+                <select 
+                    id="editarIdPatient"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    required
+                >
+                    <option value="">Seleccionar paciente</option>
+                    {pacientes.map(paciente => (
+                        <option value={paciente.id}>
+                            {paciente.firstname} {paciente.lastname} {paciente.motherlastname}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">EMPLEADO *</label>
+                <select 
+                    id="editarIdEmployed"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    required
+                >
+                    <option value="">Seleccionar empleado</option>
+                    {empleados.map(empleado => (
+                        <option value={empleado.id}>
+                            {empleado.firstname} {empleado.lastname}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">FECHA *</label>
+                <input 
+                    type="date" 
+                    id="editarCurrentday"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    required
+                >
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">HORA INICIO *</label>
+                <input 
+                    type="time" 
+                    id="editarInitHour"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    required
+                    step="300"
+                >
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">HORA FIN *</label>
+                <input 
+                    type="time" 
+                    id="editarEndHour"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    required
+                    step="300"
+                >
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">ESTADO *</label>
+                <select 
+                    id="editarStatus"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    required
+                >
+                    <option value="wait">En espera</option>
+                    <option value="confirmed">Confirmada</option>
+                    <option value="canceled">Cancelada</option>
+                </select>
+            </div>
+            <div class="flex flex-col col-span-1 md:col-span-2">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">RAZÓN/MOTIVO *</label>
+                <input 
+                    type="text" 
+                    id="editarReason"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                    required
+                >
+            </div>
+            <div class="flex flex-col col-span-1 md:col-span-2">
+                <label class="text-[#2F5D50] font-medium mb-2 text-sm">FOTO (URL)</label>
+                <input 
+                    type="url" 
+                    id="editarPhoto"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+                >
+            </div>
+        </div>
+    </FormModal>
+
+    <!-- Modal Ver Citas -->
+    <div id="modalVerCitas" class="modal-overlay hidden">
+        <div class="modal-content max-w-6xl">
+            <div class="modal-header">
+                <h2 class="modal-title">TODAS LAS CITAS PROGRAMADAS</h2>
+                <button type="button" class="close-button" onclick="cerrarModal('modalVerCitas')">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
                 </button>
             </div>
-            
-            <form class="space-y-4" onsubmit="manejarEnvioCita(event)">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-[#2F5D50] mb-2">PACIENTE</label>
-                        <select class="input-base w-full" required>
-                            <option value="">Seleccionar paciente</option>
-                            <option value="1">JUANA MATEO</option>
-                            <option value="2">IAN</option>
-                            <option value="3">JACQUELINE</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-[#2F5D50] mb-2">FECHA</label>
-                        <input type="date" class="input-base w-full" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-[#2F5D50] mb-2">HORA</label>
-                        <input type="time" class="input-base w-full" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-[#2F5D50] mb-2">SERVICIO</label>
-                        <select class="input-base w-full" required>
-                            <option value="">Seleccionar servicio</option>
-                            <option value="1">ONDAS DE CHOQUE</option>
-                            <option value="2">BOTAS DE PRESOTERAPIA</option>
-                            <option value="3">VENDAJE NEUROMUSCULAR</option>
-                        </select>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-[#2F5D50] mb-2">NOTAS</label>
-                        <textarea rows="3" class="input-base w-full"></textarea>
+            <div class="modal-body p-0">
+                <div class="table-responsive-container">
+                    <div class="table-view table-desktop-full">
+                        <div class="table-header grid-cols-8">
+                            <div class="col-checkbox">Sel</div>
+                            <div class="col-fecha">Fecha</div>
+                            <div class="col-hora">Hora Inicio</div>
+                            <div class="col-hora">Hora Fin</div>
+                            <div class="col-paciente">Paciente</div>
+                            <div class="col-empleado">Empleado</div>
+                            <div class="col-estado">Estado</div>
+                            <div class="col-acciones">Acciones</div>
+                        </div>
+                        
+                        <div class="table-body" id="citasTableBody">
+                            {citas.map((cita) => {
+                                const paciente = pacientes.find(p => p.id === cita.idpatient) || {};
+                                const empleado = empleados.find(e => e.id === cita.idemployed) || {};
+                                const nombrePaciente = `${paciente.firstname || ''} ${paciente.lastname || ''} ${paciente.motherlastname || ''}`;
+                                const nombreEmpleado = `${empleado.firstname || ''} ${empleado.lastname || ''}`;
+                                
+                                return (
+                                    <div class="table-row grid-cols-8">
+                                        <div class="col-checkbox">
+                                            <input type="checkbox" class="cita-checkbox" value={cita.id} />
+                                        </div>
+                                        <div class="col-fecha">{formatDate(cita.currentday)}</div>
+                                        <div class="col-hora">{formatTime(cita.inithour)}</div>
+                                        <div class="col-hora">{formatTime(cita.endhour)}</div>
+                                        <div class="col-paciente">{nombrePaciente}</div>
+                                        <div class="col-empleado">{nombreEmpleado}</div>
+                                        <div class="col-estado">
+                                            <span class={`status-badge ${cita.status}`}>
+                                                {cita.status === 'wait' ? 'En espera' : 
+                                                 cita.status === 'confirmed' ? 'Confirmada' : 'Cancelada'}
+                                            </span>
+                                        </div>
+                                        <div class="col-acciones">
+                                            <button 
+                                                class="btn-action"
+                                                onclick={`abrirModalAcciones(${cita.id}, '${escapeJS(nombrePaciente)}', '${escapeJS(nombreEmpleado)}', '${escapeJS(formatDate(cita.currentday))}', '${escapeJS(formatTime(cita.inithour))}', '${escapeJS(formatTime(cita.endhour))}', '${escapeJS(cita.status)}', '${escapeJS(cita.reason)}', '${escapeJS(cita.photo)}', ${cita.idpatient}, ${cita.idemployed})`}
+                                            >
+                                                Acciones
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
-                
-                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                    <button type="button" 
-                            onclick="cerrarModalCita()" 
-                            class="btn-secondary">
-                        CANCELAR
-                    </button>
-                    <button type="submit" 
-                            class="btn-primary">
-                        GUARDAR
-                    </button>
-                </div>
-            </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="cerrarModal('modalVerCitas')">
+                    Cerrar
+                </button>
+            </div>
         </div>
     </div>
 
-    <script>
-        /**
-         * FUNCIONES DE GESTIÓN DE AGENDA
-         */
+    <!-- Modal de Acciones -->
+    <div id="modalAcciones" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">¿Qué acción deseas realizar?</h2>
+                <button type="button" class="close-button" onclick="cerrarModal('modalAcciones')">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="space-y-4">
+                    <div class="text-center">
+                        <p class="text-gray-600">Selecciona la acción que deseas realizar para la cita:</p>
+                        <p id="nombreCitaAcciones" class="font-semibold text-lg text-[#2F5D50] mt-2"></p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row justify-center gap-4 mt-6">
+                        <button 
+                            id="btnEditarAccion"
+                            class="btn-editar-accion flex items-center justify-center gap-2"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            Editar Cita
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="cerrarModal('modalAcciones')">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
 
-        /**
-         * Abre el modal para crear una nueva cita
-         */
-        function abrirModalCita() {
-            const modal = document.getElementById('modalCita');
-            if (modal) {
-                modal.classList.remove('hidden');
-                document.querySelector('form')?.reset();
-            }
+    <!-- Modal de detalles del día -->
+    <div id="modalDetallesDia" class="modal-sidebar hidden">
+        <div class="flex flex-col h-full">
+            <div class="modal-header">
+                <h3 class="modal-title" id="dayDetailsTitle">Citas del Día</h3>
+                <button id="closeDetallesBtn" class="close-button">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="dayDetailsBody">
+                <!-- Contenido dinámico de citas del día -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de detalles de cita específica - VERSIÓN SIDEBAR -->
+<div id="modalDetallesCita" class="modal-sidebar hidden">
+    <div class="flex flex-col h-full">
+        <div class="modal-header">
+            <h3 class="modal-title">Información de la Reserva</h3>
+            <button id="closeDetallesCitaBtn" class="close-button">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body flex-1 overflow-y-auto" id="detallesCitaBody">
+            <!-- Contenido dinámico de detalles de cita -->
+        </div>
+        <div class="modal-footer border-t border-gray-200 p-4">
+            <div class="flex gap-3 w-full">
+                <button id="iniciarConsultaBtn" class="btn-iniciar-consulta flex-1">
+                    INICIAR CONSULTA
+                </button>
+                <button id="editarCitaBtn" class="btn-editar-cita flex-1">
+                    EDITAR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Modal de éxito personalizado -->
+    <div id="modalExito" class="modal-overlay hidden">
+        <div class="modal-content max-w-md">
+            <div class="modal-header">
+                <h2 class="modal-title text-green-600">Éxito</h2>
+                <button type="button" class="close-button" onclick="cerrarModal('modalExito')">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2" id="mensajeExito"></h3>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary w-full" onclick="cerrarModal('modalExito')">
+                    Aceptar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de error personalizado -->
+    <div id="modalError" class="modal-overlay hidden">
+        <div class="modal-content max-w-md">
+            <div class="modal-header">
+                <h2 class="modal-title text-red-600">Error</h2>
+                <button type="button" class="close-button" onclick="cerrarModal('modalError')">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2" id="mensajeError"></h3>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary w-full" onclick="cerrarModal('modalError')">
+                    Aceptar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script para inicializar datos globales -->
+<!-- Script para inicializar datos globales - VERSIÓN ASTRO CORRECTA -->
+<script define:vars={{ pacientesData: pacientes, empleadosData: empleados, todasLasCitas: citas, citasPorFechaCompletaData: citasPorFechaCompleta }}>
+  // Los datos ya están disponibles directamente gracias a define:vars
+  window.pacientesData = pacientesData;
+  window.empleadosData = empleadosData;
+  window.todasLasCitas = todasLasCitas;
+  window.citasPorFechaCompleta = citasPorFechaCompletaData;
+
+  console.log('=== DATOS INICIALIZADOS CORRECTAMENTE ===');
+  console.log('Pacientes:', window.pacientesData.length);
+  console.log('Empleados:', window.empleadosData.length);
+  console.log('Citas totales:', window.todasLasCitas.length);
+  console.log('Citas agrupadas:', Object.keys(window.citasPorFechaCompleta).length);
+  
+  if (window.todasLasCitas.length > 0) {
+    console.log('Primera cita:', window.todasLasCitas[0]);
+  }
+  if (Object.keys(window.citasPorFechaCompleta).length > 0) {
+    const primeraFecha = Object.keys(window.citasPorFechaCompleta)[0];
+    console.log(`Citas para ${primeraFecha}:`, window.citasPorFechaCompleta[primeraFecha]);
+  }
+</script>
+
+
+<script>
+    // Variables globales
+    let citaSeleccionada = null;
+    let citaData = {};
+    let fechaCalendario = new Date(); // Fecha actual para el calendario
+
+    // Función para formatear fecha (necesaria para el calendario - formato D/MM/YYYY)
+function formatDate(dateString) {
+    if (!dateString) return '';
+    try {
+        const date = new Date(dateString);
+        // Usar métodos directos para evitar problemas de timezone
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    } catch (e) {
+        console.error('Error formateando fecha:', dateString, e);
+        return '';
+    }
+}
+
+// Función para formatear fecha amigable (ej: "27 de Noviembre de 2025")
+function formatDateFriendly(dateString) {
+    if (!dateString) return '';
+    try {
+        // Si es una fecha en formato YYYY-MM-DD, crear la fecha correctamente
+        if (dateString.includes('-')) {
+            const [year, month, day] = dateString.split('-');
+            const date = new Date(year, month - 1, day);
+            return date.toLocaleDateString('es-ES', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+        } else {
+            // Si es una fecha ISO, usar el método normal
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
         }
+    } catch (e) {
+        console.error('Error formateando fecha amigable:', dateString, e);
+        return '';
+    }
+}
 
-        /**
-         * Cierra el modal de nueva cita
-         */
-        function cerrarModalCita() {
-            const modal = document.getElementById('modalCita');
-            if (modal) {
-                modal.classList.add('hidden');
-            }
+    // Función para formatear hora para display
+    function formatTimeDisplay(timeString) {
+        if (!timeString) return '';
+        const time = timeString.substring(0, 5);
+        const [hours, minutes] = time.split(':');
+        const hour = parseInt(hours);
+        return hour < 12 ? `${time} AM` : `${time} PM`;
+    }
+
+    // Función para formatear hora (para inputs)
+    function formatTime(timeString) {
+        if (!timeString) return '';
+        return timeString.substring(0, 5);
+    }
+
+    // Obtener texto del estado
+    function getStatusText(status) {
+        const estados = {
+            'wait': 'En espera',
+            'confirmed': 'Confirmada',
+            'canceled': 'Cancelada'
+        };
+        return estados[status] || status;
+    }
+
+    // FUNCIÓN PRINCIPAL DEL CALENDARIO - VERSIÓN CORREGIDA
+function actualizarCalendario() {
+    console.log('=== ACTUALIZANDO CALENDARIO ===');
+    const daysGrid = document.getElementById('daysGrid');
+    const mesActualElement = document.getElementById('mesActual');
+    
+    if (!daysGrid) {
+        console.error('No se encontró el elemento daysGrid');
+        return;
+    }
+
+    // Verificar datos críticos
+    console.log('Datos disponibles para calendario:', {
+        citasPorFechaCompleta: window.citasPorFechaCompleta ? Object.keys(window.citasPorFechaCompleta).length : 0,
+        tipo: typeof window.citasPorFechaCompleta
+    });
+    
+    if (!window.citasPorFechaCompleta) {
+        console.error('ERROR: citasPorFechaCompleta no está definido');
+        window.citasPorFechaCompleta = {};
+    }
+
+    // Actualizar texto del mes actual
+    const opciones = { month: 'long', year: 'numeric' };
+    mesActualElement.textContent = fechaCalendario.toLocaleDateString('es-ES', opciones).toUpperCase();
+    
+    // Limpiar grid
+    daysGrid.innerHTML = '';
+    
+    // Obtener primer día del mes y último día del mes
+    const primerDia = new Date(fechaCalendario.getFullYear(), fechaCalendario.getMonth(), 1);
+    const ultimoDia = new Date(fechaCalendario.getFullYear(), fechaCalendario.getMonth() + 1, 0);
+    const primerDiaSemana = primerDia.getDay();
+    const offset = primerDiaSemana === 0 ? 6 : primerDiaSemana - 1;
+    const totalDias = 42;
+    const hoy = new Date();
+    
+    console.log(`Buscando citas para mes: ${fechaCalendario.getMonth() + 1} año: ${fechaCalendario.getFullYear()}`);
+    console.log('Total de fechas con citas:', Object.keys(window.citasPorFechaCompleta).length);
+    
+    for (let i = 0; i < totalDias; i++) {
+        const diaActual = new Date(fechaCalendario.getFullYear(), fechaCalendario.getMonth(), i - offset + 1);
+        const diaNumero = diaActual.getDate();
+        const mesActual = diaActual.getMonth();
+        const añoActual = diaActual.getFullYear();
+        const esMesActual = mesActual === fechaCalendario.getMonth();
+        const esHoy = diaActual.toDateString() === hoy.toDateString();
+        
+        // Formatear fecha para búsqueda (YYYY-MM-DD)
+        const fechaFormateada = `${añoActual}-${String(mesActual + 1).padStart(2, '0')}-${String(diaNumero).padStart(2, '0')}`;
+        
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-day';
+        if (esHoy && esMesActual) dayElement.classList.add('current-day');
+        if (!esMesActual) dayElement.classList.add('other-month');
+        
+        // Obtener citas para este día - VERIFICACIÓN MÁS ROBUSTA
+        const citasDelDia = window.citasPorFechaCompleta && window.citasPorFechaCompleta[fechaFormateada] 
+            ? window.citasPorFechaCompleta[fechaFormateada] 
+            : [];
+        
+        // DEBUG: Mostrar información específica para días con citas
+        if (citasDelDia.length > 0) {
+            console.log(`🎯 ENCONTRADAS ${citasDelDia.length} citas para ${fechaFormateada}`);
         }
-
-        /**
-         * Maneja el envío del formulario de nueva cita
-         */
-        function manejarEnvioCita(event) {
-            event.preventDefault();
-            console.log('Guardando nueva cita...');
-            cerrarModalCita();
-            alert('Cita guardada exitosamente');
-        }
-
-        /**
-         * Cierra el modal al hacer clic fuera del contenido
-         */
-        function manejarClicExterno(event) {
-            const modal = document.getElementById('modalCita');
-            const modalContent = document.querySelector('.bg-white.rounded-lg');
+        
+        // Construir el contenido del día
+        let eventosHTML = '';
+        if (citasDelDia.length > 0 && window.pacientesData) {
+            eventosHTML = citasDelDia.slice(0, 2).map(cita => {
+                const paciente = window.pacientesData.find(p => p.id == cita.idpatient) || {};
+                const nombrePaciente = paciente.firstname || 'Paciente';
+                const estado = cita.status || 'wait';
+                const hora = cita.inithour ? formatTimeDisplay(cita.inithour) : '';
+                return `
+                <div class="calendar-event ${estado}" data-cita-id="${cita.id}">
+                    ${hora} - ${nombrePaciente}
+                </div>
+                `;
+            }).join('');
             
-            if (modal && modalContent && !modalContent.contains(event.target)) {
-                cerrarModalCita();
+            if (citasDelDia.length > 2) {
+                eventosHTML += `<div class="more-events">+${citasDelDia.length - 2} más</div>`;
             }
         }
+        
+        dayElement.innerHTML = `
+            <div class="day-number">${diaNumero}</div>
+            <div class="day-events">${eventosHTML}</div>
+        `;
+        
+        // Event listeners solo para días del mes actual
+        if (esMesActual) {
+            dayElement.addEventListener('click', (e) => {
+                if (!e.target.closest('.calendar-event')) {
+                    mostrarDetallesDia(fechaFormateada, diaNumero);
+                }
+            });
 
-        // Inicialización cuando el DOM está listo
-        document.addEventListener('DOMContentLoaded', function() {
-            const modal = document.getElementById('modalCita');
-            if (modal) {
-                modal.addEventListener('click', manejarClicExterno);
-            }
-
-            // Configurar eventos para días del calendario
-            const diasCalendario = document.querySelectorAll('.agenda-calendar-day');
-            diasCalendario.forEach(dia => {
-                dia.addEventListener('click', function() {
-                    // Remover selección anterior
-                    diasCalendario.forEach(d => {
-                        d.classList.remove('border-[#2F5D50]', 'bg-[#E7FFEF]');
-                        d.classList.add('border-gray-200');
-                    });
-                    // Agregar selección actual
-                    this.classList.remove('border-gray-200');
-                    this.classList.add('border-[#2F5D50]', 'bg-[#E7FFEF]');
-                    
-                    const numeroDia = this.querySelector('.day-number')?.textContent.trim();
-                    console.log('Día seleccionado:', numeroDia);
+            // Agregar event listeners a los eventos de citas
+            dayElement.querySelectorAll('.calendar-event').forEach(evento => {
+                evento.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const citaId = evento.dataset.citaId;
+                    const cita = citasDelDia.find(c => c.id == citaId);
+                    if (cita) {
+                        console.log('Cita clickeada:', cita);
+                        mostrarDetallesCita(cita);
+                    }
                 });
             });
+        }
+        
+        daysGrid.appendChild(dayElement);
+    }
+    
+    console.log('=== CALENDARIO ACTUALIZADO ===');
+    
+
+// VERIFICACIÓN EXTRA: Asegurar que los datos están listos
+console.log('=== VERIFICACIÓN FINAL DE DATOS ===');
+console.log('Citas para agrupar:', citas.length);
+console.log('Citas agrupadas exitosamente:', Object.keys(citasPorFechaCompleta).length);
+
+// Verificar algunas fechas específicas si hay datos
+if (Object.keys(citasPorFechaCompleta).length > 0) {
+  const fechasEjemplo = Object.keys(citasPorFechaCompleta).slice(0, 3);
+  console.log('Fechas de ejemplo con citas:', fechasEjemplo);
+  fechasEjemplo.forEach(fecha => {
+    console.log(`Citas para ${fecha}:`, citasPorFechaCompleta[fecha].length);
+  });
+} else {
+  console.log('⚠️ ADVERTENCIA: No hay citas agrupadas. Verificar:');
+  console.log('- ¿La API de citas está devolviendo datos?');
+  console.log('- ¿Las citas tienen campo currentday?');
+  if (citas.length > 0) {
+    console.log('Ejemplo de cita sin procesar:', citas[0]);
+  }
+}
+}
+
+    function mostrarDetallesDia(fechaCompleta, diaNumero) {
+    const citasDelDia = window.citasPorFechaCompleta ? window.citasPorFechaCompleta[fechaCompleta] || [] : [];
+    console.log(`Mostrando detalles del día ${fechaCompleta} (día ${diaNumero}):`, citasDelDia);
+    
+    const modal = document.getElementById('modalDetallesDia');
+    const title = document.getElementById('dayDetailsTitle');
+    const body = document.getElementById('dayDetailsBody');
+    
+    if (!modal || !title || !body) {
+        console.error('Elementos del modal no encontrados');
+        return;
+    }
+
+    // CORREGIDO: Usar la fecha directamente sin parsear para evitar problemas de timezone
+    const [año, mes, dia] = fechaCompleta.split('-');
+    
+    // Crear fecha en formato local para mostrar correctamente
+    const fechaLocal = new Date(año, mes - 1, dia);
+    const fechaAmigable = fechaLocal.toLocaleDateString('es-ES', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
+    
+    title.textContent = `Citas del ${fechaAmigable}`;
+    
+    if (citasDelDia.length === 0) {
+        body.innerHTML = `
+            <div class="empty-state">
+                <svg class="empty-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+                <p>No hay citas programadas para este día</p>
+            </div>
+        `;
+    } else {
+        body.innerHTML = citasDelDia.map(cita => {
+            const paciente = window.pacientesData?.find(p => p.id == cita.idpatient) || {};
+            const empleado = window.empleadosData?.find(e => e.id == cita.idemployed) || {};
+            const nombrePaciente = `${paciente.firstname || ''} ${paciente.lastname || ''}`.trim();
+            const nombreEmpleado = `${empleado.firstname || ''} ${empleado.lastname || ''}`.trim();
+            
+            return `
+            <div class="cita-item" data-cita-id="${cita.id}">
+                <div class="cita-info">
+                    <p class="cita-time">${formatTimeDisplay(cita.inithour)} - ${formatTimeDisplay(cita.endhour)}</p>
+                    <p class="cita-patient">${nombrePaciente || 'Paciente no encontrado'}</p>
+                    <p class="cita-servicio">${cita.reason || 'Sin motivo especificado'}</p>
+                    <p class="cita-empleado">Con: ${nombreEmpleado || 'Empleado no encontrado'}</p>
+                </div>
+                <span class="status-badge ${cita.status}">
+                    ${getStatusText(cita.status)}
+                </span>
+            </div>
+            `;
+        }).join('');
+
+        // Agregar event listeners a las citas individuales
+        body.querySelectorAll('.cita-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const citaId = item.dataset.citaId;
+                const cita = citasDelDia.find(c => c.id == citaId);
+                if (cita) {
+                    cerrarDetallesDia();
+                    mostrarDetallesCita(cita);
+                }
+            });
         });
-    </script>
+    }
+    
+    modal.classList.remove('hidden');
+}
+
+
+
+    // Resto de las funciones permanecen igual...
+    // Función para mostrar mensajes de éxito
+    function mostrarExito(mensaje) {
+        document.getElementById('mensajeExito').textContent = mensaje;
+        document.getElementById('modalExito').classList.remove('hidden');
+    }
+
+    // Función para mostrar mensajes de error
+    function mostrarError(mensaje) {
+        document.getElementById('mensajeError').textContent = mensaje;
+        document.getElementById('modalError').classList.remove('hidden');
+    }
+
+    // Función global para cerrar modales - VERSIÓN MEJORADA
+window.cerrarModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    
+    // Si estamos cerrando el modal de edición, limpiar la cita seleccionada
+    if (modalId === 'modalEditarCita') {
+        citaSeleccionada = null;
+        citaData = {};
+    }
+};
+
+    // Abrir modal agregar
+    window.abrirModalAgregar = function() {
+        const form = document.getElementById('formAgregarCita');
+        if (form) {
+            form.reset();
+            // Establecer fecha actual por defecto
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('agregarCurrentday').value = hoy;
+            
+            // Establecer hora por defecto (próxima hora en punto)
+            const ahora = new Date();
+            const siguienteHora = new Date(ahora.getTime() + 60 * 60 * 1000);
+            const horaFormateada = siguienteHora.getHours().toString().padStart(2, '0') + ':00';
+            document.getElementById('agregarInitHour').value = horaFormateada;
+            
+            // Hora fin (1 hora después)
+            const horaFin = new Date(siguienteHora.getTime() + 60 * 60 * 1000);
+            const horaFinFormateada = horaFin.getHours().toString().padStart(2, '0') + ':00';
+            document.getElementById('agregarEndHour').value = horaFinFormateada;
+        }
+        
+        const modal = document.getElementById('modalAgregarCita');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    };
+
+    // Abrir modal ver citas
+    window.abrirModalVerCitas = function() {
+        const modal = document.getElementById('modalVerCitas');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    };
+
+    // Configurar eventos cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM cargado, inicializando calendario...');
+        
+    console.log('Datos disponibles:', {
+        citasPorFechaCompleta: window.citasPorFechaCompleta ? Object.keys(window.citasPorFechaCompleta).length : 0,
+        pacientes: window.pacientesData?.length || 0,
+        empleados: window.empleadosData?.length || 0,
+        todasLasCitas: window.todasLasCitas?.length || 0
+    });
+
+     // Verificar datos con más detalle
+    console.log('=== VERIFICACIÓN EN CLIENTE ===');
+    console.log('Pacientes:', window.pacientesData?.length || 0);
+    console.log('Empleados:', window.empleadosData?.length || 0);
+    console.log('Citas totales:', window.todasLasCitas?.length || 0);
+    console.log('Citas agrupadas:', window.citasPorFechaCompleta ? Object.keys(window.citasPorFechaCompleta).length : 0);
+
+    // Inicializar con datos por defecto si es necesario
+    if (!window.citasPorFechaCompleta) {
+        window.citasPorFechaCompleta = {};
+        console.warn('citasPorFechaCompleta no estaba definido, inicializado como objeto vacío');
+    }
+
+    // Si no hay datos, mostrar advertencia
+    if (window.todasLasCitas?.length === 0) {
+        console.warn('⚠️ NO HAY CITAS CARGADAS - Verificar:');
+        console.warn('1. Conexión con la API');
+        console.warn('2. CORS en el servidor de la API');
+        console.warn('3. Formato de los datos');
+    }
+
+        // Botón Editar en modal de acciones - VERSIÓN MEJORADA
+document.getElementById('btnEditarAccion')?.addEventListener('click', function() {
+    cerrarModal('modalAcciones');
+    // No cerrar modalVerCitas aquí, dejar que abrirModalEditar lo haga
+    abrirModalEditar();
+});
+
+        // Botón Nueva Cita
+        document.getElementById('nuevaCitaBtn')?.addEventListener('click', abrirModalAgregar);
+
+        // Botón Ver Citas
+        document.getElementById('verCitasBtn')?.addEventListener('click', abrirModalVerCitas);
+
+        // Botones de navegación del calendario
+        document.getElementById('mesAnterior')?.addEventListener('click', function() {
+            fechaCalendario.setMonth(fechaCalendario.getMonth() - 1);
+            actualizarCalendario();
+        });
+
+        document.getElementById('mesSiguiente')?.addEventListener('click', function() {
+            fechaCalendario.setMonth(fechaCalendario.getMonth() + 1);
+            actualizarCalendario();
+        });
+
+       // Botón Editar en sidebar de detalles de cita - VERSIÓN MEJORADA
+document.getElementById('editarCitaBtn')?.addEventListener('click', function() {
+    cerrarDetallesCita();
+    abrirModalEditar();
+});
+
+        document.getElementById('iniciarConsultaBtn')?.addEventListener('click', function() {
+            iniciarConsulta();
+        });
+
+        // Cerrar modales no componentes
+        document.getElementById('closeDetallesBtn')?.addEventListener('click', cerrarDetallesDia);
+        document.getElementById('closeDetallesCitaBtn')?.addEventListener('click', cerrarDetallesCita);
+
+        // Inicializar calendario inmediatamente
+        actualizarCalendario();
+    });
+
+    // Abrir modal de edición - VERSIÓN MEJORADA
+function abrirModalEditar() {
+    // Cerrar automáticamente otros modales antes de abrir edición
+    cerrarModal('modalAcciones');
+    cerrarModal('modalVerCitas');
+    cerrarDetallesDia();
+    cerrarDetallesCita();
+
+    document.getElementById('editarId').value = citaSeleccionada || '';
+    document.getElementById('editarIdPatient').value = citaData.idpatient || '';
+    document.getElementById('editarIdEmployed').value = citaData.idemployed || '';
+    document.getElementById('editarCurrentday').value = citaData.currentday || '';
+    
+    // Formatear horas para input time (HH:MM)
+    const initHour = citaData.inithour ? citaData.inithour.substring(0, 5) : '';
+    const endHour = citaData.endhour ? citaData.endhour.substring(0, 5) : '';
+    
+    document.getElementById('editarInitHour').value = initHour;
+    document.getElementById('editarEndHour').value = endHour;
+    document.getElementById('editarStatus').value = citaData.status || 'wait';
+    document.getElementById('editarReason').value = citaData.reason || '';
+    document.getElementById('editarPhoto').value = citaData.photo || '';
+    
+    const modal = document.getElementById('modalEditarCita');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+}
+
+    // Manejar envío del formulario agregar
+    document.getElementById('formAgregarCita')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Validar campos requeridos
+        const requiredFields = [
+            'agregarIdPatient', 'agregarIdEmployed', 'agregarCurrentday',
+            'agregarInitHour', 'agregarEndHour', 'agregarStatus', 'agregarReason'
+        ];
+        
+        for (const fieldId of requiredFields) {
+            const field = document.getElementById(fieldId);
+            if (!field.value.trim()) {
+                mostrarError(`El campo ${field.previousElementSibling.textContent} es obligatorio`);
+                field.focus();
+                return;
+            }
+        }
+
+        const citaData = {
+            IdPatient: parseInt(document.getElementById('agregarIdPatient').value),
+            IdEmployed: parseInt(document.getElementById('agregarIdEmployed').value),
+            currentday: document.getElementById('agregarCurrentday').value,
+            initHour: document.getElementById('agregarInitHour').value + ':00',
+            endHour: document.getElementById('agregarEndHour').value + ':00',
+            status: document.getElementById('agregarStatus').value,
+            reason: document.getElementById('agregarReason').value,
+            photo: document.getElementById('agregarPhoto').value || null
+        };
+
+        console.log('Datos a enviar:', citaData);
+
+        try {
+            const response = await fetch('http://localhost:3001/api/v1/Citas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(citaData)
+            });
+
+            if (response.ok) {
+                cerrarModal('modalAgregarCita');
+                mostrarExito('Cita agregada correctamente');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                const errorData = await response.json();
+                console.error('Error del servidor:', errorData);
+                mostrarError('Error al agregar la cita: ' + (errorData.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarError('Error de conexión con el servidor');
+        }
+    });
+
+    // Manejar envío del formulario editar - VERSIÓN MEJORADA
+document.getElementById('formEditarCita')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Validar campos requeridos
+    const requiredFields = [
+        'editarIdPatient', 'editarIdEmployed', 'editarCurrentday',
+        'editarInitHour', 'editarEndHour', 'editarStatus', 'editarReason'
+    ];
+    
+    for (const fieldId of requiredFields) {
+        const field = document.getElementById(fieldId);
+        if (!field.value.trim()) {
+            mostrarError(`El campo ${field.previousElementSibling.textContent} es obligatorio`);
+            field.focus();
+            return;
+        }
+    }
+
+    const citaData = {
+        IdPatient: parseInt(document.getElementById('editarIdPatient').value),
+        IdEmployed: parseInt(document.getElementById('editarIdEmployed').value),
+        currentday: document.getElementById('editarCurrentday').value,
+        initHour: document.getElementById('editarInitHour').value + ':00',
+        endHour: document.getElementById('editarEndHour').value + ':00',
+        status: document.getElementById('editarStatus').value,
+        reason: document.getElementById('editarReason').value,
+        photo: document.getElementById('editarPhoto').value || null
+    };
+
+    console.log('Datos a enviar para editar:', citaData);
+
+    try {
+        const response = await fetch(`http://localhost:3001/api/v1/Citas/${citaSeleccionada}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(citaData)
+        });
+
+        if (response.ok) {
+            cerrarModal('modalEditarCita');
+            mostrarExito('Cita actualizada correctamente');
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            const errorData = await response.json();
+            console.error('Error del servidor:', errorData);
+            mostrarError('Error al actualizar la cita: ' + (errorData.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarError('Error de conexión con el servidor');
+    }
+});
+
+    // Abrir modal de acciones para una cita
+    window.abrirModalAcciones = function(id, nombrePaciente, nombreEmpleado, currentday, inithour, endhour, status, reason, photo, idpatient, idemployed) {
+        citaSeleccionada = id;
+        
+        citaData = {
+            idpatient: idpatient,
+            idemployed: idemployed,
+            currentday: currentday,
+            inithour: inithour,
+            endhour: endhour,
+            status: status,
+            reason: reason,
+            photo: photo,
+            nombreCompleto: `${nombrePaciente} - ${inithour}`
+        };
+        
+        document.getElementById('nombreCitaAcciones').textContent = citaData.nombreCompleto;
+        document.getElementById('modalAcciones').classList.remove('hidden');
+    }
+
+    // Mostrar detalles de cita específica
+    // Mostrar detalles de cita específica - VERSIÓN SIDEBAR
+function mostrarDetallesCita(cita) {
+    citaSeleccionada = cita.id;
+    const paciente = window.pacientesData?.find(p => p.id === cita.idpatient) || {};
+    const empleado = window.empleadosData?.find(e => e.id === cita.idemployed) || {};
+    
+    citaData = {
+        idpatient: cita.idpatient,
+        idemployed: cita.idemployed,
+        currentday: cita.currentday,
+        inithour: cita.inithour,
+        endhour: cita.endhour,
+        status: cita.status,
+        reason: cita.reason,
+        photo: cita.photo
+    };
+
+    const modal = document.getElementById('modalDetallesCita');
+    const body = document.getElementById('detallesCitaBody');
+    
+    const nombrePaciente = `${paciente.firstname || ''} ${paciente.lastname || ''} ${paciente.motherlastname || ''}`.trim();
+    const nombreEmpleado = `${empleado.firstname || ''} ${empleado.lastname || ''}`.trim();
+    const edadPaciente = paciente.birthday ? calcularEdad(paciente.birthday) + ' años' : '';
+    
+    body.innerHTML = `
+        <div class="space-y-6 p-4">
+            <!-- Información Principal -->
+            <div class="bg-gradient-to-r from-[#2F5D50] to-[#3a6b5a] rounded-lg p-4 text-white">
+                <h4 class="font-semibold text-lg mb-2">Reserva Confirmada</h4>
+                <p class="text-sm opacity-90">${formatDateFriendly(cita.currentday)}</p>
+                <p class="text-sm opacity-90">${formatTimeDisplay(cita.inithour)} - ${formatTimeDisplay(cita.endhour)}</p>
+            </div>
+
+            <!-- Estado de la Cita -->
+            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span class="font-medium text-gray-700">Estado:</span>
+                <span class="status-badge ${cita.status} font-semibold">
+                    ${getStatusText(cita.status)}
+                </span>
+            </div>
+
+            <!-- Información del Servicio -->
+            <div class="space-y-4">
+                <h5 class="font-semibold text-gray-700 border-b pb-2">Detalles del Servicio</h5>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-500">Consultorio</p>
+                        <p class="font-medium">JESS THERAPY</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Servicio</p>
+                        <p class="font-medium">${cita.reason || 'Consulta general'}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información del Médico -->
+            <div class="space-y-3 p-3 bg-blue-50 rounded-lg">
+                <h5 class="font-semibold text-gray-700">Profesional</h5>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-[#2F5D50] rounded-full flex items-center justify-center text-white font-semibold">
+                        ${empleado.firstname ? empleado.firstname.charAt(0) : 'D'}
+                    </div>
+                    <div>
+                        <p class="font-medium">${nombreEmpleado}</p>
+                        <p class="text-sm text-gray-600">${empleado.email || 'No disponible'}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información del Paciente -->
+            <div class="space-y-3 p-3 bg-green-50 rounded-lg">
+                <h5 class="font-semibold text-gray-700">Paciente</h5>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
+                        ${paciente.firstname ? paciente.firstname.charAt(0) : 'P'}
+                    </div>
+                    <div>
+                        <p class="font-medium">${nombrePaciente}</p>
+                        <p class="text-sm text-gray-600">${edadPaciente}</p>
+                        <p class="text-sm text-gray-600">${paciente.email || 'No disponible'}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notas Adicionales -->
+            ${cita.reason ? `
+            <div class="space-y-2">
+                <h5 class="font-semibold text-gray-700">Notas de la Cita</h5>
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-sm text-gray-700">${cita.reason}</p>
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- Información de Contacto -->
+            <div class="space-y-2 p-3 bg-yellow-50 rounded-lg">
+                <h5 class="font-semibold text-gray-700">Información de Contacto</h5>
+                <p class="text-sm text-gray-600">Para cambios o cancelaciones, contactar con recepción.</p>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+}
+
+    // Función para calcular edad
+    function calcularEdad(fechaNacimiento) {
+        const hoy = new Date();
+        const nacimiento = new Date(fechaNacimiento);
+        let edad = hoy.getFullYear() - nacimiento.getFullYear();
+        const mes = hoy.getMonth() - nacimiento.getMonth();
+        
+        if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+            edad--;
+        }
+        
+        return edad;
+    }
+
+    // Función para iniciar consulta
+    function iniciarConsulta() {
+        if (!citaSeleccionada) return;
+        
+        console.log('Iniciando consulta para:', citaData.nombreCompleto);
+        alert(`Iniciando consulta con ${citaData.nombreCompleto}`);
+        // Aquí iría la lógica para redirigir a la pantalla de consulta
+    }
+
+    // Funciones de cierre para modales no componentes
+    function cerrarDetallesDia() {
+        document.getElementById('modalDetallesDia').classList.add('hidden');
+    }
+
+    function cerrarDetallesCita() {
+        document.getElementById('modalDetallesCita').classList.add('hidden');
+        citaSeleccionada = null;
+    }
+
+// VERIFICACIÓN EXTRA EN SERVIDOR
+console.log('=== VERIFICACIÓN EN SERVIDOR ===');
+console.log('Total citas cargadas:', citas.length);
+console.log('Total pacientes:', pacientes.length);
+console.log('Total empleados:', empleados.length);
+console.log('Citas agrupadas:', Object.keys(citasPorFechaCompleta).length);
+
+// Verificar que las fechas se están procesando correctamente
+if (citas.length > 0) {
+  console.log('--- EJEMPLO DE PROCESAMIENTO DE FECHAS ---');
+  citas.slice(0, 2).forEach((cita, index) => {
+    console.log(`Cita ${index}:`);
+    console.log('  Fecha original:', cita.currentday);
+    console.log('  Fecha formateada:', formatDateToYYYYMMDD(cita.currentday));
+    console.log('  Día del mes:', getDayOfMonth(cita.currentday));
+  });
+}
+
+// Preparar datos para el script (asegurar valores por defecto)
+const pacientesJSON = JSON.stringify(pacientes || []);
+const empleadosJSON = JSON.stringify(empleados || []);
+const citasJSON = JSON.stringify(citas || []);
+const citasPorFechaCompletaJSON = JSON.stringify(citasPorFechaCompleta || {});
+console.log('Citas procesadas:', Object.keys(citasPorFechaCompleta).length);
+
+// Mostrar ejemplos específicos
+Object.keys(citasPorFechaCompleta).slice(0, 3).forEach(fecha => {
+    console.log(`Fecha ${fecha}:`, citasPorFechaCompleta[fecha].map(c => ({
+        id: c.id,
+        paciente: c.idpatient,
+        fechaOriginal: c.currentday,
+        fechaProcesada: fecha
+    })));
+});
+</script>
+
+    <style>
+        /* Estilos existentes del calendario - MANTENER TODOS LOS ESTILOS ANTERIORES */
+        .agenda-container {
+            display: flex;
+            min-height: 100vh;
+            background-color: #f8fafc;
+        }
+
+        .agenda-main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .agenda-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .agenda-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1rem 0;
+        }
+
+        .date-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .current-date {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2F5D50;
+            margin: 0;
+        }
+
+        .agenda-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #234d20, #2d5a28);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 4px rgba(35, 77, 32, 0.2);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2d5a28, #366032);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(35, 77, 32, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            transform: translateY(-2px);
+        }
+
+        .btn-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .calendar-container {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .calendar-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2F5D50;
+        }
+
+        .calendar-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .month-year {
+            font-weight: 600;
+            color: #374151;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .nav-button {
+            background: #f3f4f6;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: background 0.3s;
+            color: #374151;
+        }
+
+        .nav-button:hover {
+            background: #e5e7eb;
+        }
+
+        .calendar-view-controls {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .view-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .view-button {
+            background: #f3f4f6;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #6b7280;
+        }
+
+        .view-button.active {
+            background: #234d20;
+            color: white;
+        }
+
+        .view-button:hover:not(.active) {
+            background: #e5e7eb;
+        }
+
+        .weekdays-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .weekday {
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #e5e7eb;
+        }
+
+        .calendar-day {
+            background: white;
+            min-height: 120px;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .calendar-day:hover {
+            background: #f8fafc;
+        }
+
+        .calendar-day.current-day {
+            background: #f0f9ff;
+        }
+
+        .calendar-day.other-month {
+            background: #f9fafb;
+            color: #9ca3af;
+        }
+
+        .day-number {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #374151;
+        }
+
+        .calendar-day.other-month .day-number {
+            color: #9ca3af;
+        }
+
+        .day-events {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .calendar-event {
+            background: #234d20;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: opacity 0.3s;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .calendar-event:hover {
+            opacity: 0.9;
+        }
+
+        .calendar-event.wait {
+            background: #f59e0b;
+        }
+
+        .calendar-event.confirmed {
+            background: #10b981;
+        }
+
+        .calendar-event.canceled {
+            background: #ef4444;
+        }
+
+        .more-events {
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-align: center;
+            padding: 0.25rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+
+        .empty-icon {
+            width: 3rem;
+            height: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .cita-item {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .cita-item:hover {
+            background: #f8fafc;
+        }
+
+        .cita-info {
+            flex: 1;
+        }
+
+        .cita-time {
+            font-weight: 600;
+            color: #374151;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .cita-patient {
+            font-weight: 500;
+            color: #2F5D50;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .cita-servicio {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .cita-empleado {
+            color: #6b7280;
+            font-size: 0.75rem;
+            margin: 0;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-badge.wait {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-badge.confirmed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.canceled {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Estilos mejorados para el sidebar de detalles de cita */
+.modal-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 450px;
+    background: white;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    z-index: 1002;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+}
+
+.modal-sidebar:not(.hidden) {
+    transform: translateX(0);
+}
+
+        .cita-detalles-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1003;
+            padding: 1rem;
+        }
+
+        .cita-detalles-content {
+            background: white;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .cita-detalles-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .cita-detalles-title {
+            color: #2F5D50;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .cita-detalles-body {
+            padding: 1.5rem;
+        }
+
+        .cita-acciones {
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-iniciar-consulta {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .btn-editar-cita {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        /* Estilos para secciones de detalles */
+        .detalle-seccion {
+            margin-bottom: 1.5rem;
+        }
+
+        .detalle-seccion-titulo {
+            color: #2F5D50;
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .detalle-item {
+            margin-bottom: 1rem;
+        }
+
+        .detalle-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+
+        .detalle-valor {
+            font-size: 1rem;
+            color: #374151;
+        }
+
+        .detalle-valor-grande {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .estado-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .estado-badge.aprobado {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .estado-badge.pendiente {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Mantener todos los otros estilos de modales y tablas anteriores */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-content.max-w-6xl {
+            max-width: 1200px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-title {
+            color: #2F5D50;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .modal-body {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Animación suave para la aparición */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.modal-sidebar:not(.hidden) {
+    animation: slideInRight 0.3s ease-out;
+}
+
+        .modal-body.p-0 {
+            padding: 0;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: background 0.3s;
+        }
+
+        .close-button:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-editar-accion {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+            min-width: 160px;
+        }
+
+        .btn-editar-accion:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Estilos para la tabla de citas */
+        .table-responsive-container {
+            width: 100%;
+            background: white;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            margin-top: 0;
+        }
+
+        .table-view {
+            width: 100%;
+        }
+
+        .table-header {
+            display: grid;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            background-color: #234d20;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+            align-items: center;
+        }
+
+        .grid-cols-8 {
+            grid-template-columns: 50px 1fr 1fr 1fr 1.5fr 1.5fr 100px 120px;
+        }
+
+        .table-body {
+            width: 100%;
+        }
+
+        .table-row {
+            display: grid;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        .table-row:hover {
+            background-color: #f8fafc;
+        }
+
+        .col-checkbox, .col-acciones {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .col-fecha, .col-hora, .col-paciente, .col-empleado, .col-estado {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #234d20, #2d5a28);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+
+        .btn-action:hover {
+            background: linear-gradient(135deg, #2d5a28, #366032);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(35, 77, 32, 0.2);
+        }
+    </style>
 </Layout>

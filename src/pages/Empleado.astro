@@ -1,0 +1,1395 @@
+---
+import Layout from "../layouts/Layout.astro";
+import NavBar from "../components/NavBar.astro";
+import HeaderEmpleado from '../components/HeaderEmpleado.astro';
+import FormModal from "../components/modals/FormModal.astro";
+import axios from "axios";
+
+let table = [];
+try {
+  const response = await fetch('http://localhost:3001/api/v1/Trabajadores');
+  if (response.ok) {
+    table = await response.json();
+  } else {
+    console.error('Error en la respuesta:', response.status);
+    table = [];
+  }
+} catch (error) {
+  console.error('Error fetching data:', error);
+  table = [];
+}
+
+// Función para formatear fecha
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toISOString().split('T')[0];
+};
+
+// Función para escapar caracteres problemáticos en JavaScript
+const escapeJS = (str) => {
+  if (!str) return '';
+  return String(str)
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r');
+};
+---
+
+<Layout title="Empleados">
+	<div class="pagos-container">
+		<NavBar />
+		<div class="flex-1 flex flex-col overflow-hidden">
+			<HeaderEmpleado titulo="EMPLEADOS" nombreUsuario="EMPLEADO" />
+            <main class="pagos-content">
+                <!-- Header con título y botón agregar -->
+                <div class="pagos-header">
+                    <h1 class="pagos-title">LISTA DE EMPLEADOS</h1>
+                    <div class="pagos-controls">
+                        <div class="pagos-buttons">
+                            <button 
+                                class="btn-action flex items-center gap-2"
+                                onclick="abrirModalAgregar()"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Agregar Empleado
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla completamente responsiva -->
+                <div class="table-responsive-container">
+                    <!-- Vista Desktop Completa (1400px+) -->
+                    <div class="table-view table-desktop-full">
+                        <div class="table-header grid-cols-9">
+                            <div class="col-checkbox">Seleccionar</div>
+                            <div class="col-nombre">Nombre</div>
+                            <div class="col-apellido">Apellido Paterno</div>
+                            <div class="col-apellido">Apellido Materno</div>
+                            <div class="col-fecha">Fecha Nac.</div>
+                            <div class="col-telefono">Teléfono</div>
+                            <div class="col-email">Correo</div>
+                            <div class="col-foto">Foto</div>
+                            <div class="col-acciones">Acciones</div>
+                        </div>
+                        
+                        <div class="table-body">
+                            {table.map((empleado) => {
+                                const firstnameEscaped = escapeJS(empleado.firstname);
+                                const lastnameEscaped = escapeJS(empleado.lastname);
+                                const motherlastnameEscaped = escapeJS(empleado.motherlastname);
+                                const phoneEscaped = escapeJS(empleado.phone);
+                                const emailEscaped = escapeJS(empleado.email);
+                                const birthdateEscaped = escapeJS(formatDate(empleado.birthday));
+                                const photoEscaped = escapeJS(empleado.photo);
+                                const nombreCompletoEscaped = escapeJS(`${empleado.firstname} ${empleado.lastname}`);
+                                
+                                return (
+                                    <div class="table-row grid-cols-9">
+                                        <div class="col-checkbox">
+                                            <input type="checkbox" class="empleado-checkbox" value={empleado.id} />
+                                        </div>
+                                        <div class="col-nombre">{empleado.firstname}</div>
+                                        <div class="col-apellido">{empleado.lastname}</div>
+                                        <div class="col-apellido">{empleado.motherlastname}</div>
+                                        <div class="col-fecha">{formatDate(empleado.birthday)}</div>
+                                        <div class="col-telefono">{empleado.phone}</div>
+                                        <div class="col-email">{empleado.email}</div>
+                                        <div class="col-foto">
+                                            {empleado.photo ? (
+                                                <img src={empleado.photo} alt="Foto" class="w-10 h-10 rounded-full object-cover" />
+                                            ) : (
+                                                <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                                    </svg>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div class="col-acciones">
+                                            <button 
+                                                class="btn-action"
+                                                onclick={`abrirModalAcciones(${empleado.id}, '${firstnameEscaped}', '${lastnameEscaped}', '${motherlastnameEscaped}', '${phoneEscaped}', '${emailEscaped}', '${birthdateEscaped}', '${photoEscaped}', '${nombreCompletoEscaped}')`}
+                                            >
+                                                Acciones
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <!-- Vista Desktop Compacta (1200px - 1399px) -->
+                    <div class="table-view table-desktop-compact">
+                        <div class="table-header grid-cols-7">
+                            <div class="col-checkbox">Sel</div>
+                            <div class="col-nombre">Nombre</div>
+                            <div class="col-apellido">Ap. Paterno</div>
+                            <div class="col-telefono">Teléfono</div>
+                            <div class="col-email">Correo</div>
+                            <div class="col-foto">Foto</div>
+                            <div class="col-acciones">Acciones</div>
+                        </div>
+                        
+                        <div class="table-body">
+                            {table.map((empleado) => {
+                                const firstnameEscaped = escapeJS(empleado.firstname);
+                                const lastnameEscaped = escapeJS(empleado.lastname);
+                                const motherlastnameEscaped = escapeJS(empleado.motherlastname);
+                                const phoneEscaped = escapeJS(empleado.phone);
+                                const emailEscaped = escapeJS(empleado.email);
+                                const birthdateEscaped = escapeJS(formatDate(empleado.birthday));
+                                const photoEscaped = escapeJS(empleado.photo);
+                                const nombreCompletoEscaped = escapeJS(`${empleado.firstname} ${empleado.lastname}`);
+                                
+                                return (
+                                    <div class="table-row grid-cols-7">
+                                        <div class="col-checkbox">
+                                            <input type="checkbox" class="empleado-checkbox" value={empleado.id} />
+                                        </div>
+                                        <div class="col-nombre">{empleado.firstname}</div>
+                                        <div class="col-apellido">{empleado.lastname}</div>
+                                        <div class="col-telefono">{empleado.phone}</div>
+                                        <div class="col-email">{empleado.email}</div>
+                                        <div class="col-foto">
+                                            {empleado.photo ? (
+                                                <img src={empleado.photo} alt="Foto" class="w-8 h-8 rounded-full object-cover" />
+                                            ) : (
+                                                <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                                    <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                                    </svg>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div class="col-acciones">
+                                            <button 
+                                                class="btn-action"
+                                                onclick={`abrirModalAcciones(${empleado.id}, '${firstnameEscaped}', '${lastnameEscaped}', '${motherlastnameEscaped}', '${phoneEscaped}', '${emailEscaped}', '${birthdateEscaped}', '${photoEscaped}', '${nombreCompletoEscaped}')`}
+                                            >
+                                                Acciones
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <!-- Vista Tablet (768px - 1199px) -->
+                    <div class="table-view table-tablet">
+                        <div class="table-header grid-cols-5">
+                            <div class="col-checkbox">Sel</div>
+                            <div class="col-nombre-tablet">Empleado</div>
+                            <div class="col-telefono-tablet">Teléfono</div>
+                            <div class="col-email-tablet">Correo</div>
+                            <div class="col-acciones">Acciones</div>
+                        </div>
+                        
+                        <div class="table-body">
+                            {table.map((empleado) => {
+                                const firstnameEscaped = escapeJS(empleado.firstname);
+                                const lastnameEscaped = escapeJS(empleado.lastname);
+                                const motherlastnameEscaped = escapeJS(empleado.motherlastname);
+                                const phoneEscaped = escapeJS(empleado.phone);
+                                const emailEscaped = escapeJS(empleado.email);
+                                const birthdateEscaped = escapeJS(formatDate(empleado.birthday));
+                                const photoEscaped = escapeJS(empleado.photo);
+                                const nombreCompletoEscaped = escapeJS(`${empleado.firstname} ${empleado.lastname}`);
+                                
+                                return (
+                                    <div class="table-row grid-cols-5">
+                                        <div class="col-checkbox">
+                                            <input type="checkbox" class="empleado-checkbox" value={empleado.id} />
+                                        </div>
+                                        <div class="col-nombre-tablet">
+                                            <div class="flex items-center gap-2">
+                                                {empleado.photo ? (
+                                                    <img src={empleado.photo} alt="Foto" class="w-8 h-8 rounded-full object-cover" />
+                                                ) : (
+                                                    <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <div class="font-medium">{empleado.firstname} {empleado.lastname}</div>
+                                                    <div class="text-sm text-gray-500">{empleado.motherlastname}</div>
+                                                    <div class="text-sm text-gray-500">{formatDate(empleado.birthday)}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-telefono-tablet">{empleado.phone}</div>
+                                        <div class="col-email-tablet">{empleado.email}</div>
+                                        <div class="col-acciones">
+                                            <button 
+                                                class="btn-action"
+                                                onclick={`abrirModalAcciones(${empleado.id}, '${firstnameEscaped}', '${lastnameEscaped}', '${motherlastnameEscaped}', '${phoneEscaped}', '${emailEscaped}', '${birthdateEscaped}', '${photoEscaped}', '${nombreCompletoEscaped}')`}
+                                            >
+                                                Acciones
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <!-- Vista Móvil (hasta 767px) -->
+                    <div class="table-view table-mobile">
+                        <div class="table-body">
+                            {table.map((empleado) => {
+                                const firstnameEscaped = escapeJS(empleado.firstname);
+                                const lastnameEscaped = escapeJS(empleado.lastname);
+                                const motherlastnameEscaped = escapeJS(empleado.motherlastname);
+                                const phoneEscaped = escapeJS(empleado.phone);
+                                const emailEscaped = escapeJS(empleado.email);
+                                const birthdateEscaped = escapeJS(formatDate(empleado.birthday));
+                                const photoEscaped = escapeJS(empleado.photo);
+                                const nombreCompletoEscaped = escapeJS(`${empleado.firstname} ${empleado.lastname}`);
+                                
+                                return (
+                                    <div class="mobile-card">
+                                        <div class="mobile-card-header">
+                                            <div class="flex items-center gap-3">
+                                                <input type="checkbox" class="empleado-checkbox" value={empleado.id} />
+                                                <div class="flex items-center gap-2">
+                                                    {empleado.photo ? (
+                                                        <img src={empleado.photo} alt="Foto" class="w-10 h-10 rounded-full object-cover" />
+                                                    ) : (
+                                                        <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                                            </svg>
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <h3 class="font-semibold text-gray-900">{empleado.firstname} {empleado.lastname}</h3>
+                                                        <p class="text-sm text-gray-600">{empleado.email}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button 
+                                                class="btn-action-mobile"
+                                                onclick={`abrirModalAcciones(${empleado.id}, '${firstnameEscaped}', '${lastnameEscaped}', '${motherlastnameEscaped}', '${phoneEscaped}', '${emailEscaped}', '${birthdateEscaped}', '${photoEscaped}', '${nombreCompletoEscaped}')`}
+                                            >
+                                                Acciones
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="mobile-card-content">
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div class="mobile-field">
+                                                    <span class="mobile-label">Apellido Materno:</span>
+                                                    <span class="mobile-value">{empleado.motherlastname}</span>
+                                                </div>
+                                                <div class="mobile-field">
+                                                    <span class="mobile-label">Teléfono:</span>
+                                                    <span class="mobile-value">{empleado.phone}</span>
+                                                </div>
+                                                <div class="mobile-field">
+                                                    <span class="mobile-label">Fecha Nacimiento:</span>
+                                                    <span class="mobile-value">{formatDate(empleado.birthday)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+				<!-- PAGINACIÓN -->
+				<div class="historial-pagination">
+					<div class="text-sm text-gray-600">1–10 de {table.length}</div>
+					<div class="flex items-center gap-3">
+						<span class="text-sm text-gray-600">Filas por página:</span>
+						<select class="historial-select" id="rowsPerPage">
+							<option>10</option>
+							<option>25</option>
+							<option>50</option>
+						</select>
+						<div class="flex items-center gap-2">
+							<button class="btn-action px-3 py-1 text-sm" onclick="cambiarPagina(-1)">⟨</button>
+							<span class="text-sm text-gray-600">1/{Math.ceil(table.length / 10)}</span>
+							<button class="btn-action px-3 py-1 text-sm" onclick="cambiarPagina(1)">⟩</button>
+						</div>
+					</div>
+				</div>
+            </main>	
+		</div>
+	</div>
+
+	<!-- Modal de Acciones -->
+	<div id="modalAcciones" class="modal-overlay hidden">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h2 class="modal-title">¿Qué acción deseas realizar?</h2>
+				<button type="button" class="close-button" onclick="cerrarModal('modalAcciones')">
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+					</svg>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div class="space-y-4">
+					<div class="text-center">
+						<p class="text-gray-600">Selecciona la acción que deseas realizar para el empleado:</p>
+						<p id="nombreEmpleadoAcciones" class="font-semibold text-lg text-[#2F5D50] mt-2"></p>
+					</div>
+					<div class="flex flex-col sm:flex-row justify-center gap-4 mt-6">
+						<button 
+							id="btnEditarAccion"
+							class="btn-editar-accion flex items-center justify-center gap-2"
+						>
+							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+							</svg>
+							Editar Empleado
+						</button>
+						<button 
+							id="btnEliminarAccion"
+							class="btn-eliminar-accion flex items-center justify-center gap-2"
+						>
+							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+							</svg>
+							Eliminar Empleado
+						</button>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn-secondary" onclick="cerrarModal('modalAcciones')">
+					Cancelar
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal de Confirmación Eliminar -->
+	<div id="modalConfirmarEliminar" class="modal-overlay hidden">
+		<div class="modal-content max-w-md">
+			<div class="modal-header">
+				<h2 class="modal-title text-red-600">Confirmar Eliminación</h2>
+				<button type="button" class="close-button" onclick="cerrarModal('modalConfirmarEliminar')">
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+					</svg>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div class="text-center">
+					<svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+					</svg>
+					<h3 class="text-lg font-semibold text-gray-900 mb-2">¿Estás seguro de eliminar este empleado?</h3>
+					<p class="text-gray-600 mb-4">Esta acción no se puede deshacer. Se eliminarán todos los datos del empleado:</p>
+					<p id="nombreEmpleadoEliminar" class="font-semibold text-red-600 text-lg"></p>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<div class="flex flex-col sm:flex-row gap-3 w-full">
+					<button type="button" class="btn-secondary flex-1" onclick="cerrarModal('modalConfirmarEliminar')">
+						Cancelar
+					</button>
+					<button type="button" id="btnConfirmarEliminar" class="btn-eliminar-confirmar flex-1">
+						Sí, Eliminar
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal Agregar Empleado -->
+	<FormModal
+		id="modalAgregarEmpleado"
+		title="AGREGAR EMPLEADO"
+		formId="formAgregarEmpleado"
+		submitText="GUARDAR"
+		cancelText="CANCELAR"
+		size="lg"
+	>
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">NOMBRE *</label>
+				<input 
+					type="text" 
+					id="agregarNombre"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					required
+					placeholder="Ingrese el nombre"
+				>
+			</div>
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">APELLIDO PATERNO *</label>
+				<input 
+					type="text" 
+					id="agregarApellidoPaterno"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					required
+					placeholder="Ingrese el apellido paterno"
+				>
+			</div>
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">APELLIDO MATERNO *</label>
+				<input 
+					type="text" 
+					id="agregarApellidoMaterno"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					required
+					placeholder="Ingrese el apellido materno"
+				>
+			</div>
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">FECHA DE NACIMIENTO</label>
+				<input 
+					type="date" 
+					id="agregarBirthday"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+				>
+			</div>
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">TELÉFONO *</label>
+				<input 
+					type="tel" 
+					id="agregarPhone"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					required
+					placeholder="Ej: 5551234567"
+					maxlength="10"
+					pattern="[0-9]{10}"
+				>
+			</div>
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">CORREO ELECTRÓNICO *</label>
+				<input 
+					type="email" 
+					id="agregarEmail"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					required
+					placeholder="ejemplo@correo.com"
+				>
+			</div>
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">CONTRASEÑA *</label>
+				<input 
+					type="password" 
+					id="agregarPassword"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					required
+					placeholder="Ingrese la contraseña"
+				>
+			</div>
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">FOTO (URL)</label>
+				<input 
+					type="url" 
+					id="agregarPhoto"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					placeholder="https://ejemplo.com/foto.jpg"
+				>
+			</div>
+		</div>
+	</FormModal>
+
+	<!-- Modal Editar Empleado -->
+	<FormModal
+		id="modalEditarEmpleado"
+		title="EDITAR EMPLEADO"
+		formId="formEditarEmpleado"
+		submitText="ACTUALIZAR"
+		cancelText="CANCELAR"
+		size="lg"
+	>
+		<input type="hidden" id="editarId">
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">NOMBRE *</label>
+				<input 
+					type="text" 
+					id="editarNombre"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					required
+				>
+			</div>
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">APELLIDO PATERNO *</label>
+				<input 
+					type="text" 
+					id="editarApellidoPaterno"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					required
+				>
+			</div>
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">APELLIDO MATERNO *</label>
+				<input 
+					type="text" 
+					id="editarApellidoMaterno"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					required
+				>
+			</div>
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">FECHA DE NACIMIENTO</label>
+				<input 
+					type="date" 
+					id="editarBirthday"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+				>
+			</div>
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">TELÉFONO *</label>
+				<input 
+					type="tel" 
+					id="editarPhone"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					required
+					maxlength="10"
+					pattern="[0-9]{10}"
+				>
+			</div>
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">CORREO ELECTRÓNICO *</label>
+				<input 
+					type="email" 
+					id="editarEmail"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					required
+				>
+			</div>
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">CONTRASEÑA</label>
+				<input 
+					type="password" 
+					id="editarPassword"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					placeholder="Dejar vacío para mantener la actual"
+				>
+			</div>
+			<div class="flex flex-col">
+				<label class="text-[#2F5D50] font-medium mb-2 text-sm">FOTO (URL)</label>
+				<input 
+					type="url" 
+					id="editarPhoto"
+					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					placeholder="https://ejemplo.com/foto.jpg"
+				>
+			</div>
+		</div>
+	</FormModal>
+
+	<!-- Modal de éxito personalizado -->
+	<div id="modalExito" class="modal-overlay hidden">
+		<div class="modal-content max-w-md">
+			<div class="modal-header">
+				<h2 class="modal-title text-green-600">Éxito</h2>
+				<button type="button" class="close-button" onclick="cerrarModal('modalExito')">
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+					</svg>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div class="text-center">
+					<svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+					</svg>
+					<h3 class="text-lg font-semibold text-gray-900 mb-2" id="mensajeExito"></h3>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn-secondary w-full" onclick="cerrarModal('modalExito')">
+					Aceptar
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal de error personalizado -->
+	<div id="modalError" class="modal-overlay hidden">
+		<div class="modal-content max-w-md">
+			<div class="modal-header">
+				<h2 class="modal-title text-red-600">Error</h2>
+				<button type="button" class="close-button" onclick="cerrarModal('modalError')">
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+					</svg>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div class="text-center">
+					<svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+					</svg>
+					<h3 class="text-lg font-semibold text-gray-900 mb-2" id="mensajeError"></h3>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn-secondary w-full" onclick="cerrarModal('modalError')">
+					Aceptar
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<script>
+    // Variables globales
+    let empleadoSeleccionado = null;
+    let empleadoData = {};
+
+    // Función para verificar checkbox seleccionado - MEJORADA
+    function verificarCheckboxSeleccionado(empleadoId) {
+        try {
+            // Convertir a número explícitamente
+            const idNum = Number(empleadoId);
+            if (isNaN(idNum)) {
+                console.error('ID inválido:', empleadoId);
+                return false;
+            }
+
+            const checkboxes = document.querySelectorAll(`.empleado-checkbox[value="${empleadoId}"]`);
+            let algunoSeleccionado = false;
+            
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    algunoSeleccionado = true;
+                }
+            });
+            
+            if (!algunoSeleccionado) {
+                mostrarError('Por favor, seleccione un dato marcando el checkbox para gestionar.');
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.error('Error verificando checkbox:', error);
+            mostrarError('Error al verificar la selección del empleado');
+            return false;
+        }
+    }
+
+    // Abrir modal de acciones - MEJORADA con validación de ID
+    window.abrirModalAcciones = function(id, firstname, lastname, motherlastname, phone, email, birthdate, photo, nombreCompleto) {
+        // Validar que el ID sea un número
+        const idNum = Number(id);
+        if (isNaN(idNum)) {
+            console.error('ID inválido recibido:', id);
+            mostrarError('Error: ID de empleado inválido');
+            return;
+        }
+
+        if (!verificarCheckboxSeleccionado(id)) {
+            return;
+        }
+        
+        empleadoSeleccionado = idNum; // Guardar como número
+        empleadoData = {
+            firstname,
+            lastname,
+            motherlastname,
+            phone,
+            email,
+            birthdate,
+            photo,
+            nombreCompleto
+        };
+        
+        document.getElementById('nombreEmpleadoAcciones').textContent = nombreCompleto;
+        document.getElementById('modalAcciones').classList.remove('hidden');
+    };
+
+    // Abrir modal agregar
+    window.abrirModalAgregar = function() {
+        const form = document.getElementById('formAgregarEmpleado');
+        if (form) {
+            form.reset();
+        }
+        
+        const modal = document.getElementById('modalAgregarEmpleado');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    };
+
+    // Función global para cerrar modales
+    window.cerrarModal = function(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    };
+
+    // Función para mostrar mensajes de éxito
+    function mostrarExito(mensaje) {
+        document.getElementById('mensajeExito').textContent = mensaje;
+        document.getElementById('modalExito').classList.remove('hidden');
+    }
+
+    // Función para mostrar mensajes de error
+    function mostrarError(mensaje) {
+        document.getElementById('mensajeError').textContent = mensaje;
+        document.getElementById('modalError').classList.remove('hidden');
+    }
+
+    // Configurar eventos cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        // Botón Editar en modal de acciones
+        document.getElementById('btnEditarAccion').addEventListener('click', function() {
+            cerrarModal('modalAcciones');
+            abrirModalEditar();
+        });
+
+        // Botón Eliminar en modal de acciones
+        document.getElementById('btnEliminarAccion').addEventListener('click', function() {
+            cerrarModal('modalAcciones');
+            abrirModalConfirmarEliminar();
+        });
+
+        // Botón Confirmar Eliminar
+        document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
+            eliminarEmpleado(empleadoSeleccionado);
+        });
+    });
+
+    // Abrir modal de edición
+    function abrirModalEditar() {
+        // Validar que tenemos un ID válido
+        if (!empleadoSeleccionado || isNaN(empleadoSeleccionado)) {
+            mostrarError('Error: No se ha seleccionado un empleado válido');
+            return;
+        }
+
+        // Llenar formulario con datos actuales
+        document.getElementById('editarId').value = empleadoSeleccionado;
+        document.getElementById('editarNombre').value = empleadoData.firstname || '';
+        document.getElementById('editarApellidoPaterno').value = empleadoData.lastname || '';
+        document.getElementById('editarApellidoMaterno').value = empleadoData.motherlastname || '';
+        document.getElementById('editarPhone').value = empleadoData.phone || '';
+        document.getElementById('editarEmail').value = empleadoData.email || '';
+        document.getElementById('editarBirthday').value = empleadoData.birthdate || '';
+        document.getElementById('editarPhoto').value = empleadoData.photo || '';
+        document.getElementById('editarPassword').value = '';
+        
+        const modal = document.getElementById('modalEditarEmpleado');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    }
+
+    // Abrir modal de confirmación de eliminación
+    function abrirModalConfirmarEliminar() {
+        document.getElementById('nombreEmpleadoEliminar').textContent = empleadoData.nombreCompleto;
+        document.getElementById('modalConfirmarEliminar').classList.remove('hidden');
+    }
+
+    // Función para eliminar empleado - MEJORADA con validación
+    async function eliminarEmpleado(id) {
+        // Validar ID
+        if (!id || isNaN(id)) {
+            mostrarError('Error: ID de empleado inválido');
+            return;
+        }
+
+        try {
+            console.log('Eliminando empleado con ID:', id);
+            
+            const response = await fetch(`http://localhost:3001/api/v1/Trabajadores/${id}`, {
+                method: 'DELETE',
+            });
+            
+            if (response.ok) {
+                cerrarModal('modalConfirmarEliminar');
+                mostrarExito('Empleado eliminado correctamente');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                const errorData = await response.json();
+                console.error('Error del servidor:', errorData);
+                mostrarError('Error al eliminar el empleado: ' + (errorData.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarError('Error de conexión con el servidor: ' + error.message);
+        }
+    }
+
+    // Manejar envío del formulario agregar
+    document.getElementById('formAgregarEmpleado')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const requiredFields = [
+            'agregarNombre', 'agregarApellidoPaterno', 'agregarApellidoMaterno',
+            'agregarPhone', 'agregarEmail', 'agregarPassword'
+        ];
+        
+        for (const fieldId of requiredFields) {
+            const field = document.getElementById(fieldId);
+            if (!field.value.trim()) {
+                mostrarError(`El campo ${field.previousElementSibling.textContent} es obligatorio`);
+                field.focus();
+                return;
+            }
+        }
+
+        // Usar nombres exactos de la base de datos (minúsculas)
+        const empleadoData = {
+            firstname: document.getElementById('agregarNombre').value,
+            lastname: document.getElementById('agregarApellidoPaterno').value,
+            motherlastname: document.getElementById('agregarApellidoMaterno').value,
+            birthday: document.getElementById('agregarBirthday').value || null,
+            phone: document.getElementById('agregarPhone').value,
+            email: document.getElementById('agregarEmail').value,
+            password: document.getElementById('agregarPassword').value,
+            photo: document.getElementById('agregarPhoto').value || null
+        };
+
+        console.log('Datos a enviar (BD minúsculas):', empleadoData);
+
+        try {
+            const response = await fetch('http://localhost:3001/api/v1/Trabajadores', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(empleadoData)
+            });
+
+            if (response.ok) {
+                cerrarModal('modalAgregarEmpleado');
+                mostrarExito('Empleado agregado correctamente');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                const errorData = await response.json();
+                console.error('Error del servidor:', errorData);
+                mostrarError('Error al agregar el empleado: ' + (errorData.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarError('Error de conexión con el servidor');
+        }
+    });
+
+    // Manejar envío del formulario editar - MEJORADA con validación de ID
+    document.getElementById('formEditarEmpleado')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Validar que tenemos un ID válido
+        if (!empleadoSeleccionado || isNaN(empleadoSeleccionado)) {
+            mostrarError('Error: No se ha seleccionado un empleado válido para editar');
+            return;
+        }
+        
+        const requiredFields = [
+            'editarNombre', 'editarApellidoPaterno', 'editarApellidoMaterno',
+            'editarPhone', 'editarEmail'
+        ];
+        
+        for (const fieldId of requiredFields) {
+            const field = document.getElementById(fieldId);
+            if (!field.value.trim()) {
+                mostrarError(`El campo ${field.previousElementSibling.textContent} es obligatorio`);
+                field.focus();
+                return;
+            }
+        }
+
+        // Usar nombres exactos de la base de datos (minúsculas)
+        const empleadoData = {
+            firstname: document.getElementById('editarNombre').value,
+            lastname: document.getElementById('editarApellidoPaterno').value,
+            motherlastname: document.getElementById('editarApellidoMaterno').value,
+            birthday: document.getElementById('editarBirthday').value || null,
+            phone: document.getElementById('editarPhone').value,
+            email: document.getElementById('editarEmail').value,
+            photo: document.getElementById('editarPhoto').value || null
+        };
+
+        // Solo incluir password si se proporcionó uno nuevo
+        const nuevaPassword = document.getElementById('editarPassword').value;
+        if (nuevaPassword) {
+            empleadoData.password = nuevaPassword;
+        }
+
+        console.log('Datos a enviar para editar (BD minúsculas):', empleadoData);
+        console.log('ID del empleado a editar:', empleadoSeleccionado);
+
+        try {
+            const response = await fetch(`http://localhost:3001/api/v1/Trabajadores/${empleadoSeleccionado}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(empleadoData)
+            });
+
+            if (response.ok) {
+                cerrarModal('modalEditarEmpleado');
+                mostrarExito('Empleado actualizado correctamente');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                const errorData = await response.json();
+                console.error('Error del servidor:', errorData);
+                mostrarError('Error al actualizar el empleado: ' + (errorData.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarError('Error de conexión con el servidor: ' + error.message);
+        }
+    });
+
+    // Seleccionar todos los checkboxes
+    document.getElementById('selectAll')?.addEventListener('change', function(e) {
+        const checkboxes = document.querySelectorAll('.empleado-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = e.target.checked;
+        });
+    });
+</script>
+
+	<style>
+		/* === ESTILOS PARA TABLA COMPLETAMENTE RESPONSIVA === */
+		
+		/* Contenedor de tabla mejorado */
+		.pagos-table-wrapper {
+			width: 100%;
+			border-radius: 0.75rem;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+			margin-top: 1rem;
+		}
+
+		/* === SISTEMA DE TABLA RESPONSIVA CON CSS GRID === */
+		
+		.table-responsive-container {
+			width: 100%;
+			background: white;
+			border-radius: 0.75rem;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+			overflow: hidden;
+			margin-top: 1rem;
+		}
+
+		/* Cada vista de tabla se muestra según el breakpoint */
+		.table-view {
+			width: 100%;
+		}
+
+		/* Vista Desktop Completa (1400px+) - 9 columnas */
+		.table-desktop-full {
+			display: none;
+		}
+
+		/* Vista Desktop Compacta (1200px - 1399px) - 7 columnas */
+		.table-desktop-compact {
+			display: none;
+		}
+
+		/* Vista Tablet (768px - 1199px) - 5 columnas */
+		.table-tablet {
+			display: none;
+		}
+
+		/* Vista Móvil (hasta 767px) - Cards */
+		.table-mobile {
+			display: none;
+		}
+
+		/* Header y filas comunes */
+		.table-header {
+			display: grid;
+			gap: 0.5rem;
+			padding: 1rem 1.5rem;
+			background-color: #234d20;
+			color: white;
+			font-weight: 600;
+			font-size: 0.875rem;
+			align-items: center;
+		}
+
+		.table-body {
+			width: 100%;
+		}
+
+		.table-row {
+			display: grid;
+			gap: 0.5rem;
+			padding: 1rem 1.5rem;
+			border-bottom: 1px solid #e5e7eb;
+			align-items: center;
+			transition: background-color 0.2s;
+		}
+
+		.table-row:hover {
+			background-color: #f8fafc;
+		}
+
+		/* Grid columns para diferentes vistas */
+		.grid-cols-9 {
+			grid-template-columns: 50px 1fr 1fr 1fr 100px 1fr 1.5fr 80px 120px;
+		}
+
+		.grid-cols-7 {
+			grid-template-columns: 40px 1fr 1fr 1fr 1.5fr 60px 120px;
+		}
+
+		.grid-cols-5 {
+			grid-template-columns: 40px 1.5fr 1fr 1.2fr 120px;
+		}
+
+		/* Estilos de columnas específicas */
+		.col-checkbox {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.col-nombre,
+		.col-apellido,
+		.col-fecha,
+		.col-telefono,
+		.col-email {
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.col-foto {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.col-nombre-tablet {
+			display: flex;
+			flex-direction: column;
+			gap: 0.25rem;
+		}
+
+		.col-telefono-tablet,
+		.col-email-tablet {
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			font-size: 0.875rem;
+		}
+
+		.col-acciones {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		/* Tarjetas móviles */
+		.mobile-card {
+			border-bottom: 1px solid #e5e7eb;
+			padding: 1rem;
+			background: white;
+		}
+
+		.mobile-card:last-child {
+			border-bottom: none;
+		}
+
+		.mobile-card-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			margin-bottom: 1rem;
+		}
+
+		.mobile-card-content {
+			width: 100%;
+		}
+
+		.mobile-field {
+			display: flex;
+			flex-direction: column;
+			gap: 0.25rem;
+		}
+
+		.mobile-label {
+			font-size: 0.75rem;
+			font-weight: 600;
+			color: #2F5D50;
+		}
+
+		.mobile-value {
+			font-size: 0.875rem;
+			color: #374151;
+		}
+
+		/* Botones */
+		.btn-action {
+			background: linear-gradient(135deg, #234d20, #2d5a28);
+			color: white;
+			border: none;
+			border-radius: 0.5rem;
+			padding: 0.5rem 1rem;
+			font-weight: 500;
+			cursor: pointer;
+			transition: all 0.3s ease-in-out;
+			font-size: 0.875rem;
+			white-space: nowrap;
+		}
+
+		.btn-action:hover {
+			background: linear-gradient(135deg, #2d5a28, #366032);
+			transform: translateY(-1px);
+			box-shadow: 0 2px 4px rgba(35, 77, 32, 0.2);
+		}
+
+		.btn-action-mobile {
+			background: linear-gradient(135deg, #234d20, #2d5a28);
+			color: white;
+			border: none;
+			border-radius: 0.375rem;
+			padding: 0.375rem 0.75rem;
+			font-weight: 500;
+			cursor: pointer;
+			transition: all 0.3s ease-in-out;
+			font-size: 0.75rem;
+			white-space: nowrap;
+		}
+
+		/* Checkboxes */
+		.empleado-checkbox {
+			cursor: pointer;
+			width: 18px;
+			height: 18px;
+		}
+
+		/* === BREAKPOINTS RESPONSIVE === */
+
+		/* Desktop Completo (1400px+) */
+		@media (min-width: 1400px) {
+			.table-desktop-full {
+				display: block;
+			}
+		}
+
+		/* Desktop Compacto (1200px - 1399px) */
+		@media (min-width: 1200px) and (max-width: 1399px) {
+			.table-desktop-compact {
+				display: block;
+			}
+		}
+
+		/* Tablet (768px - 1199px) */
+		@media (min-width: 768px) and (max-width: 1199px) {
+			.table-tablet {
+				display: block;
+			}
+		}
+
+		/* Móvil (hasta 767px) */
+		@media (max-width: 767px) {
+			.table-mobile {
+				display: block;
+			}
+			
+			.table-responsive-container {
+				border-radius: 0.5rem;
+			}
+		}
+
+		/* Ajustes para pantallas muy pequeñas */
+		@media (max-width: 480px) {
+			.mobile-card {
+				padding: 0.75rem;
+			}
+			
+			.mobile-card-header {
+				flex-direction: column;
+				gap: 0.75rem;
+				align-items: flex-start;
+			}
+			
+			.mobile-card-content .grid-cols-2 {
+				grid-template-columns: 1fr;
+				gap: 0.75rem;
+			}
+			
+			.mobile-field {
+				flex-direction: row;
+				justify-content: space-between;
+				align-items: center;
+			}
+			
+			.mobile-label {
+				min-width: 120px;
+			}
+		}
+
+		/* Responsive para controles */
+		@media (max-width: 768px) {
+			.pagos-header {
+				flex-direction: column;
+				gap: 1rem;
+			}
+			
+			.pagos-controls {
+				justify-content: flex-start;
+			}
+			
+			.pagos-buttons {
+				width: 100%;
+			}
+			
+			.pagos-buttons .btn-action {
+				width: 100%;
+				justify-content: center;
+			}
+			
+			.historial-pagination {
+				flex-direction: column;
+				gap: 1rem;
+				align-items: flex-start;
+			}
+		}
+
+		/* === ESTILOS PARA MODALES === */
+		.modal-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(0, 0, 0, 0.5);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			z-index: 1001;
+			padding: 1rem;
+		}
+
+		.modal-content {
+			background: white;
+			border-radius: 1rem;
+			width: 100%;
+			max-width: 500px;
+			max-height: 90vh;
+			overflow-y: auto;
+			box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+		}
+
+		.modal-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 1.5rem;
+			border-bottom: 1px solid #e5e7eb;
+		}
+
+		.modal-title {
+			color: #2F5D50;
+			font-size: 1.25rem;
+			font-weight: 600;
+			margin: 0;
+		}
+
+		.modal-body {
+			padding: 1.5rem;
+		}
+
+		.modal-footer {
+			padding: 1.5rem;
+			border-top: 1px solid #e5e7eb;
+			display: flex;
+			justify-content: flex-end;
+		}
+
+		.close-button {
+			background: none;
+			border: none;
+			color: #6b7280;
+			cursor: pointer;
+			padding: 0.5rem;
+			border-radius: 0.375rem;
+			transition: background 0.3s;
+		}
+
+		.close-button:hover {
+			background: #f3f4f6;
+			color: #374151;
+		}
+
+		.btn-editar-accion {
+			background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+			color: white;
+			border: none;
+			border-radius: 0.75rem;
+			padding: 0.75rem 1.5rem;
+			font-weight: 500;
+			cursor: pointer;
+			transition: all 0.3s ease-in-out;
+			box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+			min-width: 160px;
+		}
+
+		.btn-editar-accion:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+		}
+
+		.btn-eliminar-accion {
+			background: linear-gradient(135deg, #ef4444, #dc2626);
+			color: white;
+			border: none;
+			border-radius: 0.75rem;
+			padding: 0.75rem 1.5rem;
+			font-weight: 500;
+			cursor: pointer;
+			transition: all 0.3s ease-in-out;
+			box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+			min-width: 160px;
+		}
+
+		.btn-eliminar-accion:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+		}
+
+		.btn-eliminar-confirmar {
+			background: linear-gradient(135deg, #ef4444, #dc2626);
+			color: white;
+			border: none;
+			border-radius: 0.5rem;
+			padding: 0.75rem 1.5rem;
+			font-weight: 500;
+			cursor: pointer;
+			transition: all 0.3s ease-in-out;
+		}
+
+		.btn-eliminar-confirmar:hover {
+			background: linear-gradient(135deg, #dc2626, #b91c1c);
+		}
+
+		.btn-secondary {
+			background: #6b7280;
+			color: white;
+			border: none;
+			border-radius: 0.5rem;
+			padding: 0.75rem 1.5rem;
+			font-weight: 500;
+			cursor: pointer;
+			transition: all 0.3s ease-in-out;
+		}
+
+		.btn-secondary:hover {
+			background: #4b5563;
+		}
+	</style>
+</Layout>
