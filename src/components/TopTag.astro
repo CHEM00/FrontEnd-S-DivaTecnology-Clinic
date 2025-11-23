@@ -1,10 +1,9 @@
 ---
 import axios from 'axios';
-// const Paciente = await axios.get('http://localhost:3000/api/v1/Pacientes').then(res => res.data);
+const Paciente = await axios.get('http://localhost:3001/api/v1/Pacientes').then(res => res.data);
 ---
 <div class="w-full h-20 bg-white flex items-center justify-between border-b shadow-sm border-gray-200">
-    <h1 class="ml-6">Bienvenido</h1>
-    <!-- <h1 class="font-serif text-2xl text-white ml-10">Bienvenido {Paciente[0].Nombre} {Paciente[0].Apellido}</h1> -->
+    <h1 class="font-serif text-2xl text-white ml-10">Bienvenido {Paciente[0].Nombre} {Paciente[0].Apellido}</h1>
     <div>
         <div class="mr-10">
             <button id="Logout" class="bg-[#2F5D50] text-white px-4 py-2 rounded shadow-sm hover:bg-[#23483c] transition">

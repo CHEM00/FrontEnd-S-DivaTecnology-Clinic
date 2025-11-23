@@ -3,7 +3,7 @@ import NavBar from "../components/NavBar.astro";
 import Layout from "../layouts/Layout.astro";
 import axios from "axios";
 
-const table = await axios.get("http://localhost:3000/api/v1/Productos&Servicios").then((res) => res.data);
+const table = await axios.get("http://localhost:3001/api/v1/Productos&Servicios").then((res) => res.data);
 ---
 
 
@@ -44,9 +44,9 @@ const table = await axios.get("http://localhost:3000/api/v1/Productos&Servicios"
                             {table.map((ProductoServicio) => (
 							<tr>
 								<td><input type="checkbox" /></td>
-								<td>{ProductoServicio.Nombre}</td>
-								<td>{`$${ProductoServicio.Precio}`}</td>
-								<td>{ProductoServicio.Descripcion}</td>
+								<td>{ProductoServicio.name}</td>
+								<td>{`$${ProductoServicio.value}`}</td>
+								<td>{ProductoServicio.description}</td>
 								<td>Servicio</td>
 								<td>
 									<button class="btn-action">Acciones</button>

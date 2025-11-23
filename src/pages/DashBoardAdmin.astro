@@ -2,151 +2,184 @@
 import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 ---
-<Layout>
-	<div class="flex h-screen dashboard-container">
+
+<Layout title="Administrador">
+	<div class="pagos-container">
+		<!-- Panel lateral izquierdo -->
 		<NavBar />
-		<div class="flex-1 flex flex-col overflow-hidden">
-			<!-- Header -->
-			<header class="dashboard-header shadow-sm">
-				<div class="flex justify-between items-center px-6 py-4">
-					<h1>Dashboard</h1>
-					<div class="flex items-center space-x-4">
-						<span class="welcome-text">Bienvenido, Administrador</span>
-						<button onclick="logout()" class="logout-button">
-							Cerrar Sesión
-						</button>
+		<!-- Contenido principal -->
+		<div class="flex-1 flex flex-col">
+            <main>
+				<div class="parent h-screen">
+					<div class="top">
+						<div class="div1 m-auto w-full px-4 border-gray-300 border p-10 bg-white/90 shadow-lg rounded-lg h-auto">
+							<!-- Row: title left, switch/select right -->
+							<div class="flex items-center justify-between p-5">
+								<h2 class="text-xl font-semibold">Venta de adicionales</h2>
+								<div>
+									<select class="border border-gray-300 rounded px-3 py-1 bg-white text-sm">
+										<option value="today">Hoy</option>
+										<option value="yesterday">Ayer</option>
+										<option value="lastWeek">Semana pasada</option>
+										<option value="thisMonth">Mes</option>
+									</select>
+								</div>
+							</div>
+							<!-- Chart container: ocupa casi todo el espacio disponible -->
+							<div class="p-4 rounded h-1/2 flex flex-col">
+								<div id="columnchart_material" class="w-full flex-1"></div>
+							</div>
+						</div>
+
+						<!-- Contenedor donde iran los ingresos hasta el momento de acuerdo a las citas concluidas -->
+					<div class="div2 m-auto w-full h-full px-4 border-gray-300 border p-10 bg-white/90 shadow-lg rounded-lg">
+							<!-- Row: title left, switch/select right -->
+							<div class="flex items-center justify-between p-5">
+								<h2 class="text-xl font-semibold">Ingreso actual en curso</h2>
+								<div>
+									<select id="" class="border border-gray-300 rounded px-3 py-1 bg-white text-sm">
+										<option value="today">Hoy</option>
+										<option value="yesterday">Ayer</option>
+										<option value="lastWeek">Semana pasada</option>
+										<option value="thisMonth">Mes</option>
+									</select>
+								</div>
+							</div>
+							<!-- Chart container: ocupa casi todo el espacio disponible -->
+							<div class="p-4 rounded h-1/2 flex flex-col-2 justify-between">
+								<div class="h-auto w-auto flex items-center justify-center text-2xl font-bold rounded">
+									$450.00 MXN
+								</div>
+								<div class="flex justify-center items-center">
+									<p>Ingresos generados por citas concluidas hasta el momento.</p>
+								</div>
+							</div>
+						</div>
+					
+						<div class="div3 m-auto w-full h-full px-4 border-gray-300 border p-10 bg-white/90 shadow-lg rounded-lg">
+							<!-- Row: title left, switch/select right -->
+							<div class="flex items-center justify-between p-5">
+								<h2 class="text-xl font-semibold">Número de citas totales: 6</h2>
+								<div>
+									<select id="" class="border border-gray-300 rounded px-3 py-1 bg-white text-sm">
+										<option value="today">Hoy</option>
+										<option value="yesterday">Ayer</option>
+										<option value="lastWeek">Semana pasada</option>
+										<option value="thisMonth">Mes</option>
+									</select>
+								</div>
+							</div>
+							<!-- Chart container: ocupa casi todo el espacio disponible -->
+							<div class="p-4 rounded h-1/2 flex flex-col">
+								<div class="w-auto flex items-center justify-between text-2xl rounded h-auto">
+									<ol class="justify-items-start flex-row">
+										<li><p class="text-black">Concluidas: 1</p></li>
+										<li><p class="text-black">Confirmadas: 3</p></li>
+										<li><p class="text-black">Pendientes: 2</p></li>
+										<li><p class="text-black">Canceladas: 0</p></li>
+										<li><p class="text-black">No asistidas: 0</p></li>
+									</ol>
+								</div>
+							</div>
+						</div>
+					</div>
+					
+
+				<div class="div4 box-border m-auto w-full h-full px-4 border-gray-300 border p-5 bg-white/90 shadow-lg rounded-lg overflow-y-auto">
+					<div class="w-auto h-auto overflow-hidden"> <!-- Contenedor que tendra el menu de citas -->
+						<div class="flex justify-between justify-items-center">
+							<h2><p>Citas en curso</p></h2>
+							<input type="date" name="" id="" class="w-auto h-auto">
+						</div>
+						<!-- Contenedor de las fichas de las citas -->
+						<div class="mt-4 space-y-4">
+							<!-- Ficha de cita individual -->
+							<div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md">
+								<div class="flex justify-between items-center mb-2 font-bold">
+									<p class="text-xl">Hora: 10:00 AM</p>									
+								</div>
+								<h3 class="text-lg mb-2">Paciente: María López</h3>
+								<p class="mb-1">Valoracion</p>
+							</div>
+						</div>
+					</div>
+					<div class="w-auto h-auto overflow-hidden"> <!-- Contenedor que tendra el menu de citas -->
+						<div class="mt-4 space-y-4">
+							<div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md">
+								<div class="flex justify-between items-center mb-2 font-bold">
+									<p class="text-xl">Hora: 11:00 AM</p>									
+								</div>
+								<h3 class="text-lg mb-2">Paciente: Juan Pérez</h3>
+								<p class="mb-1">Masaje relajante - $800.00 MXN</p>
+							</div>
+						</div>
+					</div>
+					<div class="w-auto h-auto overflow-hidden"> <!-- Contenedor que tendra el menu de citas -->
+						<div class="mt-4 space-y-4">
+							<div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md">
+								<div class="flex justify-between items-center mb-2 font-bold">
+									<p class="text-xl">Hora: 01:00 PM</p>									
+								</div>
+								<h3 class="text-lg mb-2">Paciente: Ana García</h3>
+								<p class="mb-1">Terapia física - $500.00 MXN</p>
+							</div>
+						</div>
+					</div>
+					<div class="w-auto h-auto overflow-hidden"> <!-- Contenedor que tendra el menu de citas -->
+						<div class="mt-4 space-y-4">
+							<div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md">
+								<div class="flex justify-between items-center mb-2 font-bold">
+									<p class="text-xl">Hora: 03:00 PM</p>									
+								</div>
+								<h3 class="text-lg mb-2">Paciente: Luis Martínez</h3>
+								<p class="mb-1">Paquete: 5 sesiones | Numero de sesion: 2</p>
+							</div>
+						</div>
+					</div>
+					<div class="w-auto h-auto overflow-hidden"> <!-- Contenedor que tendra el menu de citas -->
+						<div class="mt-4 space-y-4">
+							<div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md">
+								<div class="flex justify-between items-center mb-2 font-bold">
+									<p class="text-xl">Hora: 04:30 PM</p>									
+								</div>
+								<h3 class="text-lg mb-2">Paciente: Carla Rodríguez</h3>
+								<p class="mb-1">Masaje terapéutico - $700.00 MXN</p>
+							</div>
+						</div>
 					</div>
 				</div>
-			</header>
-
-			<main class="dashboard-main">
-				<!-- Estadísticas principales -->
-				<div class="dashboard-grid">
-					<div class="dashboard-stat-card text-white">
-						<div class="dashboard-stat-content">
-							<div class="dashboard-stat-info">
-								<p class="dashboard-stat-title">Total User</p>
-								<p class="dashboard-stat-value">40,689</p>
-								<p class="dashboard-stat-subtitle">8.5% Up from yesterday</p>
-							</div>
-							<div class="dashboard-stat-icon">
-								<i class="fa-solid fa-users"></i>
-							</div>
-						</div>
-					</div>
-
-					<div class="dashboard-stat-card text-white">
-						<div class="dashboard-stat-content">
-							<div class="dashboard-stat-info">
-								<p class="dashboard-stat-title">Total Order</p>
-								<p class="dashboard-stat-value">10,293</p>
-								<p class="dashboard-stat-subtitle">1.3% Up from past week</p>
-							</div>
-							<div class="dashboard-stat-icon">
-								<i class="fa-solid fa-shopping-cart"></i>
-							</div>
-						</div>
-					</div>
-
-					<div class="dashboard-stat-card text-white">
-						<div class="dashboard-stat-content">
-							<div class="dashboard-stat-info">
-								<p class="dashboard-stat-title">Total Sales</p>
-								<p class="dashboard-stat-value">$89,000</p>
-								<p class="dashboard-stat-subtitle">4.3% Down from yesterday</p>
-							</div>
-							<div class="dashboard-stat-icon">
-								<i class="fa-solid fa-chart-line"></i>
-							</div>
-						</div>
-					</div>
-
-					<div class="dashboard-stat-card text-white">
-						<div class="dashboard-stat-content">
-							<div class="dashboard-stat-info">
-								<p class="dashboard-stat-title">Total Pending</p>
-								<p class="dashboard-stat-value">2,040</p>
-								<p class="dashboard-stat-subtitle">1.8% Up from yesterday</p>
-							</div>
-							<div class="dashboard-stat-icon">
-								<i class="fa-solid fa-clock"></i>
-							</div>
-						</div>
+				<div class="div5 p-5 border border-gray-300 rounded-lg bg-white/90 shadow-lg">
+					<!-- Detalles adicionales o información extendida -->
+					<h2 class="text-xl font-semibold mb-2 flex justify-center">Detalles de la cita</h2>
+					<div class="flex justify-center items-center">
+						<p class="text-black">Selecciona una cita para ver más detalles.</p>
 					</div>
 				</div>
-
-				<!-- Gráfica de ventas y próximas citas -->
-				<div class="dashboard-stats-grid">
-					<!-- Gráfica de ventas -->
-					<div class="dashboard-content-card">
-						<h3 class="dashboard-card-title">Sales Details</h3>
-						<div class="sales-chart-container">
-							<div class="sales-chart-placeholder">
-								<div class="sales-chart-graphic">
-									<span class="sales-chart-percentage">54%</span>
-								</div>
-								<p class="sales-chart-text">Gráfica de ventas mensuales</p>
-							</div>
-						</div>
-					</div>
-
-					<!-- Próximas citas -->
-					<div class="dashboard-content-card">
-						<h3 class="dashboard-card-title">Próximas Citas Hoy</h3>
-						<div class="appointments-list">
-							<div class="appointment-item">
-								<div class="appointment-info">
-									<p class="appointment-time">10:00 AM</p>
-									<p class="appointment-patient">PACIENTE 1</p>
-								</div>
-								<span class="status-pending">PENDIENTE</span>
-							</div>
-							<div class="appointment-item">
-								<div class="appointment-info">
-									<p class="appointment-time">10:00 AM</p>
-									<p class="appointment-patient">PACIENTE 2</p>
-								</div>
-								<span class="status-pending">PENDIENTE</span>
-							</div>
-							<div class="appointment-item">
-								<div class="appointment-info">
-									<p class="appointment-time">11:00 AM</p>
-									<p class="appointment-patient">PACIENTE 3</p>
-								</div>
-								<span class="status-confirmed">CONFIRMADA</span>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Acciones rápidas -->
-				<div class="dashboard-actions-grid">
-					<a href="/Paciente" class="quick-action-card">
-						<i class="fa-solid fa-user-plus quick-action-icon"></i>
-						<p class="quick-action-text">Registrar Paciente</p>
-					</a>
-					<a href="/Agenda" class="quick-action-card">
-						<i class="fa-solid fa-calendar-days quick-action-icon"></i>
-						<p class="quick-action-text">Agenda</p>
-					</a>
-					<a href="/ProductoServicio" class="quick-action-card">
-						<i class="fa-solid fa-cart-plus quick-action-icon"></i>
-						<p class="quick-action-text">Productos/Servicios</p>
-					</a>
-					<a href="/HistorialCita" class="quick-action-card">
-						<i class="fa-solid fa-box-archive quick-action-icon"></i>
-						<p class="quick-action-text">Historial de Citas</p>
-					</a>
-				</div>
+			</div>	
 			</main>
 		</div>
 	</div>
-
-	<script>
-		function logout() {
-			localStorage.removeItem('token');
-			localStorage.removeItem('userRole');
-			window.location.href = '/';
-		}
-	</script>
 </Layout>
+
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+    	google.charts.load('current', {'packages':['bar']});
+    	google.charts.setOnLoadCallback(drawChart);
+  		
+		function drawChart() {
+        	var data = google.visualization.arrayToDataTable([
+        	['', 'Nayelli', 'Jacqueline', 'Jessika'],
+			['Hoy', 1, 3, 2]
+		]);
+
+        var options = {
+        	chart: {
+            	title: 'Adicionales vendidos por fisios',
+        	}
+        };
+
+        var chart = new google.charts.Bar(document.getElementById('columnchart_material'));
+
+        chart.draw(data, google.charts.Bar.convertOptions(options));
+    }
+</script>

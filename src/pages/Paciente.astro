@@ -4,7 +4,7 @@ import NavBar from "../components/NavBar.astro";
 import Boton from "../components/Boton.astro";
 import axios from "axios";
 
-const table = await axios.get("http://localhost:3000/api/v1/Pacientes").then((res) => res.data);
+const table = await axios.get("http://localhost:3001/api/v1/Pacientes").then((res) => res.data);
 ---
 
 
@@ -48,12 +48,12 @@ const table = await axios.get("http://localhost:3000/api/v1/Pacientes").then((re
                             {table.map((Paciente) => (
 							<tr>
 								<td><input type="checkbox" /></td>
-								<td>{Paciente.Nombre}</td>
-								<td>{Paciente.ApellidoPaterno}</td>
-								<td>{Paciente.ApellidoMaterno}</td>
-								<td>{Paciente.Telefono}</td>
-								<td>{Paciente.Correo}</td>
-								<td>{Paciente.Codigo}</td>
+								<td>{Paciente.firstname}</td>
+								<td>{Paciente.lastname}</td>
+								<td>{Paciente.motherlastname}</td>
+								<td>{Paciente.phone}</td>
+								<td>{Paciente.email}</td>
+								<td>{Paciente.code}</td>
 								<td>
 									<button class="btn-action">Acciones</button>
 								</td>

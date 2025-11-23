@@ -1,18 +1,18 @@
 ---
 const iconos = [
     { icon: "fa-bars", label: "Menú", href: "#" },
-    { icon: "fa-house", label: "Inicio", href: "/DashBoardEmpleado" },
+    { icon: "fa-house", label: "Inicio", href: "/DashboardAdmin" },
     { icon: "fa-user-plus", label: "Registrar paciente", href: "/Paciente" },
     { icon: "fa-cart-plus", label: "Productos y servicios", href: "/ProductoServicio" },
     { icon: "fa-calendar-days", label: "Agenda", href: "/Agenda" },
     { icon: "fa-box-archive", label: "Historial de citas", href: "/HistorialCita" },
     { icon: "fa-money-bill", label: "Pagos", href: "/Pago" },
-    { icon: "fa-universal-access", label: "Roles y permisos", href: "/RolesPermiso" },
+    { icon: "fa-universal-access", label: "Roles y permisos", href: "/Roles" },
     { icon: "fa-user-nurse", label: "Empleados", href: "/Empleado" },
     { icon: "fa-gear", label: "Configuración", href: "/configuracion" },
 ];
 ---
-<div id="Contenedor" class="transition-all duration-300 w-16 h-screen bg-[#2E7D6D]" tabindex="0">
+<div id="Contenedor" class="transition-all duration-300 w-16 h-full bg-[#2E7D6D]" tabindex="0">
     <ol id="NavList" class="w-full h-full flex flex-col">
         {iconos.map((item, idx) => (
         <li
@@ -20,12 +20,12 @@ const iconos = [
             class="flex-1 flex items-center justify-center cursor-pointer group"
         >
             {idx === 0 ? (
-                <a href={item.href} onclick="toggleNavBar(); return false;" class="flex items-center w-full h-full justify-center">
-                    <i class={`fa-solid ${item.icon} fa-xl`}></i>
+                <a href={item.href} onclick="toggleNavBar(); return false;" class="flex items-center w-full h-full justify-center hover:bg-gray-600">
+                    <i class={`fa-solid text-white ${item.icon} fa-xl`}></i>
                     <span class="ml-4 hidden label">{item.label}</span>
                 </a>
             ) : (
-                <a href={item.href} class="flex items-center w-full h-full justify-center">
+                <a href={item.href} class="flex items-center w-full h-full justify-center text-[#FFFFFF] hover:bg-gray-600">
                     <i class={`fa-solid ${item.icon} fa-xl`}></i>
                     <span class="ml-4 hidden label">{item.label}</span>
                 </a>

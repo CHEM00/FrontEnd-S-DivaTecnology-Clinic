@@ -1,8 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
 <Layout>
 	<div class="flex flex-col md:flex-row h-screen overflow-hidden">
@@ -15,25 +12,60 @@ import Layout from '../layouts/Layout.astro';
 					<span class="text-2xl font-semibold mb-4">Inicio de sesión</span>
 					<div class="w-full flex flex-col space-y-2">
 						<label class="text-sm font-medium" for="correo">Ingrese su código de paciente</label>
+						<p id="api-result" class="hidden text-red-500">Código incorrecto</p>
 						<input
-							id="codigo"
+							id="InputCodigo"
 							type="text"
 							placeholder="1234567890"
 							class="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#234D20]"
 						/>
-                        <p>Si no conoce su código de paciente, solicitelo a la clinica</p>
+                        <p>Si no conoce su código de paciente o lo olvidó, solicítelo a la clínica</p>
 					</div>
                     <div class="w-full flex justify-between">
                         <a href="/" class="mt-4 px-6 py-2 bg-[#234D20] text-white rounded hover:bg-[#1a3a15] transition flex items-center justify-center h-10">
                             Regresar
-                        </a>
-					    <button class="mt-4 px-6 py-2 bg-[#234D20] text-white rounded hover:bg-[#1a3a15] transition">
-						    Iniciar sesión
-					    </button>
+                        </a >
+						<button
+                            id="loginBtn"
+                            type="button"
+                            class="mt-4 px-6 py-2 bg-[#234D20] text-white rounded hover:bg-[#1a3a15] transition flex items-center justify-center h-10"
+                        >
+                            Iniciar sesión
+                        </button>
                     </div>
-				</div>
-			</form>
-		</div>
-	</div>
+                </div>
+            </form>
+        </div>
+    </div>
 </Layout>
+
+<div id="api-result" class="hidden p-4 bg-white text-sm overflow-auto"></div>
+
+<script type="module">
+
+  const btn = document.getElementById('loginBtn');
+  const out = document.getElementById('api-result');
+
+  btn.addEventListener('click', async () => {
+    try {
+      const { data: Codigo } = await axios.get('http://localhost:3000/api/v1/Pacientes');
+      const inputVal = document.getElementById('InputCodigo').value;
+      if (Codigo && Codigo.length > 0 && inputVal === Codigo[0].Codigo) {
+		console.log('Código correcto');
+		window.location.href = '/DashboardPaciente';
+        return;
+      } else {
+        console.log('Código incorrecto');
+		console.log(Codigo[0].Codigo + ' vs ' + inputVal);
+		document.getElementById('api-result').classList.remove('hidden');
+        out.textContent = 'Código incorrecto';
+        out.classList.remove('hidden');
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      out.textContent = `Error: ${error.message}`;
+      out.classList.remove('hidden');
+    }
+  });
+</script>
 

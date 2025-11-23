@@ -1,0 +1,33 @@
+<div id="defaultModal" tabindex = "-1" aria-hidden="true" class="hidden fixed inset-0 items-center justify-center z-50">
+        <div class="bg-[#E7FFEF] p-8 rounded-2xl shadow-2xl w-full max-w-lg border border-black relative">
+            {/* Encabezado */}
+            <div class="flex items-center justify-between mb-6">
+                <span class="font-sans text-2xl font-semibold text-gray-800">Registrar paciente</span>
+                <button data-modal-toggle="defaultModal" class="text-2xl font-bold text-gray-500 hover:text-gray-700 transition-colors duration-200">&times;</button>
+            </div>
+            {/* Contenido */}
+            <div class="flex flex-col items-center">
+                <div class="w-24 h-24 rounded-full shadow-md overflow-hidden mb-6 border-2 border-[#8eb79f] bg-white flex items-center justify-center">
+                    <img src="LogoJess.png" alt="Imagen del paciente" class="object-cover w-full h-full" />
+                </div>
+                <form class="w-full grid grid-cols-2 gap-4">
+                    <input type="text" placeholder="Nombre" class="col-span-1 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8eb79f]" />
+                    <input type="text" placeholder="Correo" class="col-span-1 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8eb79f]" />
+                    <input type="tel" placeholder="Teléfono" class="col-span-1 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8eb79f]" />
+                    <select name="" id="" class="col-span-1 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8eb79f]">
+                        <option value=""></option>
+                        <option value="">Amputación</option>
+                        <option value="">Artristis</option>
+                    </select>
+                    <input type="date"placeholder="Fecha de nacimiento" class="col-span-2 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8eb79f]" />
+                    <div class="col-span-2 flex justify-between mt-4">
+                        <button class="bg-[#8eb79f] text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-[#6fa885] transition-colors duration-200">
+                            Regresar
+                        </button>
+                        <button class="bg-[#8eb79f] text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-[#6fa885] transition-colors duration-200">
+                            Registrar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>

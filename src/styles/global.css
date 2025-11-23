@@ -13,10 +13,6 @@ li {
     color: #ffffff; /* Cambia este valor al color que desees */
 }
 
-li:hover{
-    background-color:#11030E;
-}
-
 /*___________________________________________________________________________________*/
 
 #Contenedor {
@@ -766,6 +762,7 @@ td {
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(35, 77, 32, 0.3);
 }
+/*--------------------------------------------------*/
 /* Ajuste general de las tablas */
 #TableContainer {
   padding: calc(var(--spacing) * 8)
@@ -910,186 +907,52 @@ td {
   
 }
 
-/* ==== HEADER DE HISTORIAL DE CITAS ==== */
-.pagos-content header {
-  width: 100%;
-  background-color: #ffffff;
-  border-bottom: 1px solid #d1d5db; /* gris claro */
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  padding: 1rem 2rem;
-}
 
-/* Asegura que ocupe toda la cabecera visible */
-.pagos-container {
+.parent {
   display: grid;
-  grid-template-columns: auto 1fr;
-  width: 100%;
-  min-height: 100vh;
+  grid-template-columns: repeat(2, 1fr); /* 2 columnas para la fila inferior (mitades iguales) */
+  grid-template-rows: auto 1fr;           /* fila superior (auto) + fila inferior */
+  gap: 1rem;
+  padding: 2rem;
+  grid-template-areas:
+    "top top"
+    "div4 div5";
 }
 
-.pagos-content {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
+/* contenedor que ocupa la fila superior completa y dentro tendrá 3 columnas */
+.top {
+  grid-area: top;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 columnas solo para la fila superior */
+  gap: 1rem;
 }
 
-/* Estilos específicos para productos y servicios */
-  .productos-container {
-    @apply grid grid-cols-[auto_1fr] min-h-screen bg-[#F7F9FA];
-  }
-  
-  .productos-content {
-    @apply flex flex-col p-8 bg-[#F7F9FA] rounded-l-[1.5rem];
-  }
-  
-  .productos-header {
-    @apply grid grid-cols-[auto_1fr_auto] items-center gap-6 mb-6;
-  }
-  
-  .productos-title {
-    @apply text-[#234d20] text-[1.8rem] font-bold whitespace-nowrap m-0;
-  }
-  
-  .productos-controls {
-    @apply flex items-center justify-end gap-4 w-full;
-  }
-  
-  .productos-search-input {
-    @apply border border-[#a8d5ba] rounded-full py-[0.45rem] px-[0.9rem] bg-white text-[0.95rem] w-full max-w-[280px] transition-all duration-200 ease-in-out m-0;
-  }
-  
-  .productos-search-input:focus {
-    @apply outline-none border-[#234d20] shadow-[0_0_0_3px_rgba(35,77,32,0.15)];
-  }
-  
-  .productos-buttons {
-    @apply flex gap-2 ml-auto;
-  }
-  
-  .productos-table-wrapper {
-    @apply bg-white rounded-xl overflow-hidden shadow-[0_5px_12px_rgba(0,0,0,0.08)] mt-8;
-  }
-  
-  .productos-table {
-    @apply w-full border-collapse text-center border-none;
-  }
-  
-  .productos-table thead {
-    @apply bg-[#234d20] text-white;
-  }
-  
-  .productos-table th,
-  .productos-table td {
-    @apply py-3 px-4 border-b border-[#e5e7eb];
-  }
-  
-  .productos-table tbody tr {
-    @apply transition-colors duration-200;
-  }
-  
-  .productos-table tbody tr:hover {
-    @apply bg-[#f3fdf6];
-  }
-  
-  .productos-table input[type="checkbox"] {
-    @apply accent-[#234d20];
-  }
+/* Los elementos existentes .div1 .div2 .div3 deben ahora estar dentro de .top en el HTML.
+   Estas reglas aseguran que se posicionen correctamente dentro del grid anidado. */
+.top .div1 { /* columna 1 del top */ }
+.top .div2 { /* columna 2 del top */ }
+.top .div3 { /* columna 3 del top */ }
 
-  /* Asegurar que los botones de acciones en la tabla tengan el mismo estilo */
-  .productos-table .btn-action {
-    @apply bg-gradient-to-br from-[#234d20] to-[#2f5d50] text-white font-medium border-none rounded-full py-[0.45rem] px-4 cursor-pointer text-[0.9rem] transition-all duration-200 ease-in-out shadow-[0_2px_5px_rgba(35,77,32,0.2)] whitespace-nowrap;
-  }
+/* Segunda fila: dos columnas iguales */
+.div4 { grid-area: div4; } /* mitad izquierda */
+.div5 { grid-area: div5; } /* mitad derecha (nuevo) */
 
-  .productos-table .btn-action:hover {
-    @apply -translate-y-0.5 shadow-[0_4px_10px_rgba(35,77,32,0.3)];
-  }
-  /* === UTILIDADES REUTILIZABLES PARA VISTAS SIMILARES === */
-
-/* Estilos base para botones de acción - AHORA MÁS ESPECÍFICOS */
-.btn-action {
-  @apply bg-gradient-to-br from-[#234d20] to-[#2f5d50] text-white font-medium border-none rounded-full py-[0.45rem] px-4 cursor-pointer text-[0.9rem] transition-all duration-200 ease-in-out shadow-[0_2px_5px_rgba(35,77,32,0.2)] whitespace-nowrap;
-}
-
-.btn-action:hover {
-  @apply -translate-y-0.5 shadow-[0_4px_10px_rgba(35,77,32,0.3)];
-}
-
-/* Asegurar que los botones en las tablas tengan el mismo estilo */
-.productos-table .btn-action,
-.pagos-table .btn-action {
-  @apply bg-gradient-to-br from-[#234d20] to-[#2f5d50] text-white font-medium border-none rounded-full py-[0.45rem] px-4 cursor-pointer text-[0.9rem] transition-all duration-200 ease-in-out shadow-[0_2px_5px_rgba(35,77,32,0.2)] whitespace-nowrap;
-}
-
-.productos-table .btn-action:hover,
-.pagos-table .btn-action:hover {
-  @apply -translate-y-0.5 shadow-[0_4px_10px_rgba(35,77,32,0.3)];
-}
-
-/* Responsive para vistas de tabla */
-@media (max-width: 1024px) {
-  .productos-header,
-  .pagos-header {
-    @apply grid-cols-1 gap-4 mb-4;
-  }
-  
-  .productos-title,
-  .pagos-title {
-    @apply text-center;
-  }
-  
-  .productos-controls,
-  .pagos-controls {
-    @apply justify-center;
-  }
-}
-
+/* Responsive: en pantallas pequeñas apilar todo */
 @media (max-width: 768px) {
-  .productos-content,
-  .pagos-content {
-    @apply p-4;
+  .parent {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "top"
+      "div4"
+      "div5";
   }
 
-  .productos-title,
-  .pagos-title {
-    @apply text-[1.5rem];
-  }
-
-  .productos-controls,
-  .pagos-controls {
-    @apply flex-col items-stretch gap-3;
-  }
-  
-  .productos-search-input,
-  .pagos-search-input {
-    @apply max-w-full;
-  }
-  
-  .productos-buttons,
-  .pagos-buttons {
-    @apply ml-0 justify-center;
-  }
-
-  .btn-action {
-    @apply w-full;
-  }
-
-  .productos-table-wrapper,
-  .pagos-table-wrapper {
-    @apply overflow-x-auto;
+  .top {
+    grid-template-columns: 1fr; /* top se apila en una columna */
   }
 }
 
-@media (max-width: 480px) {
-  .productos-header,
-  .pagos-header {
-    @apply gap-3;
-  }
-  
-  .productos-title,
-  .pagos-title {
-    @apply text-[1.3rem];
-  }
-}
 
 /* === DASHBOARD EMPLEADO - ESTILOS REUTILIZABLES === */
 
