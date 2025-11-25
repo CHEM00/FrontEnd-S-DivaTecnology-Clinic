@@ -5,7 +5,19 @@ import HeaderEmpleado from '../components/HeaderEmpleado.astro';
 import FormModal from "../components/modals/FormModal.astro";
 import axios from "axios";
 
-const table = await axios.get("http://localhost:3001/api/v1/Productos&Servicios").then((res) => res.data);
+let table = [];
+try {
+  const response = await fetch('http://localhost:3001/api/v1/Roles');
+  if (response.ok) {
+    table = await response.json();
+  } else {
+    console.error('Error en la respuesta:', response.status);
+    table = [];
+  }
+} catch (error) {
+  console.error('Error fetching data:', error);
+  table = [];
+}
 
 // Función para escapar caracteres problemáticos en JavaScript
 const escapeJS = (str) => {
@@ -18,15 +30,15 @@ const escapeJS = (str) => {
 };
 ---
 
-<Layout title="Productos y Servicios">
+<Layout title="Roles y Permisos">
 	<div class="pagos-container">
 		<NavBar />
 		<div class="flex-1 flex flex-col overflow-hidden">
-			<HeaderEmpleado titulo="PRODUCTOS Y SERVICIOS" nombreUsuario="EMPLEADO" />
+			<HeaderEmpleado titulo="ROLES Y PERMISOS" nombreUsuario="EMPLEADO" />
             <main class="pagos-content">
                 <!-- Header con título y botón agregar -->
                 <div class="pagos-header">
-                    <h1 class="pagos-title">LISTA DE PRODUCTOS Y SERVICIOS</h1>
+                    <h1 class="pagos-title">LISTA DE ROLES</h1>
                     <div class="pagos-controls">
                         <div class="pagos-buttons">
                             <button 
@@ -36,7 +48,7 @@ const escapeJS = (str) => {
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                 </svg>
-                                Agregar Producto/Servicio
+                                Agregar Rol
                             </button>
                         </div>
                     </div>
@@ -46,40 +58,27 @@ const escapeJS = (str) => {
                 <div class="table-responsive-container">
                     <!-- Vista Desktop Completa (1400px+) -->
                     <div class="table-view table-desktop-full">
-                        <div class="table-header grid-cols-6">
+                        <div class="table-header grid-cols-3">
                             <div class="col-checkbox">Seleccionar</div>
                             <div class="col-nombre">Nombre</div>
-                            <div class="col-precio">Precio</div>
-                            <div class="col-descripcion">Descripción</div>
-                            <div class="col-tipo">Tipo</div>
                             <div class="col-acciones">Acciones</div>
                         </div>
                         
                         <div class="table-body">
-                            {table.map((productoServicio) => {
-                                const nombreEscaped = escapeJS(productoServicio.name);
-                                const precioEscaped = escapeJS(productoServicio.value);
-                                const descripcionEscaped = escapeJS(productoServicio.description);
-                                const tipoEscaped = escapeJS(productoServicio.type);
-                                const nombreCompletoEscaped = escapeJS(productoServicio.name);
+                            {table.map((rol) => {
+                                const nombreEscaped = escapeJS(rol.name);
+                                const nombreCompletoEscaped = escapeJS(rol.name);
                                 
                                 return (
-                                    <div class="table-row grid-cols-6">
+                                    <div class="table-row grid-cols-3">
                                         <div class="col-checkbox">
-                                            <input type="checkbox" class="producto-servicio-checkbox" value={productoServicio.id} />
+                                            <input type="checkbox" class="rol-checkbox" value={rol.id} />
                                         </div>
-                                        <div class="col-nombre">{productoServicio.name}</div>
-                                        <div class="col-precio">${productoServicio.value}</div>
-                                        <div class="col-descripcion">{productoServicio.description}</div>
-                                        <div class="col-tipo">
-                                            <span class={`status-badge ${productoServicio.type === 'service' ? 'service' : 'additional'}`}>
-                                                {productoServicio.type === 'service' ? 'Servicio' : 'Adicional'}
-                                            </span>
-                                        </div>
+                                        <div class="col-nombre">{rol.name}</div>
                                         <div class="col-acciones">
                                             <button 
                                                 class="btn-action"
-                                                onclick={`abrirModalAcciones(${productoServicio.id}, '${nombreEscaped}', '${precioEscaped}', '${descripcionEscaped}', '${tipoEscaped}', '${nombreCompletoEscaped}')`}
+                                                onclick={`abrirModalAcciones(${rol.id}, '${nombreEscaped}', '${nombreCompletoEscaped}')`}
                                             >
                                                 Acciones
                                             </button>
@@ -92,38 +91,27 @@ const escapeJS = (str) => {
 
                     <!-- Vista Desktop Compacta (1200px - 1399px) -->
                     <div class="table-view table-desktop-compact">
-                        <div class="table-header grid-cols-5">
+                        <div class="table-header grid-cols-3">
                             <div class="col-checkbox">Sel</div>
                             <div class="col-nombre">Nombre</div>
-                            <div class="col-precio">Precio</div>
-                            <div class="col-tipo">Tipo</div>
                             <div class="col-acciones">Acciones</div>
                         </div>
                         
                         <div class="table-body">
-                            {table.map((productoServicio) => {
-                                const nombreEscaped = escapeJS(productoServicio.name);
-                                const precioEscaped = escapeJS(productoServicio.value);
-                                const descripcionEscaped = escapeJS(productoServicio.description);
-                                const tipoEscaped = escapeJS(productoServicio.type);
-                                const nombreCompletoEscaped = escapeJS(productoServicio.name);
+                            {table.map((rol) => {
+                                const nombreEscaped = escapeJS(rol.name);
+                                const nombreCompletoEscaped = escapeJS(rol.name);
                                 
                                 return (
-                                    <div class="table-row grid-cols-5">
+                                    <div class="table-row grid-cols-3">
                                         <div class="col-checkbox">
-                                            <input type="checkbox" class="producto-servicio-checkbox" value={productoServicio.id} />
+                                            <input type="checkbox" class="rol-checkbox" value={rol.id} />
                                         </div>
-                                        <div class="col-nombre">{productoServicio.name}</div>
-                                        <div class="col-precio">${productoServicio.value}</div>
-                                        <div class="col-tipo">
-                                            <span class={`status-badge ${productoServicio.type === 'service' ? 'service' : 'additional'}`}>
-                                                {productoServicio.type === 'service' ? 'Servicio' : 'Adicional'}
-                                            </span>
-                                        </div>
+                                        <div class="col-nombre">{rol.name}</div>
                                         <div class="col-acciones">
                                             <button 
                                                 class="btn-action"
-                                                onclick={`abrirModalAcciones(${productoServicio.id}, '${nombreEscaped}', '${precioEscaped}', '${descripcionEscaped}', '${tipoEscaped}', '${nombreCompletoEscaped}')`}
+                                                onclick={`abrirModalAcciones(${rol.id}, '${nombreEscaped}', '${nombreCompletoEscaped}')`}
                                             >
                                                 Acciones
                                             </button>
@@ -136,40 +124,29 @@ const escapeJS = (str) => {
 
                     <!-- Vista Tablet (768px - 1199px) -->
                     <div class="table-view table-tablet">
-                        <div class="table-header grid-cols-4">
+                        <div class="table-header grid-cols-3">
                             <div class="col-checkbox">Sel</div>
                             <div class="col-nombre-tablet">Nombre</div>
-                            <div class="col-tipo-tablet">Tipo</div>
                             <div class="col-acciones">Acciones</div>
                         </div>
                         
                         <div class="table-body">
-                            {table.map((productoServicio) => {
-                                const nombreEscaped = escapeJS(productoServicio.name);
-                                const precioEscaped = escapeJS(productoServicio.value);
-                                const descripcionEscaped = escapeJS(productoServicio.description);
-                                const tipoEscaped = escapeJS(productoServicio.type);
-                                const nombreCompletoEscaped = escapeJS(productoServicio.name);
+                            {table.map((rol) => {
+                                const nombreEscaped = escapeJS(rol.name);
+                                const nombreCompletoEscaped = escapeJS(rol.name);
                                 
                                 return (
-                                    <div class="table-row grid-cols-4">
+                                    <div class="table-row grid-cols-3">
                                         <div class="col-checkbox">
-                                            <input type="checkbox" class="producto-servicio-checkbox" value={productoServicio.id} />
+                                            <input type="checkbox" class="rol-checkbox" value={rol.id} />
                                         </div>
                                         <div class="col-nombre-tablet">
-                                            <div class="font-medium">{productoServicio.name}</div>
-                                            <div class="text-sm text-gray-500">${productoServicio.value}</div>
-                                            <div class="text-sm text-gray-500">{productoServicio.description}</div>
-                                        </div>
-                                        <div class="col-tipo-tablet">
-                                            <span class={`status-badge status-badge-sm ${productoServicio.type === 'service' ? 'service' : 'additional'}`}>
-                                                {productoServicio.type === 'service' ? 'Servicio' : 'Adicional'}
-                                            </span>
+                                            <div class="font-medium">{rol.name}</div>
                                         </div>
                                         <div class="col-acciones">
                                             <button 
                                                 class="btn-action"
-                                                onclick={`abrirModalAcciones(${productoServicio.id}, '${nombreEscaped}', '${precioEscaped}', '${descripcionEscaped}', '${tipoEscaped}', '${nombreCompletoEscaped}')`}
+                                                onclick={`abrirModalAcciones(${rol.id}, '${nombreEscaped}', '${nombreCompletoEscaped}')`}
                                             >
                                                 Acciones
                                             </button>
@@ -183,44 +160,25 @@ const escapeJS = (str) => {
                     <!-- Vista Móvil (hasta 767px) -->
                     <div class="table-view table-mobile">
                         <div class="table-body">
-                            {table.map((productoServicio) => {
-                                const nombreEscaped = escapeJS(productoServicio.name);
-                                const precioEscaped = escapeJS(productoServicio.value);
-                                const descripcionEscaped = escapeJS(productoServicio.description);
-                                const tipoEscaped = escapeJS(productoServicio.type);
-                                const nombreCompletoEscaped = escapeJS(productoServicio.name);
+                            {table.map((rol) => {
+                                const nombreEscaped = escapeJS(rol.name);
+                                const nombreCompletoEscaped = escapeJS(rol.name);
                                 
                                 return (
                                     <div class="mobile-card">
                                         <div class="mobile-card-header">
                                             <div class="flex items-center gap-3">
-                                                <input type="checkbox" class="producto-servicio-checkbox" value={productoServicio.id} />
+                                                <input type="checkbox" class="rol-checkbox" value={rol.id} />
                                                 <div>
-                                                    <h3 class="font-semibold text-gray-900">{productoServicio.name}</h3>
-                                                    <p class="text-sm text-gray-600">${productoServicio.value}</p>
+                                                    <h3 class="font-semibold text-gray-900">{rol.name}</h3>
                                                 </div>
                                             </div>
                                             <button 
                                                 class="btn-action-mobile"
-                                                onclick={`abrirModalAcciones(${productoServicio.id}, '${nombreEscaped}', '${precioEscaped}', '${descripcionEscaped}', '${tipoEscaped}', '${nombreCompletoEscaped}')`}
+                                                onclick={`abrirModalAcciones(${rol.id}, '${nombreEscaped}', '${nombreCompletoEscaped}')`}
                                             >
                                                 Acciones
                                             </button>
-                                        </div>
-                                        
-                                        <div class="mobile-card-content">
-                                            <div class="grid grid-cols-2 gap-3">
-                                                <div class="mobile-field">
-                                                    <span class="mobile-label">Descripción:</span>
-                                                    <span class="mobile-value">{productoServicio.description}</span>
-                                                </div>
-                                                <div class="mobile-field">
-                                                    <span class="mobile-label">Tipo:</span>
-                                                    <span class={`status-badge status-badge-sm ${productoServicio.type === 'service' ? 'service' : 'additional'}`}>
-                                                        {productoServicio.type === 'service' ? 'Servicio' : 'Adicional'}
-                                                    </span>
-                                                </div>
-                                            </div>
                                         </div>
                                     </div>
                                 );
@@ -264,8 +222,8 @@ const escapeJS = (str) => {
 			<div class="modal-body">
 				<div class="space-y-4">
 					<div class="text-center">
-						<p class="text-gray-600">Selecciona la acción que deseas realizar para el producto/servicio:</p>
-						<p id="nombreProductoServicioAcciones" class="font-semibold text-lg text-[#2F5D50] mt-2"></p>
+						<p class="text-gray-600">Selecciona la acción que deseas realizar para el rol:</p>
+						<p id="nombreRolAcciones" class="font-semibold text-lg text-[#2F5D50] mt-2"></p>
 					</div>
 					<div class="flex flex-col sm:flex-row justify-center gap-4 mt-6">
 						<button 
@@ -275,7 +233,7 @@ const escapeJS = (str) => {
 							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
 							</svg>
-							Editar Producto/Servicio
+							Editar Rol
 						</button>
 						<button 
 							id="btnEliminarAccion"
@@ -284,7 +242,7 @@ const escapeJS = (str) => {
 							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
 							</svg>
-							Eliminar Producto/Servicio
+							Eliminar Rol
 						</button>
 					</div>
 				</div>
@@ -313,9 +271,9 @@ const escapeJS = (str) => {
 					<svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"/>
 					</svg>
-					<h3 class="text-lg font-semibold text-gray-900 mb-2">¿Estás seguro de eliminar este producto/servicio?</h3>
-					<p class="text-gray-600 mb-4">Esta acción no se puede deshacer. Se eliminarán todos los datos del producto/servicio:</p>
-					<p id="nombreProductoServicioEliminar" class="font-semibold text-red-600 text-lg"></p>
+					<h3 class="text-lg font-semibold text-gray-900 mb-2">¿Estás seguro de eliminar este rol?</h3>
+					<p class="text-gray-600 mb-4">Esta acción no se puede deshacer. Se eliminarán todos los datos del rol:</p>
+					<p id="nombreRolEliminar" class="font-semibold text-red-600 text-lg"></p>
 				</div>
 			</div>
 			<div class="modal-footer">
@@ -331,16 +289,16 @@ const escapeJS = (str) => {
 		</div>
 	</div>
 
-	<!-- Modal Agregar Producto/Servicio -->
+	<!-- Modal Agregar Rol -->
 	<FormModal
-		id="modalAgregarProductoServicio"
-		title="AGREGAR PRODUCTO/SERVICIO"
-		formId="formAgregarProductoServicio"
+		id="modalAgregarRol"
+		title="AGREGAR ROL"
+		formId="formAgregarRol"
 		submitText="GUARDAR"
 		cancelText="CANCELAR"
-		size="lg"
+		size="md"
 	>
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+		<div class="grid grid-cols-1 gap-4 mb-6">
 			<div class="flex flex-col">
 				<label class="text-[#2F5D50] font-medium mb-2 text-sm">NOMBRE *</label>
 				<input 
@@ -348,57 +306,23 @@ const escapeJS = (str) => {
 					id="agregarNombre"
 					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
 					required
-					placeholder="Ingrese el nombre"
+					placeholder="Ingrese el nombre del rol"
 				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">PRECIO *</label>
-				<input 
-					type="number" 
-					id="agregarPrecio"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-					placeholder="0.00"
-					step="0.01"
-					min="0"
-				>
-			</div>
-			<div class="flex flex-col md:col-span-2">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">DESCRIPCIÓN *</label>
-				<textarea 
-					id="agregarDescripcion"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-					placeholder="Ingrese la descripción"
-					rows="3"
-				></textarea>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">TIPO *</label>
-				<select 
-					id="agregarTipo"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full"
-					required
-				>
-					<option value="">Seleccione un tipo</option>
-					<option value="service">Servicio</option>
-					<option value="additional">Adicional</option>
-				</select>
 			</div>
 		</div>
 	</FormModal>
 
-	<!-- Modal Editar Producto/Servicio -->
+	<!-- Modal Editar Rol -->
 	<FormModal
-		id="modalEditarProductoServicio"
-		title="EDITAR PRODUCTO/SERVICIO"
-		formId="formEditarProductoServicio"
+		id="modalEditarRol"
+		title="EDITAR ROL"
+		formId="formEditarRol"
 		submitText="ACTUALIZAR"
 		cancelText="CANCELAR"
-		size="lg"
+		size="md"
 	>
 		<input type="hidden" id="editarId">
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+		<div class="grid grid-cols-1 gap-4 mb-6">
 			<div class="flex flex-col">
 				<label class="text-[#2F5D50] font-medium mb-2 text-sm">NOMBRE *</label>
 				<input 
@@ -407,37 +331,6 @@ const escapeJS = (str) => {
 					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
 					required
 				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">PRECIO *</label>
-				<input 
-					type="number" 
-					id="editarPrecio"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-					step="0.01"
-					min="0"
-				>
-			</div>
-			<div class="flex flex-col md:col-span-2">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">DESCRIPCIÓN *</label>
-				<textarea 
-					id="editarDescripcion"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-					rows="3"
-				></textarea>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">TIPO *</label>
-				<select 
-					id="editarTipo"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full"
-					required
-				>
-					<option value="service">Servicio</option>
-					<option value="additional">Adicional</option>
-				</select>
 			</div>
 		</div>
 	</FormModal>
@@ -498,14 +391,13 @@ const escapeJS = (str) => {
 
 	<script>
 		// Variables globales
-		let productoServicioSeleccionado = null;
-		let productoServicioData = {};
+		let rolSeleccionado = null;
+		let rolData = {};
 
-		// Función para verificar checkbox seleccionado - IDÉNTICA a la de Pacientes
-		function verificarCheckboxSeleccionado(productoServicioId) {
+		// Función para verificar checkbox seleccionado
+		function verificarCheckboxSeleccionado(rolId) {
 			try {
-				// Buscar todos los checkboxes con el mismo valor (pueden estar en diferentes vistas)
-				const checkboxes = document.querySelectorAll(`.producto-servicio-checkbox[value="${productoServicioId}"]`);
+				const checkboxes = document.querySelectorAll(`.rol-checkbox[value="${rolId}"]`);
 				let algunoSeleccionado = false;
 				
 				checkboxes.forEach(checkbox => {
@@ -521,43 +413,35 @@ const escapeJS = (str) => {
 				return true;
 			} catch (error) {
 				console.error('Error verificando checkbox:', error);
-				mostrarError('Error al verificar la selección del producto/servicio');
+				mostrarError('Error al verificar la selección del rol');
 				return false;
 			}
 		}
 
 		// Abrir modal de acciones
-		window.abrirModalAcciones = function(id, name, value, description, type, nombreCompleto) {
-			// Verificar si el checkbox está seleccionado
+		window.abrirModalAcciones = function(id, nombre, nombreCompleto) {
 			if (!verificarCheckboxSeleccionado(id)) {
 				return;
 			}
 			
-			productoServicioSeleccionado = id;
-			productoServicioData = {
-				name,
-				value,
-				description,
-				type,
+			rolSeleccionado = id;
+			rolData = {
+				nombre,
 				nombreCompleto
 			};
 			
-			// Mostrar nombre del producto/servicio en el modal
-			document.getElementById('nombreProductoServicioAcciones').textContent = nombreCompleto;
-			
-			// Mostrar modal de acciones
+			document.getElementById('nombreRolAcciones').textContent = nombreCompleto;
 			document.getElementById('modalAcciones').classList.remove('hidden');
 		};
 
 		// Abrir modal agregar
 		window.abrirModalAgregar = function() {
-			// Limpiar formulario
-			const form = document.getElementById('formAgregarProductoServicio');
+			const form = document.getElementById('formAgregarRol');
 			if (form) {
 				form.reset();
 			}
 			
-			const modal = document.getElementById('modalAgregarProductoServicio');
+			const modal = document.getElementById('modalAgregarRol');
 			if (modal) {
 				modal.classList.remove('hidden');
 			}
@@ -599,20 +483,16 @@ const escapeJS = (str) => {
 
 			// Botón Confirmar Eliminar
 			document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
-				eliminarProductoServicio(productoServicioSeleccionado);
+				eliminarRol(rolSeleccionado);
 			});
 		});
 
 		// Abrir modal de edición
 		function abrirModalEditar() {
-			// Llenar formulario con datos actuales
-			document.getElementById('editarId').value = productoServicioSeleccionado || '';
-			document.getElementById('editarNombre').value = productoServicioData.name || '';
-			document.getElementById('editarPrecio').value = productoServicioData.value || '';
-			document.getElementById('editarDescripcion').value = productoServicioData.description || '';
-			document.getElementById('editarTipo').value = productoServicioData.type || '';
+			document.getElementById('editarId').value = rolSeleccionado || '';
+			document.getElementById('editarNombre').value = rolData.nombre || '';
 			
-			const modal = document.getElementById('modalEditarProductoServicio');
+			const modal = document.getElementById('modalEditarRol');
 			if (modal) {
 				modal.classList.remove('hidden');
 			}
@@ -620,32 +500,35 @@ const escapeJS = (str) => {
 
 		// Abrir modal de confirmación de eliminación
 		function abrirModalConfirmarEliminar() {
-			document.getElementById('nombreProductoServicioEliminar').textContent = productoServicioData.nombreCompleto;
+			document.getElementById('nombreRolEliminar').textContent = rolData.nombreCompleto;
 			document.getElementById('modalConfirmarEliminar').classList.remove('hidden');
 		}
 
-		// Función para eliminar producto/servicio - CORREGIDA
-		async function eliminarProductoServicio(id) {
+		// Función para eliminar rol
+		async function eliminarRol(id) {
+			// Validar ID
+			if (!id || isNaN(id)) {
+				mostrarError('Error: ID de rol inválido');
+				return;
+			}
+
 			try {
-				console.log('Eliminando producto/servicio con ID:', id);
+				console.log('Eliminando rol con ID:', id);
 				
-				const response = await fetch(`http://localhost:3001/api/v1/Productos&Servicios/${id}`, {
+				const response = await fetch(`http://localhost:3001/api/v1/Roles/${id}`, {
 					method: 'DELETE',
-					headers: {
-						'Content-Type': 'application/json',
-					},
 				});
 				
 				if (response.ok) {
 					cerrarModal('modalConfirmarEliminar');
-					mostrarExito('Producto/Servicio eliminado correctamente');
+					mostrarExito('Rol eliminado correctamente');
 					setTimeout(() => {
 						location.reload();
 					}, 1500);
 				} else {
 					const errorData = await response.json();
 					console.error('Error del servidor:', errorData);
-					mostrarError('Error al eliminar el producto/servicio: ' + (errorData.message || errorData.error || 'Error desconocido'));
+					mostrarError('Error al eliminar el rol: ' + (errorData.message || errorData.error || 'Error desconocido'));
 				}
 			} catch (error) {
 				console.error('Error:', error);
@@ -653,105 +536,90 @@ const escapeJS = (str) => {
 			}
 		}
 
-		// Manejar envío del formulario agregar - CORREGIDO
-		document.getElementById('formAgregarProductoServicio')?.addEventListener('submit', async function(e) {
+		// Manejar envío del formulario agregar
+		document.getElementById('formAgregarRol')?.addEventListener('submit', async function(e) {
 			e.preventDefault();
 			
-			// Validar campos requeridos
-			const requiredFields = [
-				'agregarNombre', 'agregarPrecio', 'agregarDescripcion', 'agregarTipo'
-			];
-			
-			for (const fieldId of requiredFields) {
-				const field = document.getElementById(fieldId);
-				if (!field.value.trim()) {
-					mostrarError(`El campo ${field.previousElementSibling.textContent} es obligatorio`);
-					field.focus();
-					return;
-				}
+			const nombre = document.getElementById('agregarNombre').value.trim();
+			if (!nombre) {
+				mostrarError('El campo Nombre es obligatorio');
+				return;
 			}
 
-			const productoServicioData = {
-				name: document.getElementById('agregarNombre').value,
-				value: parseFloat(document.getElementById('agregarPrecio').value),
-				description: document.getElementById('agregarDescripcion').value,
-				type: document.getElementById('agregarTipo').value
+			const rolData = {
+				name: nombre // Usar "name" en lugar de "Nombre" para coincidir con BD
 			};
 
-			console.log('Datos a enviar:', productoServicioData);
+			console.log('Datos a enviar:', rolData);
 
 			try {
-				const response = await fetch('http://localhost:3001/api/v1/Productos&Servicios', {
+				const response = await fetch('http://localhost:3001/api/v1/Roles', {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
 					},
-					body: JSON.stringify(productoServicioData)
+					body: JSON.stringify(rolData)
 				});
 
 				if (response.ok) {
-					cerrarModal('modalAgregarProductoServicio');
-					mostrarExito('Producto/Servicio agregado correctamente');
+					cerrarModal('modalAgregarRol');
+					mostrarExito('Rol agregado correctamente');
 					setTimeout(() => {
 						location.reload();
 					}, 1500);
 				} else {
 					const errorData = await response.json();
 					console.error('Error del servidor:', errorData);
-					mostrarError('Error al agregar el producto/servicio: ' + (errorData.message || errorData.error || 'Error desconocido'));
+					mostrarError('Error al agregar el rol: ' + (errorData.message || errorData.error || 'Error desconocido'));
 				}
 			} catch (error) {
 				console.error('Error:', error);
-				mostrarError('Error de conexión con el servidor: ' + error.message);
+				mostrarError('Error de conexión con el servidor');
 			}
 		});
 
-		// Manejar envío del formulario editar - CORREGIDO
-		document.getElementById('formEditarProductoServicio')?.addEventListener('submit', async function(e) {
+		// Manejar envío del formulario editar
+		document.getElementById('formEditarRol')?.addEventListener('submit', async function(e) {
 			e.preventDefault();
 			
-			// Validar campos requeridos
-			const requiredFields = [
-				'editarNombre', 'editarPrecio', 'editarDescripcion', 'editarTipo'
-			];
+			// Validar que tenemos un ID válido
+			if (!rolSeleccionado || isNaN(rolSeleccionado)) {
+				mostrarError('Error: No se ha seleccionado un rol válido para editar');
+				return;
+			}
 			
-			for (const fieldId of requiredFields) {
-				const field = document.getElementById(fieldId);
-				if (!field.value.trim()) {
-					mostrarError(`El campo ${field.previousElementSibling.textContent} es obligatorio`);
-					field.focus();
-					return;
-				}
+			const nombre = document.getElementById('editarNombre').value.trim();
+			if (!nombre) {
+				mostrarError('El campo Nombre es obligatorio');
+				return;
 			}
 
-			const productoServicioData = {
-				name: document.getElementById('editarNombre').value,
-				value: parseFloat(document.getElementById('editarPrecio').value),
-				description: document.getElementById('editarDescripcion').value,
-				type: document.getElementById('editarTipo').value
+			const rolData = {
+				name: nombre // Usar "name" en lugar de "Nombre" para coincidir con BD
 			};
 
-			console.log('Datos a enviar para editar:', productoServicioData);
+			console.log('Datos a enviar para editar:', rolData);
+			console.log('ID del rol a editar:', rolSeleccionado);
 
 			try {
-				const response = await fetch(`http://localhost:3001/api/v1/Productos&Servicios/${productoServicioSeleccionado}`, {
+				const response = await fetch(`http://localhost:3001/api/v1/Roles/${rolSeleccionado}`, {
 					method: 'PATCH',
 					headers: {
 						'Content-Type': 'application/json',
 					},
-					body: JSON.stringify(productoServicioData)
+					body: JSON.stringify(rolData)
 				});
 
 				if (response.ok) {
-					cerrarModal('modalEditarProductoServicio');
-					mostrarExito('Producto/Servicio actualizado correctamente');
+					cerrarModal('modalEditarRol');
+					mostrarExito('Rol actualizado correctamente');
 					setTimeout(() => {
 						location.reload();
 					}, 1500);
 				} else {
 					const errorData = await response.json();
 					console.error('Error del servidor:', errorData);
-					mostrarError('Error al actualizar el producto/servicio: ' + (errorData.message || errorData.error || 'Error desconocido'));
+					mostrarError('Error al actualizar el rol: ' + (errorData.message || errorData.error || 'Error desconocido'));
 				}
 			} catch (error) {
 				console.error('Error:', error);
@@ -761,7 +629,7 @@ const escapeJS = (str) => {
 
 		// Seleccionar todos los checkboxes
 		document.getElementById('selectAll')?.addEventListener('change', function(e) {
-			const checkboxes = document.querySelectorAll('.producto-servicio-checkbox');
+			const checkboxes = document.querySelectorAll('.rol-checkbox');
 			checkboxes.forEach(checkbox => {
 				checkbox.checked = e.target.checked;
 			});
@@ -777,81 +645,6 @@ const escapeJS = (str) => {
 			border-radius: 0.75rem;
 			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 			margin-top: 1rem;
-		}
-
-		/* Tabla responsiva */
-		.responsive-table {
-			width: 100%;
-			border-collapse: collapse;
-			font-size: 0.875rem;
-		}
-
-		.responsive-table th,
-		.responsive-table td {
-			padding: 0.8rem;
-			text-align: left;
-			border-bottom: 1px solid #e5e7eb;
-		}
-
-		.responsive-table thead {
-			background-color: #234d20;
-			color: white;
-		}
-
-		.responsive-table th {
-			font-weight: 600;
-			font-size: 0.875rem;
-		}
-
-		/* Columnas específicas con anchos optimizados */
-		.checkbox-col {
-			width: 50px;
-			text-align: center;
-			padding-left: 1rem;
-		}
-
-		.nombre-col {
-			min-width: 120px;
-			max-width: 150px;
-		}
-
-		.precio-col {
-			min-width: 100px;
-			max-width: 120px;
-		}
-
-		.descripcion-col {
-			min-width: 180px;
-			max-width: 220px;
-		}
-
-		.tipo-col {
-			width: 100px;
-			text-align: center;
-		}
-
-		.acciones-col {
-			width: 100px;
-			text-align: center;
-		}
-
-		/* Badges de estado */
-		.status-badge {
-			display: inline-block;
-			padding: 0.25rem 0.5rem;
-			border-radius: 0.375rem;
-			font-size: 0.75rem;
-			font-weight: 500;
-		}
-
-		.status-badge.service {
-			background-color: #dbeafe;
-			color: #1e40af;
-		}
-
-		.status-badge.additional {
-			background-color: #d1fae5;
-			color: #065f46;
 		}
 
 		/* === SISTEMA DE TABLA RESPONSIVA CON CSS GRID === */
@@ -870,17 +663,17 @@ const escapeJS = (str) => {
 			width: 100%;
 		}
 
-		/* Vista Desktop Completa (1400px+) - 6 columnas */
+		/* Vista Desktop Completa (1400px+) - 3 columnas */
 		.table-desktop-full {
 			display: none;
 		}
 
-		/* Vista Desktop Compacta (1200px - 1399px) - 5 columnas */
+		/* Vista Desktop Compacta (1200px - 1399px) - 3 columnas */
 		.table-desktop-compact {
 			display: none;
 		}
 
-		/* Vista Tablet (768px - 1199px) - 4 columnas */
+		/* Vista Tablet (768px - 1199px) - 3 columnas */
 		.table-tablet {
 			display: none;
 		}
@@ -910,7 +703,7 @@ const escapeJS = (str) => {
 			display: grid;
 			gap: 0.5rem;
 			padding: 1rem 1.5rem;
-			
+			border-bottom: 1px solid #e5e7eb;
 			align-items: center;
 			transition: background-color 0.2s;
 		}
@@ -920,16 +713,8 @@ const escapeJS = (str) => {
 		}
 
 		/* Grid columns para diferentes vistas */
-		.grid-cols-6 {
-			grid-template-columns: 50px 1fr 100px 1fr 100px 120px;
-		}
-
-		.grid-cols-5 {
-			grid-template-columns: 40px 1fr 100px 100px 120px;
-		}
-
-		.grid-cols-4 {
-			grid-template-columns: 40px 1.5fr 1fr 120px;
+		.grid-cols-3 {
+			grid-template-columns: 50px 1fr 120px;
 		}
 
 		/* Estilos de columnas específicas */
@@ -939,34 +724,16 @@ const escapeJS = (str) => {
 			align-items: center;
 		}
 
-		.col-nombre{
-			font-weight: bold;
-		},
-		.col-precio{
-			font-weight: bold;
-		},
-		.col-descripcion{
-			font-weight: bold;
-		},
-		.col-tipo {
+		.col-nombre {
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
-			font-weight: bold;
 		}
 
 		.col-nombre-tablet {
 			display: flex;
 			flex-direction: column;
 			gap: 0.25rem;
-			font-weight: bold;
-			
-		}
-
-		.col-tipo-tablet {
-			display: flex;
-			justify-content: center;
-			align-items: center;
 		}
 
 		.col-acciones {
@@ -1014,35 +781,6 @@ const escapeJS = (str) => {
 			color: #374151;
 		}
 
-		/* Badges de estado */
-		.status-badge {
-			display: inline-block;
-			padding: 0.25rem 0.75rem;
-			border-radius: 0.375rem;
-			font-size: 0.75rem;
-			font-weight: 500;
-			text-align: center;
-			min-width: 50px;
-		}
-
-		.status-badge-sm {
-			padding: 0.2rem 0.5rem;
-			font-size: 0.7rem;
-			min-width: 40px;
-		}
-
-		.status-badge.service {
-			background-color: #dbeafe;
-			color: #1e40af;
-			border: 1px solid #bfdbfe;
-		}
-
-		.status-badge.additional {
-			background-color: #d1fae5;
-			color: #065f46;
-			border: 1px solid #a7f3d0;
-		}
-
 		/* Botones */
 		.btn-action {
 			background: linear-gradient(135deg, #234d20, #2d5a28);
@@ -1077,7 +815,7 @@ const escapeJS = (str) => {
 		}
 
 		/* Checkboxes */
-		.producto-servicio-checkbox {
+		.rol-checkbox {
 			cursor: pointer;
 			width: 18px;
 			height: 18px;
@@ -1128,21 +866,6 @@ const escapeJS = (str) => {
 				gap: 0.75rem;
 				align-items: flex-start;
 			}
-			
-			.mobile-card-content .grid-cols-2 {
-				grid-template-columns: 1fr;
-				gap: 0.75rem;
-			}
-			
-			.mobile-field {
-				flex-direction: row;
-				justify-content: space-between;
-				align-items: center;
-			}
-			
-			.mobile-label {
-				min-width: 120px;
-			}
 		}
 
 		/* Responsive para controles */
@@ -1158,6 +881,8 @@ const escapeJS = (str) => {
 			
 			.pagos-buttons {
 				width: 100%;
+				flex-direction: column;
+				gap: 1rem;
 			}
 			
 			.pagos-buttons .btn-action {
@@ -1172,7 +897,7 @@ const escapeJS = (str) => {
 			}
 		}
 
-		/* === ESTILOS PARA MODALES (se mantienen igual) === */
+		/* === ESTILOS PARA MODALES === */
 		.modal-overlay {
 			position: fixed;
 			top: 0;
@@ -1305,3 +1030,21 @@ const escapeJS = (str) => {
 		}
 	</style>
 </Layout>
+<script type="module">
+	import axios from 'axios';
+	
+	async function CambiarAPermiso() {
+		// fetch permisos and handle the response (extend as needed)
+		try {
+			const Table = await axios.get('http://localhost:3000/api/v1/Permisos');
+		} catch (err) {
+			console.error(err);
+		}
+	}
+	const button = document.getElementById('CambiarEstado');
+	// Guard against null button before adding the listener
+	if (button) {
+		button.addEventListener('click', CambiarAPermiso);
+	}
+
+</script>

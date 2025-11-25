@@ -1,0 +1,71 @@
+---
+export interface Props {
+  id: string;
+  title: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  position?: 'center' | 'right';
+  formId: string;
+  submitText?: string;
+  cancelText?: string;
+}
+
+const { 
+  id, 
+  title, 
+  size = 'md', 
+  position = 'center',
+  formId,
+  submitText = 'GUARDAR',
+  cancelText = 'CANCELAR'
+} = Astro.props;
+
+const sizeClasses = {
+  sm: 'max-w-md',
+  md: 'max-w-lg', 
+  lg: 'max-w-2xl',
+  xl: 'max-w-4xl'
+};
+---
+
+<div id={id} class={`${position === 'right' ? 'modal-sidebar' : 'modal-overlay'} hidden`}>
+  <div class={`${position === 'center' ? 'modal-content' : 'flex flex-col h-full'} ${sizeClasses[size]} w-auto`}>
+    <!-- Header -->
+    <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200 flex-shrink-0">
+      <h3 class="text-[#2F5D50] text-xl font-semibold m-0">{title}</h3>
+      <button 
+        class="bg-none border-none text-gray-500 cursor-pointer p-2 rounded-lg transition-colors hover:bg-gray-100 hover:text-gray-700" 
+        onclick={`cerrarModal('${id}')`}
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="p-6 overflow-y-auto flex-1 min-h-0">
+      <form id={formId} class="h-full">
+        <slot />
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex justify-end gap-4 px-6 py-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+      <button 
+        type="button" 
+        class="bg-gray-500 text-white border-none rounded-xl px-6 py-3 font-medium cursor-pointer transition-all duration-300 min-w-[120px] hover:bg-gray-600 hover:-translate-y-0.5" 
+        onclick={`cerrarModal('${id}')`}
+      >
+        {cancelText}
+      </button>
+      <button 
+        type="submit" 
+        form={formId} 
+        class="bg-gradient-to-br from-[#234D20] to-[#2F5D50] text-white border-none rounded-xl px-6 py-3 font-medium cursor-pointer transition-all duration-300 min-w-[120px] hover:-translate-y-0.5 hover:shadow-lg"
+      >
+        {submitText}
+      </button>
+    </div>
+  </div>
+</div>
+

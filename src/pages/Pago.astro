@@ -1,106 +1,746 @@
 ---
-import NavBar from "../components/NavBar.astro";
 import Layout from "../layouts/Layout.astro";
+import NavBar from "../components/NavBar.astro";
+import HeaderEmpleado from '../components/HeaderEmpleado.astro';
+import axios from "axios";
+
+// Generar pagos automáticamente al cargar la vista
+await axios.post('http://localhost:3001/api/v1/HistorialPagos/generar');
+
+// Obtener el historial de pagos
+const table = await axios.get("http://localhost:3001/api/v1/HistorialPagos").then((res) => res.data);
+const pacientes = await axios.get("http://localhost:3001/api/v1/Pacientes").then((res) => res.data);
+
+// Función para formatear fecha
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toISOString().split('T')[0];
+};
+
+// Función para escapar caracteres problemáticos en JavaScript
+const escapeJS = (str) => {
+  if (!str) return '';
+  return String(str)
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r');
+};
 ---
 
-<Layout title="Pagos">
+<Layout title="Historial de Pagos">
 	<div class="pagos-container">
-		<!-- Panel lateral izquierdo -->
 		<NavBar />
-
-		<!-- Contenido principal -->
 		<div class="flex-1 flex flex-col overflow-hidden">
-			<header class="bg-gray-100 shadow-sm border-b border-gray-200">
-				<div class="flex items-center justify-between px-6 py-4">
-					<div id="TituloTabla" class="flex">
-						<h1 class="text-2xl font-bold text-[#2F5D50]">PAGOS</h1>
-						<div class="flex ml-5 space-x-4">
-							<input 
-								type="text" 
-								placeholder="Buscar..." 
-								class="auth-input px-4 py-2 w-64"
-							>
-						</div>
-					</div>
-				</div>
-			</header>
+			<HeaderEmpleado titulo="HISTORIAL DE PAGOS" nombreUsuario="EMPLEADO" />
+            <main class="pagos-content">
+                <!-- Header con título y filtros -->
+                <div class="pagos-header">
+                    <h1 class="pagos-title">HISTORIAL AUTOMÁTICO DE PAGOS</h1>
+                    <div class="pagos-controls">
+                        <div class="pagos-filters">
+                            <select id="filterPaciente" class="auth-input">
+                                <option value="">Todos los pacientes</option>
+                                {pacientes.map((paciente) => (
+                                    <option value={paciente.id}>{paciente.firstname} {paciente.lastname}</option>
+                                ))}
+                            </select>
+                            <input 
+                                type="date" 
+                                id="filterFecha" 
+                                class="auth-input"
+                            >
+                            <select id="filterEstado" class="auth-input">
+                                <option value="">Todos los estados</option>
+                                <option value="completed">Completado</option>
+                                <option value="pending">Pendiente</option>
+                                <option value="cancelled">Cancelado</option>
+                            </select>
+                            <button class="btn-action" onclick="filtrarPagos()">
+                                Filtrar
+                            </button>
+                            <button class="btn-secondary" onclick="limpiarFiltros()">
+                                Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-			<main>
-				<!-- TABLA DE PAGOS -->
-				<div id="TableContainer">
-					<table id="Table">
-						<thead>
-							<tr id="TableHeader">
-								<th><input type="checkbox" /></th>
-								<th>Paciente</th>
-								<th>Producto/Servicio</th>
-								<th>Precio</th>
-								<th>IVA</th>
-								<th>Subtotal</th>
-								<th>Total</th>
-								<th>Acciones</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td><input type="checkbox" /></td>
-								<td>Juan Pérez</td>
-								<td>Ondas de choque</td>
-								<td>$300.00</td>
-								<td>$48.00</td>
-								<td>$300.00</td>
-								<td>$348.00</td>
-								<td>
-									<button class="btn-action">Acciones</button>
-								</td>
-							</tr>
+                <!-- Tabla completamente responsiva (SOLO LECTURA) -->
+                <div class="table-responsive-container">
+                    <!-- Vista Desktop Completa (1400px+) -->
+                    <div class="table-view table-desktop-full">
+                        <div class="table-header grid-cols-10">
+                            <div class="col-fecha">Fecha Cita</div>
+                            <div class="col-paciente">Paciente</div>
+                            <div class="col-servicio">Servicio</div>
+                            <div class="col-cantidad">Cantidad</div>
+                            <div class="col-precio">Precio Unit.</div>
+                            <div class="col-subtotal">Subtotal</div>
+                            <div class="col-iva">IVA</div>
+                            <div class="col-total">Total</div>
+                            <div class="col-metodo">Método</div>
+                            <div class="col-estado">Estado</div>
+                        </div>
+                        
+                        <div class="table-body">
+                            {table.map((pago) => (
+                                <div class="table-row grid-cols-10">
+                                    <div class="col-fecha">{formatDate(pago.appointmentdate)}</div>
+                                    <div class="col-paciente">{pago.patientname}</div>
+                                    <div class="col-servicio">{pago.productname}</div>
+                                    <div class="col-cantidad">{pago.quantity}</div>
+                                    <div class="col-precio">${pago.unitprice}</div>
+                                    <div class="col-subtotal">${pago.subtotal}</div>
+                                    <div class="col-iva">${pago.iva}</div>
+                                    <div class="col-total">${pago.total}</div>
+                                    <div class="col-metodo">
+                                        <span class={`status-badge ${pago.paymentmethod === 'cash' ? 'has-package' : 
+                                                      pago.paymentmethod === 'card' ? 'not-sanctioned' : 
+                                                      pago.paymentmethod === 'transfer' ? 'has-package' : 'no-package'}`}>
+                                            {pago.paymentmethod === 'cash' ? 'Efectivo' : 
+                                             pago.paymentmethod === 'card' ? 'Tarjeta' : 
+                                             pago.paymentmethod === 'transfer' ? 'Transferencia' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div class="col-estado">
+                                        <span class={`status-badge ${
+                                            pago.status === 'completed' ? 'not-sanctioned' : 
+                                            pago.status === 'cancelled' ? 'sanctioned' : 'no-package'
+                                        }`}>
+                                            {pago.status === 'completed' ? 'Completado' : 
+                                             pago.status === 'pending' ? 'Pendiente' : 'Cancelado'}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
 
-							<tr>
-								<td><input type="checkbox" /></td>
-								<td>María García</td>
-								<td>Consulta médica</td>
-								<td>$500.00</td>
-								<td>$80.00</td>
-								<td>$500.00</td>
-								<td>$580.00</td>
-								<td>
-									<button class="btn-action">Acciones</button>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
+                    <!-- Vista Desktop Compacta (1200px - 1399px) -->
+                    <div class="table-view table-desktop-compact">
+                        <div class="table-header grid-cols-7">
+                            <div class="col-fecha">Fecha</div>
+                            <div class="col-paciente">Paciente</div>
+                            <div class="col-servicio">Servicio</div>
+                            <div class="col-total">Total</div>
+                            <div class="col-metodo">Método</div>
+                            <div class="col-estado">Estado</div>
+                        </div>
+                        
+                        <div class="table-body">
+                            {table.map((pago) => (
+                                <div class="table-row grid-cols-7">
+                                    <div class="col-fecha">{formatDate(pago.appointmentdate)}</div>
+                                    <div class="col-paciente">{pago.patientname}</div>
+                                    <div class="col-servicio">{pago.productname}</div>
+                                    <div class="col-total">${pago.total}</div>
+                                    <div class="col-metodo">
+                                        <span class={`status-badge status-badge-sm ${pago.paymentmethod === 'cash' ? 'has-package' : 
+                                                      pago.paymentmethod === 'card' ? 'not-sanctioned' : 'no-package'}`}>
+                                            {pago.paymentmethod === 'cash' ? 'Efectivo' : 
+                                             pago.paymentmethod === 'card' ? 'Tarjeta' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div class="col-estado">
+                                        <span class={`status-badge status-badge-sm ${
+                                            pago.status === 'completed' ? 'not-sanctioned' : 
+                                            pago.status === 'cancelled' ? 'sanctioned' : 'no-package'
+                                        }`}>
+                                            {pago.status === 'completed' ? 'Completado' : 
+                                             pago.status === 'pending' ? 'Pendiente' : 'Cancelado'}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
 
-				<!-- PAGINACIÓN Y BOTONES -->
-				<div class="historial-pagination">
-					<div class="text-sm text-gray-600">1–10 de 99</div>
-					<div class="flex items-center gap-3">
-						<!-- Botón Exportar -->
-						
-						
-						<span class="text-sm text-gray-600">Filas por página:</span>
-						<select class="historial-select">
-							<option>10</option>
-							<option>25</option>
-							<option>50</option>
-						</select>
-						<div class="flex items-center gap-2">
-							<button class="btn-action px-3 py-1 text-sm">⟨</button>
-							<span class="text-sm text-gray-600">1/10</span>
-							<button class="btn-action px-3 py-1 text-sm">⟩</button>
-						</div>
-					</div>
-				</div>
-			</main>
-		</div>
-	</div>
+                    <!-- Vista Tablet (768px - 1199px) -->
+                    <div class="table-view table-tablet">
+                        <div class="table-header grid-cols-5">
+                            <div class="col-paciente-tablet">Paciente</div>
+                            <div class="col-servicio-tablet">Servicio</div>
+                            <div class="col-total-tablet">Total</div>
+                            <div class="col-metodo">Método</div>
+                            <div class="col-estado">Estado</div>
+                        </div>
+                        
+                        <div class="table-body">
+                            {table.map((pago) => (
+                                <div class="table-row grid-cols-5">
+                                    <div class="col-paciente-tablet">
+                                        <div class="font-medium">{pago.patientname}</div>
+                                        <div class="text-sm text-gray-500">{formatDate(pago.appointmentdate)}</div>
+                                    </div>
+                                    <div class="col-servicio-tablet">
+                                        <div class="font-medium">{pago.productname}</div>
+                                        <div class="text-sm text-gray-500">Cant: {pago.quantity}</div>
+                                    </div>
+                                    <div class="col-total-tablet">
+                                        <div class="font-bold text-green-600">${pago.total}</div>
+                                        <div class="text-sm text-gray-500">IVA: ${pago.iva}</div>
+                                    </div>
+                                    <div class="col-metodo">
+                                        <span class={`status-badge status-badge-sm ${pago.paymentmethod === 'cash' ? 'has-package' : 'no-package'}`}>
+                                            {pago.paymentmethod === 'cash' ? 'Efectivo' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                    <div class="col-estado">
+                                        <span class={`status-badge status-badge-sm ${
+                                            pago.status === 'completed' ? 'not-sanctioned' : 
+                                            pago.status === 'cancelled' ? 'sanctioned' : 'no-package'
+                                        }`}>
+                                            {pago.status === 'completed' ? 'Completado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
 
-	
+                    <!-- Vista Móvil (hasta 767px) -->
+                    <div class="table-view table-mobile">
+                        <div class="table-body">
+                            {table.map((pago) => (
+                                <div class="mobile-card">
+                                    <div class="mobile-card-header">
+                                        <div>
+                                            <h3 class="font-semibold text-gray-900">{pago.patientname}</h3>
+                                            <p class="text-sm text-gray-600">{formatDate(pago.appointmentdate)}</p>
+                                            <p class="text-sm text-gray-500">{pago.productname}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="font-bold text-green-600">${pago.total}</div>
+                                            <div class="text-sm text-gray-500">Total</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mobile-card-content">
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div class="mobile-field">
+                                                <span class="mobile-label">Cantidad:</span>
+                                                <span class="mobile-value">{pago.quantity}</span>
+                                            </div>
+                                            <div class="mobile-field">
+                                                <span class="mobile-label">Precio Unitario:</span>
+                                                <span class="mobile-value">${pago.unitprice}</span>
+                                            </div>
+                                            <div class="mobile-field">
+                                                <span class="mobile-label">Subtotal:</span>
+                                                <span class="mobile-value">${pago.subtotal}</span>
+                                            </div>
+                                            <div class="mobile-field">
+                                                <span class="mobile-label">IVA:</span>
+                                                <span class="mobile-value">${pago.iva}</span>
+                                            </div>
+                                            <div class="mobile-field">
+                                                <span class="mobile-label">Método de Pago:</span>
+                                                <span class={`status-badge status-badge-sm ${pago.paymentmethod === 'cash' ? 'has-package' : 'no-package'}`}>
+                                                    {pago.paymentmethod === 'cash' ? 'Efectivo' : 'Pendiente'}
+                                                </span>
+                                            </div>
+                                            <div class="mobile-field">
+                                                <span class="mobile-label">Estado:</span>
+                                                <span class={`status-badge status-badge-sm ${
+                                                    pago.status === 'completed' ? 'not-sanctioned' : 
+                                                    pago.status === 'cancelled' ? 'sanctioned' : 'no-package'
+                                                }`}>
+                                                    {pago.status === 'completed' ? 'Completado' : 
+                                                     pago.status === 'pending' ? 'Pendiente' : 'Cancelado'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGINACIÓN -->
+                <div class="historial-pagination">
+                    <div class="text-sm text-gray-600">1–10 de {table.length}</div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm text-gray-600">Filas por página:</span>
+                        <select class="historial-select" id="rowsPerPage">
+                            <option>10</option>
+                            <option>25</option>
+                            <option>50</option>
+                        </select>
+                        <div class="flex items-center gap-2">
+                            <button class="btn-action px-3 py-1 text-sm" onclick="cambiarPagina(-1)">⟨</button>
+                            <span class="text-sm text-gray-600">1/{Math.ceil(table.length / 10)}</span>
+                            <button class="btn-action px-3 py-1 text-sm" onclick="cambiarPagina(1)">⟩</button>
+                        </div>
+                    </div>
+                </div>
+            </main>	
+        </div>
+    </div>
+
+    <script>
+        // Función para filtrar pagos
+        async function filtrarPagos() {
+            const pacienteId = document.getElementById('filterPaciente').value;
+            const fecha = document.getElementById('filterFecha').value;
+            const estado = document.getElementById('filterEstado').value;
+            
+            let url = 'http://localhost:3001/api/v1/HistorialPagos';
+            
+            if (pacienteId) {
+                url = `http://localhost:3001/api/v1/HistorialPagos/paciente/${pacienteId}`;
+            } else if (fecha) {
+                url = `http://localhost:3001/api/v1/HistorialPagos/fecha/${fecha}`;
+            }
+            
+            try {
+                const response = await fetch(url);
+                let pagos = await response.json();
+                
+                // Filtrar por estado si se seleccionó
+                if (estado) {
+                    pagos = pagos.filter(pago => pago.status === estado);
+                }
+                
+                // Aquí deberías actualizar la tabla con los pagos filtrados
+                console.log('Pagos filtrados:', pagos);
+                // En una implementación real, aquí actualizarías la tabla
+                alert(`Filtro aplicado. ${pagos.length} registros encontrados.`);
+                
+            } catch (error) {
+                console.error('Error filtrando pagos:', error);
+                alert('Error al aplicar filtros');
+            }
+        }
+
+        // Función para limpiar filtros
+        function limpiarFiltros() {
+            document.getElementById('filterPaciente').value = '';
+            document.getElementById('filterFecha').value = '';
+            document.getElementById('filterEstado').value = '';
+            location.reload();
+        }
+
+        // Función para cambiar página
+        function cambiarPagina(direction) {
+            // Implementación básica de paginación
+            console.log('Cambiando página:', direction);
+        }
+
+        // Mostrar información de que es solo lectura
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Historial de pagos - Vista de solo lectura');
+            console.log('Los pagos se generan automáticamente basados en las citas');
+        });
+    </script>
+
+    <style>
+        /* === ESTILOS GLOBALES PARA EL CONTENEDOR === */
+        .pagos-container {
+            display: flex;
+            min-height: 100vh;
+            background-color: #f8fafc;
+        }
+
+        /* === ESTILOS PARA TABLA COMPLETAMENTE RESPONSIVA === */
+        
+        .table-responsive-container {
+            width: 100%;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .pagos-filters {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .auth-input {
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        /* === SISTEMA DE TABLA RESPONSIVA CON CSS GRID === */
+        
+        /* Cada vista de tabla se muestra según el breakpoint */
+        .table-view {
+            width: 100%;
+        }
+
+        /* Vista Desktop Completa (1400px+) - 10 columnas */
+        .table-desktop-full {
+            display: none;
+        }
+
+        /* Vista Desktop Compacta (1200px - 1399px) - 7 columnas */
+        .table-desktop-compact {
+            display: none;
+        }
+
+        /* Vista Tablet (768px - 1199px) - 5 columnas */
+        .table-tablet {
+            display: none;
+        }
+
+        /* Vista Móvil (hasta 767px) - Cards */
+        .table-mobile {
+            display: none;
+        }
+
+        /* Header y filas comunes */
+        .table-header {
+            display: grid;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            background-color: #234d20;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+            align-items: center;
+        }
+
+        .table-body {
+            width: 100%;
+        }
+
+        .table-row {
+            display: grid;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        .table-row:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Grid columns para diferentes vistas */
+        .grid-cols-10 {
+            grid-template-columns: 1fr 1.2fr 1.5fr 80px 100px 100px 100px 120px 100px 120px;
+        }
+
+        .grid-cols-7 {
+            grid-template-columns: 1fr 1.2fr 1.5fr 120px 100px 120px;
+        }
+
+        .grid-cols-5 {
+            grid-template-columns: 1.5fr 1.5fr 1.2fr 100px 120px;
+        }
+
+        /* Estilos de columnas específicas */
+        .col-fecha,
+        .col-paciente,
+        .col-servicio,
+        .col-cantidad,
+        .col-precio,
+        .col-subtotal,
+        .col-iva,
+        .col-total,
+        .col-metodo,
+        .col-estado {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .col-paciente-tablet {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .col-servicio-tablet {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .col-total-tablet {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .col-metodo,
+        .col-estado {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Tarjetas móviles */
+        .mobile-card {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1rem;
+            background: white;
+        }
+
+        .mobile-card:last-child {
+            border-bottom: none;
+        }
+
+        .mobile-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .mobile-card-content {
+            width: 100%;
+        }
+
+        .mobile-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .mobile-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #2F5D50;
+        }
+
+        .mobile-value {
+            font-size: 0.875rem;
+            color: #374151;
+        }
+
+        /* Badges de estado */
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-align: center;
+            min-width: 50px;
+        }
+
+        .status-badge-sm {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.7rem;
+            min-width: 40px;
+        }
+
+        .status-badge.sanctioned {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .status-badge.not-sanctioned {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .status-badge.has-package {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        .status-badge.no-package {
+            background-color: #f3f4f6;
+            color: #4b5563;
+            border: 1px solid #e5e7eb;
+        }
+
+        /* Botones */
+        .btn-action {
+            background: linear-gradient(135deg, #234d20, #2d5a28);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+
+        .btn-action:hover {
+            background: linear-gradient(135deg, #2d5a28, #366032);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(35, 77, 32, 0.2);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        /* === BREAKPOINTS RESPONSIVE === */
+
+        /* Desktop Completo (1400px+) */
+        @media (min-width: 1400px) {
+            .table-desktop-full {
+                display: block;
+            }
+        }
+
+        /* Desktop Compacto (1200px - 1399px) */
+        @media (min-width: 1200px) and (max-width: 1399px) {
+            .table-desktop-compact {
+                display: block;
+            }
+        }
+
+        /* Tablet (768px - 1199px) */
+        @media (min-width: 768px) and (max-width: 1199px) {
+            .table-tablet {
+                display: block;
+            }
+        }
+
+        /* Móvil (hasta 767px) */
+        @media (max-width: 767px) {
+            .table-mobile {
+                display: block;
+            }
+            
+            .table-responsive-container {
+                border-radius: 0.5rem;
+            }
+            
+            .pagos-filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .pagos-filters .auth-input,
+            .pagos-filters .btn-action,
+            .pagos-filters .btn-secondary {
+                width: 100%;
+            }
+        }
+
+        /* Ajustes para pantallas muy pequeñas */
+        @media (max-width: 480px) {
+            .mobile-card {
+                padding: 0.75rem;
+            }
+            
+            .mobile-card-header {
+                flex-direction: column;
+                gap: 0.75rem;
+                align-items: flex-start;
+            }
+            
+            .mobile-card-content .grid-cols-2 {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .mobile-field {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .mobile-label {
+                min-width: 120px;
+            }
+        }
+
+        /* Responsive para controles */
+        @media (max-width: 768px) {
+            .pagos-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .pagos-controls {
+                justify-content: flex-start;
+            }
+            
+            .pagos-filters {
+                width: 100%;
+            }
+            
+            .pagos-filters .btn-action {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .historial-pagination {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+        }
+
+        /* === ESTILOS PARA PAGINACIÓN === */
+        .historial-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            margin-top: 1rem;
+        }
+
+        .historial-select {
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        /* === ESTILOS PARA HEADER === */
+        .pagos-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .pagos-title {
+            color: #2F5D50;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .pagos-content {
+            padding: 1.5rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* === ESTILOS PARA ASEGURAR QUE EL NAVBAR OCUPE TODA LA ALTURA === */
+        .flex-1 {
+            flex: 1;
+        }
+
+        .flex-col {
+            flex-direction: column;
+        }
+
+        .overflow-hidden {
+            overflow: hidden;
+        }
+    </style>
 </Layout>
-
-<script>
-		function logout() {
-			localStorage.removeItem('token');
-			window.location.href = '/';
-		}
-	</script>

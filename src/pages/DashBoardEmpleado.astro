@@ -1,10 +1,106 @@
 ---
-// src/pages/DashboardEmpleado.astro
 import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 import HeaderEmpleado from "../components/HeaderEmpleado.astro";
-import CitaEmpleado from "../components/CitaEmpleado.astro";
-import ActividadCita from "../components/ActividadCita.astro";
+import axios from "axios";
+
+// Manejo seguro de las peticiones API
+let citas = [];
+let pacientes = [];
+let empleados = [];
+let detallesCitas = [];
+
+try {
+  const [citasRes, pacientesRes, empleadosRes, detallesRes] = await Promise.all([
+    axios.get("http://localhost:3001/api/v1/Citas").catch(() => ({ data: [] })),
+    axios.get("http://localhost:3001/api/v1/Pacientes").catch(() => ({ data: [] })),
+    axios.get("http://localhost:3001/api/v1/Trabajadores").catch(() => ({ data: [] })),
+    axios.get("http://localhost:3001/api/v1/DetalleCitas").catch(() => ({ data: [] }))
+  ]);
+  
+  citas = citasRes.data || [];
+  pacientes = pacientesRes.data || [];
+  empleados = empleadosRes.data || [];
+  detallesCitas = detallesRes.data || [];
+} catch (error) {
+  console.error('Error cargando datos:', error);
+  // Los arrays permanecen vacíos si hay error
+}
+
+// Función para formatear fecha
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0];
+  } catch {
+    return '';
+  }
+};
+
+// Función para formatear hora (solo HH:MM)
+const formatTime = (timeString) => {
+  if (!timeString) return '';
+  if (timeString.includes(':')) {
+    return timeString.substring(0, 5);
+  }
+  return timeString;
+};
+
+// Función para calcular la edad desde la fecha de nacimiento
+const calcularEdad = (fechaNacimiento) => {
+  if (!fechaNacimiento) return '';
+  try {
+    const hoy = new Date();
+    const nacimiento = new Date(fechaNacimiento);
+    let edad = hoy.getFullYear() - nacimiento.getFullYear();
+    const mes = hoy.getMonth() - nacimiento.getMonth();
+    if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+      edad--;
+    }
+    return `${edad} años`;
+  } catch {
+    return '';
+  }
+};
+
+// Función para obtener el nombre completo del paciente
+const getNombrePaciente = (idPaciente) => {
+  if (!idPaciente || !Array.isArray(pacientes)) return 'Paciente no encontrado';
+  const paciente = pacientes.find(p => p.id == idPaciente);
+  return paciente ? `${paciente.firstname || ''} ${paciente.lastname || ''}`.trim() : 'Paciente no encontrado';
+};
+
+// Función para obtener datos del paciente por ID
+const getPacienteData = (idPaciente) => {
+  if (!idPaciente || !Array.isArray(pacientes)) return {};
+  return pacientes.find(p => p.id == idPaciente) || {};
+};
+
+// Función para obtener datos del empleado por ID
+const getEmpleadoData = (idEmpleado) => {
+  if (!idEmpleado || !Array.isArray(empleados)) return {};
+  return empleados.find(e => e.id == idEmpleado) || {};
+};
+
+// Función para obtener detalle de cita por ID de cita
+const getDetalleCita = (idCita) => {
+  if (!idCita || !Array.isArray(detallesCitas)) return {};
+  return detallesCitas.find(d => d.IdAppointment == idCita) || {};
+};
+
+// MOSTRAR TODAS LAS CITAS (no filtrar por fecha actual)
+const citasParaMostrar = Array.isArray(citas) ? citas : [];
+
+// Escapar caracteres para JavaScript
+const escapeJS = (str) => {
+  if (!str) return '';
+  return String(str)
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r');
+};
 ---
 
 <Layout title="Dashboard Empleado">
@@ -19,15 +115,15 @@ import ActividadCita from "../components/ActividadCita.astro";
             <HeaderEmpleado titulo="DASHBOARD EMPLEADO" nombreUsuario="EMPLEADO" />
             
             <main class="dashboard-empleado-content">
-                <!-- Grid de 2 columnas para citas y actividades -->
+                <!-- Grid de 2 columnas para citas y detalles -->
                 <div class="citas-actividades-grid">
                     
                     <!-- Columna 1: Citas del empleado -->
                     <div class="citas-empleado-column">
                         <div class="empleado-column-header">
-                            <h2 class="empleado-column-title">Citas del Día</h2>
+                            <h2 class="empleado-column-title">Todas las Citas</h2>
                             <div class="empleado-column-controls">
-                                <input type="text" class="empleado-search-input" placeholder="Buscar cita..." />
+                                <input type="text" class="empleado-search-input" placeholder="Buscar cita..." id="buscarCitaInput" />
                                 <div class="empleado-pagination-controls">
                                     <button class="empleado-pagination-btn">‹</button>
                                     <span>1</span>
@@ -36,90 +132,78 @@ import ActividadCita from "../components/ActividadCita.astro";
                             </div>
                         </div>
                         
-                        <div class="citas-empleado-list">
-                            <CitaEmpleado 
-                                cita="C001" 
-                                fecha="2025-01-15" 
-                                paciente="Juan Pérez" 
-                                hora="10:00 AM" 
-                                estado="Confirmada" 
-                            />
-                            <CitaEmpleado 
-                                cita="C002" 
-                                fecha="2025-01-15" 
-                                paciente="María García" 
-                                hora="11:30 AM" 
-                                estado="Pendiente" 
-                            />
-                            <CitaEmpleado 
-                                cita="C003" 
-                                fecha="2025-01-15" 
-                                paciente="Carlos López" 
-                                hora="02:00 PM" 
-                                estado="Confirmada" 
-                            />
-                            <CitaEmpleado 
-                                cita="C004" 
-                                fecha="2025-01-15" 
-                                paciente="Ana Rodríguez" 
-                                hora="03:30 PM" 
-                                estado="Completada" 
-                            />
-                            <CitaEmpleado 
-                                cita="C005" 
-                                fecha="2025-01-15" 
-                                paciente="Pedro Martínez" 
-                                hora="04:45 PM" 
-                                estado="Pendiente" 
-                            />
+                        <div class="citas-empleado-list" id="citasList">
+                            {citasParaMostrar.length > 0 ? citasParaMostrar.map((cita) => {
+                                const paciente = getPacienteData(cita.idpatient);
+                                const edad = calcularEdad(paciente.birthday);
+                                const nombrePaciente = getNombrePaciente(cita.idpatient);
+                                const empleado = getEmpleadoData(cita.idemployed);
+                                const nombreEmpleado = empleado ? `${empleado.firstname || ''} ${empleado.lastname || ''}`.trim() : 'Empleado no encontrado';
+                                const detalleCita = getDetalleCita(cita.id);
+                                
+                                return (
+                                    <div 
+                                        class="cita-empleado-item"
+                                        data-cita-id={cita.id || ''}
+                                        data-paciente-id={cita.idpatient || ''}
+                                        data-empleado-id={cita.idemployed || ''}
+                                        data-paciente-nombre={escapeJS(nombrePaciente)}
+                                        data-paciente-edad={escapeJS(edad)}
+                                        data-paciente-email={escapeJS(paciente.email || '')}
+                                        data-paciente-telefono={escapeJS(paciente.phone || '')}
+                                        data-cita-hora={escapeJS(formatTime(cita.inithour))}
+                                        data-cita-duracion={escapeJS(`${formatTime(cita.inithour)} - ${formatTime(cita.endhour)}`)}
+                                        data-cita-servicio={escapeJS(cita.reason || '')}
+                                        data-cita-estado={escapeJS(cita.status || '')}
+                                        data-cita-fecha={escapeJS(formatDate(cita.currentday))}
+                                        data-empleado-nombre={escapeJS(nombreEmpleado)}
+                                        data-cita-notas={escapeJS(cita.reason || '')}
+                                        data-diagnostico={escapeJS(detalleCita.diagnostic || '')}
+                                        data-nota-terapeutica={escapeJS(detalleCita.therapeuticNote || '')}
+                                    >
+                                        <div class="cita-empleado-info">
+                                            <div class="cita-empleado-paciente">{nombrePaciente}</div>
+                                            <div class="cita-empleado-detalles">
+                                                <span class="cita-empleado-hora">{formatTime(cita.inithour)}</span>
+                                                <span class="cita-empleado-fecha">{formatDate(cita.currentday)}</span>
+                                                <span class="cita-empleado-servicio">{cita.reason || 'Sin servicio'}</span>
+                                            </div>
+                                            <div class="cita-empleado-edad">{edad}</div>
+                                        </div>
+                                        <span class={`cita-empleado-estado ${cita.status || ''}`}>
+                                            {(cita.status || '').toUpperCase()}
+                                        </span>
+                                    </div>
+                                );
+                            }) : (
+                                <div class="empty-citas-state">
+                                    <svg class="empty-details-icon" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                                    </svg>
+                                    <h3>No hay citas programadas</h3>
+                                    <p>No se encontraron citas en el sistema</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                     
-                    <!-- Columna 2: Actividades por cita -->
+                    <!-- Columna 2: Detalles de la cita seleccionada -->
                     <div class="actividades-empleado-column">
                         <div class="empleado-column-header">
-                            <h2 class="empleado-column-title">Actividades de la Cita</h2>
-                            <button class="empleado-action-btn">
-                                Guardar Cambios
+                            <h2 class="empleado-column-title">Detalles de la Cita</h2>
+                            <button class="empleado-action-btn" id="iniciarConsultaBtn">
+                                Iniciar Consulta
                             </button>
                         </div>
                         
-                        <div class="actividades-empleado-list">
-                            <div class="empleado-selected-cita-info">
-                                <h3>Cita: C001 - Juan Pérez</h3>
-                                <p>10:00 AM - 15 Ene 2025</p>
+                        <div class="detalles-cita-container" id="detallesCitaContainer">
+                            <div class="empty-details-state">
+                                <svg class="empty-details-icon" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                                </svg>
+                                <h3>Selecciona una cita</h3>
+                                <p>Haz clic en una cita de la lista para ver sus detalles completos</p>
                             </div>
-                            
-                            <ActividadCita 
-                                actividad="Evaluación Inicial" 
-                                descripcion="Evaluar condición del paciente y establecer objetivos" 
-                                duracion="15" 
-                                completada={true}
-                            />
-                            <ActividadCita 
-                                actividad="Ejercicios de Movilidad" 
-                                descripcion="Serie de ejercicios para mejorar rango de movimiento" 
-                                duracion="25" 
-                                completada={true}
-                            />
-                            <ActividadCita 
-                                actividad="Terapia con Calor" 
-                                descripcion="Aplicación de calor en zona afectada" 
-                                duracion="10" 
-                                completada={false}
-                            />
-                            <ActividadCita 
-                                actividad="Ejercicios de Fortalecimiento" 
-                                descripcion="Rutina para fortalecer músculos afectados" 
-                                duracion="20" 
-                                completada={false}
-                            />
-                            <ActividadCita 
-                                actividad="Reevaluación y Planificación" 
-                                descripcion="Evaluar progreso y planificar próxima sesión" 
-                                duracion="10" 
-                                completada={false}
-                            />
                         </div>
                     </div>
                 </div>
@@ -129,1377 +213,793 @@ import ActividadCita from "../components/ActividadCita.astro";
 </Layout>
 
 <script>
-    // Script para manejar la selección de citas
-    document.addEventListener('DOMContentLoaded', function() {
-        const citasItems = document.querySelectorAll('.cita-empleado-item');
+    // Variables globales
+    let citaSeleccionada = null;
+    let todasLasCitas = [];
+
+    // Función para inicializar las citas
+    function inicializarCitas() {
+        todasLasCitas = Array.from(document.querySelectorAll('.cita-empleado-item'));
         
-        citasItems.forEach(item => {
+        // Configurar event listeners para las citas
+        todasLasCitas.forEach(item => {
             item.addEventListener('click', function() {
-                // Remover selección anterior
-                citasItems.forEach(cita => cita.classList.remove('selected'));
-                
-                // Agregar selección a la cita clickeada
-                this.classList.add('selected');
-                
-                // Aquí se cargaran las actividades correspondientes a una cita
-                console.log('Cita seleccionada:', this.getAttribute('data-cita-id'));
+                seleccionarCita(this);
             });
         });
+    }
+
+    // Función para seleccionar una cita y mostrar sus detalles
+    function seleccionarCita(elementoCita) {
+        // Remover selección anterior
+        document.querySelectorAll('.cita-empleado-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+
+        // Agregar selección a la cita clickeada
+        elementoCita.classList.add('selected');
+
+        // Obtener datos de la cita desde los data attributes
+        const citaData = {
+            id: elementoCita.dataset.citaId || '',
+            paciente: {
+                id: elementoCita.dataset.pacienteId || '',
+                nombre: elementoCita.dataset.pacienteNombre || '',
+                edad: elementoCita.dataset.pacienteEdad || '',
+                email: elementoCita.dataset.pacienteEmail || '',
+                telefono: elementoCita.dataset.pacienteTelefono || ''
+            },
+            empleado: {
+                id: elementoCita.dataset.empleadoId || '',
+                nombre: elementoCita.dataset.empleadoNombre || ''
+            },
+            cita: {
+                hora: elementoCita.dataset.citaHora || '',
+                duracion: elementoCita.dataset.citaDuracion || '',
+                servicio: elementoCita.dataset.citaServicio || '',
+                estado: elementoCita.dataset.citaEstado || '',
+                fecha: elementoCita.dataset.citaFecha || '',
+                notas: elementoCita.dataset.citaNotas || '',
+                diagnostico: elementoCita.dataset.diagnostico || '',
+                notaTerapeutica: elementoCita.dataset.notaTerapeutica || ''
+            }
+        };
+
+        citaSeleccionada = citaData;
         
-        // Manejar checkboxes de actividades
-        const actividadChecks = document.querySelectorAll('.actividad-cita-check');
-        actividadChecks.forEach(check => {
-            check.addEventListener('change', function() {
-                const actividadItem = this.closest('.actividad-cita-item');
-                if (this.checked) {
-                    actividadItem.classList.add('completada');
+        // Solo cargar detalles adicionales si hay un ID de paciente válido
+        if (citaData.paciente.id) {
+            cargarDetallesPaciente(citaData.paciente.id)
+                .then(pacienteCompleto => {
+                    mostrarDetallesCita(citaData, pacienteCompleto);
+                })
+                .catch(error => {
+                    console.error('Error cargando detalles del paciente:', error);
+                    mostrarDetallesCita(citaData, {});
+                });
+        } else {
+            mostrarDetallesCita(citaData, {});
+        }
+    }
+
+    // Función para cargar detalles adicionales del paciente
+    async function cargarDetallesPaciente(pacienteId) {
+        if (!pacienteId) return {};
+        
+        try {
+            const response = await fetch(`http://localhost:3001/api/v1/Pacientes/${pacienteId}`);
+            if (response.ok) {
+                return await response.json();
+            } else {
+                return {};
+            }
+        } catch (error) {
+            console.error('Error cargando datos del paciente:', error);
+            return {};
+        }
+    }
+
+    // Función para mostrar los detalles de la cita en la segunda columna
+    function mostrarDetallesCita(cita, pacienteCompleto) {
+        const detallesContainer = document.getElementById('detallesCitaContainer');
+        
+        if (!cita.id) {
+            detallesContainer.innerHTML = `
+                <div class="empty-details-state">
+                    <svg class="empty-details-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <h3>Selecciona una cita</h3>
+                    <p>Haz clic en una cita de la lista para ver sus detalles completos</p>
+                </div>
+            `;
+            return;
+        }
+        
+        detallesContainer.innerHTML = `
+            <div class="detalles-cita-content">
+                <!-- Header de la cita -->
+                <div class="detalles-cita-header">
+                    <div class="detalles-cita-paciente">
+                        <h3>${cita.paciente.nombre || 'Paciente no disponible'}</h3>
+                        <span class="detalles-cita-edad">${cita.paciente.edad || ''}</span>
+                    </div>
+                    <div class="detalles-cita-horario">
+                        <span class="detalles-cita-hora">${cita.cita.hora || ''}</span>
+                        <span class="detalles-cita-fecha">${cita.cita.fecha || ''}</span>
+                        <span class="detalles-cita-duracion">${cita.cita.duracion || ''}</span>
+                    </div>
+                </div>
+
+                <!-- Información básica -->
+                <div class="detalles-seccion">
+                    <h4 class="detalles-seccion-titulo">Información de la Cita</h4>
+                    <div class="detalles-grid">
+                        <div class="detalle-item">
+                            <span class="detalle-label">Servicio</span>
+                            <span class="detalle-valor">${cita.cita.servicio || 'No especificado'}</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Médico</span>
+                            <span class="detalle-valor">${cita.empleado.nombre || 'No asignado'}</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Consultorio</span>
+                            <span class="detalle-valor">JESS THERAPY</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Estado</span>
+                            <span class="estado-badge ${cita.cita.estado || ''}">${(cita.cita.estado || '').toUpperCase()}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información médica -->
+                <div class="detalles-seccion">
+                    <h4 class="detalles-seccion-titulo">Información Médica</h4>
+                    <div class="detalles-grid">
+                        <div class="detalle-item full-width">
+                            <span class="detalle-label">Diagnóstico</span>
+                            <span class="detalle-valor">${cita.cita.diagnostico || 'No disponible'}</span>
+                        </div>
+                        <div class="detalle-item full-width">
+                            <span class="detalle-label">Nota Terapéutica</span>
+                            <div class="notas-cita">${cita.cita.notaTerapeutica || 'No disponible'}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Antecedentes del paciente -->
+                <div class="detalles-seccion">
+                    <h4 class="detalles-seccion-titulo">Antecedentes del Paciente</h4>
+                    <div class="detalles-grid">
+                        <div class="detalle-item">
+                            <span class="detalle-label">Citas Asistidas</span>
+                            <span class="detalle-valor">${pacienteCompleto.assistappointment || 0}</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Citas No Asistidas</span>
+                            <span class="detalle-valor">${pacienteCompleto.noassistappointment || 0}</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Citas Canceladas</span>
+                            <span class="detalle-valor">${pacienteCompleto.canceledappointment || 0}</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Sanción</span>
+                            <span class="estado-badge ${pacienteCompleto.sanction ? 'sanctioned' : 'not-sanctioned'}">
+                                ${pacienteCompleto.sanction ? 'SÍ' : 'NO'}
+                            </span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Tiene Paquete</span>
+                            <span class="estado-badge ${pacienteCompleto.havepackage ? 'has-package' : 'no-package'}">
+                                ${pacienteCompleto.havepackage ? 'SÍ' : 'NO'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notas y contacto -->
+                <div class="detalles-seccion">
+                    <h4 class="detalles-seccion-titulo">Notas y Contacto</h4>
+                    <div class="detalles-grid">
+                        <div class="detalle-item full-width">
+                            <span class="detalle-label">Notas de la Cita</span>
+                            <div class="notas-cita">${cita.cita.notas || 'Sin notas adicionales'}</div>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Email</span>
+                            <span class="detalle-valor">${cita.paciente.email || 'No disponible'}</span>
+                        </div>
+                        <div class="detalle-item">
+                            <span class="detalle-label">Teléfono</span>
+                            <span class="detalle-valor">${cita.paciente.telefono || 'No disponible'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="detalles-acciones">
+                    <button class="btn-secundario" onclick="editarCita('${cita.id}')">
+                        Editar Información
+                    </button>
+                    <button class="btn-primario" onclick="iniciarConsulta('${cita.id}')">
+                        Iniciar Consulta
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Función para buscar citas
+    function buscarCitas(termino) {
+        if (!termino.trim()) {
+            // Si la búsqueda está vacía, mostrar todas las citas
+            todasLasCitas.forEach(cita => {
+                cita.style.display = 'flex';
+            });
+            // Ocultar mensaje de no resultados si existe
+            const mensajeNoResultados = document.querySelector('.empty-search-state');
+            if (mensajeNoResultados) {
+                mensajeNoResultados.style.display = 'none';
+            }
+            return;
+        }
+
+        const terminoLower = termino.toLowerCase();
+        let encontradas = 0;
+
+        todasLasCitas.forEach(cita => {
+            const nombrePaciente = (cita.dataset.pacienteNombre || '').toLowerCase();
+            const servicio = (cita.dataset.citaServicio || '').toLowerCase();
+            const estado = (cita.dataset.citaEstado || '').toLowerCase();
+            
+            if (nombrePaciente.includes(terminoLower) ||
+                servicio.includes(terminoLower) ||
+                estado.includes(terminoLower)) {
+                cita.style.display = 'flex';
+                encontradas++;
+            } else {
+                cita.style.display = 'none';
+            }
+        });
+
+        // Manejar mensaje de no resultados
+        let mensajeNoResultados = document.querySelector('.empty-search-state');
+        const citasList = document.getElementById('citasList');
+        
+        if (encontradas === 0 && termino.trim() !== '') {
+            if (!mensajeNoResultados) {
+                mensajeNoResultados = document.createElement('div');
+                mensajeNoResultados.className = 'empty-search-state';
+                mensajeNoResultados.innerHTML = `
+                    <svg class="empty-details-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                    </svg>
+                    <h3>No se encontraron citas</h3>
+                    <p>No hay citas que coincidan con "${termino}"</p>
+                `;
+                citasList.appendChild(mensajeNoResultados);
+            } else {
+                mensajeNoResultados.style.display = 'flex';
+            }
+        } else if (mensajeNoResultados) {
+            mensajeNoResultados.style.display = 'none';
+        }
+    }
+
+    // Función para iniciar consulta
+    function iniciarConsulta(citaId) {
+        console.log('Iniciando consulta para:', citaId);
+        if (citaSeleccionada) {
+            alert(`Iniciando consulta con ${citaSeleccionada.paciente.nombre}`);
+            // Aquí iría la lógica para redirigir a la pantalla de consulta
+        }
+    }
+
+    // Función para editar cita
+    function editarCita(citaId) {
+        console.log('Editando cita:', citaId);
+        if (citaSeleccionada) {
+            alert(`Editando cita de ${citaSeleccionada.paciente.nombre}`);
+        }
+    }
+
+    // Inicialización cuando el DOM está listo
+    document.addEventListener('DOMContentLoaded', function() {
+        inicializarCitas();
+        
+        // Configurar búsqueda
+        const buscarInput = document.getElementById('buscarCitaInput');
+        if (buscarInput) {
+            buscarInput.addEventListener('input', function(e) {
+                buscarCitas(e.target.value);
+            });
+        }
+
+        // Configurar botón de iniciar consulta
+        const iniciarConsultaBtn = document.getElementById('iniciarConsultaBtn');
+        if (iniciarConsultaBtn) {
+            iniciarConsultaBtn.addEventListener('click', function() {
+                if (citaSeleccionada) {
+                    iniciarConsulta(citaSeleccionada.id);
                 } else {
-                    actividadItem.classList.remove('completada');
+                    alert('Por favor, selecciona una cita primero');
                 }
             });
-        });
+        }
+
+        // Seleccionar automáticamente la primera cita si existe
+        const primeraCita = document.querySelector('.cita-empleado-item');
+        if (primeraCita) {
+            seleccionarCita(primeraCita);
+        }
     });
 </script>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<style>
+    /* Estilos específicos para el dashboard de empleado actualizado */
+    .dashboard-empleado-container {
+        display: flex;
+        min-height: 100vh;
+        background-color: #f8fafc;
+    }
+
+    .dashboard-empleado-nav-container {
+       
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+
+    .dashboard-empleado-main-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dashboard-empleado-content {
+        flex: 1;
+        padding: 2rem;
+        overflow-y: auto;
+    }
+
+    .citas-actividades-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        height: 100%;
+    }
+
+    .citas-empleado-column, .actividades-empleado-column {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .empleado-column-header {
+        padding: 1.5rem;
+        border-bottom: 2px solid #e5e7eb;
+        background: linear-gradient(135deg, #2F5D50, #234D20);
+        color: white;
+    }
+
+    .empleado-column-title {
+        margin: 0 0 1rem 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: white;
+        background-color: bold;
+    }
+
+    .empleado-column-controls {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .empleado-search-input {
+        flex: 1;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 0.875rem;
+    }
+
+    .empleado-pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .empleado-pagination-btn {
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 0.5rem;
+        cursor: pointer;
+        color: #374151;
+    }
+
+    .empleado-action-btn {
+        background: white;
+        color: #2F5D50;
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .empleado-action-btn:hover {
+        background: #f8fafc;
+        transform: translateY(-2px);
+    }
+
+    .citas-empleado-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+    }
+
+    .cita-empleado-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .cita-empleado-item:hover {
+        border-color: #2F5D50;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(47, 93, 80, 0.2);
+    }
+
+    .cita-empleado-item.selected {
+        border-color: #2F5D50;
+        background: #f0f9ff;
+    }
+
+    .cita-empleado-info {
+        flex: 1;
+    }
+
+    .cita-empleado-paciente {
+        font-weight: 600;
+        color: #2F5D50;
+        margin-bottom: 0.25rem;
+    }
+
+    .cita-empleado-detalles {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        margin: 0.25rem 0;
+    }
+
+    .cita-empleado-hora {
+        color: #2F5D50;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .cita-empleado-fecha {
+        color: #6b7280;
+        font-size: 0.75rem;
+    }
+
+    .cita-empleado-servicio {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    .cita-empleado-edad {
+        color: #9ca3af;
+        font-size: 0.75rem;
+    }
+
+    .cita-empleado-estado {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .cita-empleado-estado.confirmed {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .cita-empleado-estado.wait {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .cita-empleado-estado.canceled {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .detalles-cita-container {
+        padding: 1.5rem;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .empty-details-state, .empty-search-state, .empty-citas-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #6b7280;
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .empty-details-icon {
+        width: 4rem;
+        height: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .empty-details-state h3, .empty-search-state h3, .empty-citas-state h3 {
+        color: #374151;
+        margin-bottom: 0.5rem;
+        font-size: 1.25rem;
+    }
+
+    .empty-details-state p, .empty-search-state p, .empty-citas-state p {
+        font-size: 0.875rem;
+        max-width: 300px;
+        line-height: 1.5;
+    }
+
+    .detalles-cita-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .detalles-cita-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    .detalles-cita-paciente h3 {
+        color: #2F5D50;
+        font-size: 1.5rem;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .detalles-cita-edad {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    .detalles-cita-horario {
+        text-align: right;
+    }
+
+    .detalles-cita-hora {
+        display: block;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #2F5D50;
+    }
+
+    .detalles-cita-fecha {
+        display: block;
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin: 0.25rem 0;
+    }
+
+    .detalles-cita-duracion {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .detalles-seccion {
+        background: #f8fafc;
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        border: 1px solid #e5e7eb;
+    }
+
+    .detalles-seccion-titulo {
+        color: #2F5D50;
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0 0 1rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .detalles-seccion-titulo::before {
+        content: "•";
+        color: #2F5D50;
+        font-size: 1.5rem;
+    }
+
+    .detalles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .detalle-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .detalle-item.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .detalle-label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .detalle-valor {
+        color: #6b7280;
+        font-size: 0.875rem;
+        line-height: 1.4;
+    }
+
+    .notas-cita {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: #374151;
+        margin-top: 0.5rem;
+    }
+
+    .detalles-acciones {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1rem;
+        border-top: 2px solid #e5e7eb;
+    }
+
+    .btn-primario {
+        background: linear-gradient(135deg, #234D20, #2F5D50);
+        color: white;
+        border: none;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+        flex: 1;
+    }
+
+    .btn-primario:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(35, 77, 32, 0.3);
+    }
+
+    .btn-secundario {
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+        flex: 1;
+    }
+
+    .btn-secundario:hover {
+        background: #e5e7eb;
+        transform: translateY(-1px);
+    }
+
+    /* Estados mejorados */
+    .estado-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .estado-badge.confirmed {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .estado-badge.wait {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .estado-badge.canceled {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .estado-badge.sanctioned {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .estado-badge.not-sanctioned {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .estado-badge.has-package {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .estado-badge.no-package {
+        background: #f3f4f6;
+        color: #4b5563;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .citas-actividades-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .detalles-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .detalles-cita-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .detalles-cita-horario {
+            text-align: left;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-empleado-content {
+            padding: 1rem;
+        }
+        
+        .detalles-acciones {
+            flex-direction: column;
+        }
+        
+        .detalles-seccion {
+            padding: 1rem;
+        }
+        
+        .empleado-column-controls {
+            flex-direction: column;
+        }
+    }
+</style>
