@@ -2,67 +2,81 @@
 import Layout from '../layouts/Layout.astro';
 ---
 <Layout>
-	<div class="flex flex-col md:flex-row h-screen overflow-hidden">
-		<div id="ContenedorIzquierdo" class="w-full md:w-1/2 h-64 md:h-screen bg-[#f1f1f1] flex items-center justify-center">
-			<img src="LogoJess.png" alt="Logo de la clinica" class="" />
-		</div>
-		<div id="ContenedorDerecho" class="w-full md:w-1/2 h-auto md:h-screen bg-[#234D20] flex items-center justify-center py-8 md:py-0">
-			<form class="border border-black w-full max-w-md bg-gray-100 rounded-md shadow-2xl mx-4">
-				<div class="flex flex-col items-center justify-center space-y-4 p-6">
-					<span class="text-2xl font-semibold mb-4">Inicio de sesión</span>
-					<div class="w-full flex flex-col space-y-2">
-						<label class="text-sm font-medium" for="correo">Ingrese su código de paciente</label>
-						<p id="api-result" class="hidden text-red-500">Código incorrecto</p>
-						<input
-							id="InputCodigo"
-							type="text"
-							placeholder="1234567890"
-							class="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#234D20]"
-						/>
-                        <p>Si no conoce su código de paciente o lo olvidó, solicítelo a la clínica</p>
-					</div>
-                    <div class="w-full flex justify-between">
-                        <a href="/" class="mt-4 px-6 py-2 bg-[#234D20] text-white rounded hover:bg-[#1a3a15] transition flex items-center justify-center h-10">
-                            Regresar
-                        </a >
-						<button
-                            id="loginBtn"
-                            type="button"
-                            class="mt-4 px-6 py-2 bg-[#234D20] text-white rounded hover:bg-[#1a3a15] transition flex items-center justify-center h-10"
-                        >
-                            Iniciar sesión
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#eafaf1] via-[#d0ecd7] to-[#b2d8c5] relative overflow-hidden">
+    {/* Logo decorativo grande, sutil y difuminado */}
+    <img
+      src="/LogoJess.png"
+      alt="Logo de la clínica"
+      class="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[420px] opacity-7 blur-[60px] object-contain z-0"
+      aria-hidden="true"
+    />
+    {/* Card de login con efecto liquid glass */}
+    <form
+      id="loginForm"
+      class="
+        relative z-10 w-full max-w-md mx-4
+        rounded-[2.5rem] border border-white/30
+        bg-white/30 backdrop-blur-2xl shadow-2xl
+        flex flex-col gap-6 items-center
+        p-8 md:p-12
+        ring-1 ring-[#b2d8c5]/40
+      "
+      style="box-shadow: 0 12px 48px 0 rgba(35,77,32,0.10), 0 1.5px 8px 0 rgba(178,216,197,0.10);"
+    >
+      {/* Logo pequeño centrado */}
+      <img
+        src="/LogoJess.png"
+        alt="Logo de la clínica"
+        class="w-32 h-32 object-contain rounded-full shadow-lg mb-2 border-2 border-white/60 bg-white/70"
+      />
+      <span class="text-2xl font-bold text-[#234D20] drop-shadow">Acceso de paciente</span>
+      {/* Campos de login */}
+      <div class="flex flex-col gap-4 w-full">
+        <label class="text-sm font-medium" for="telefono">Ingrese su número de teléfono</label>
+        <p id="api-result" class="hidden text-red-500">Número incorrecto</p>
+        <input
+          id="InputTelefono"
+          type="tel"
+          placeholder="Ej: 5551234567"
+          class="px-4 py-2 rounded-xl border border-gray-200 bg-white/60 backdrop-blur focus:outline-none focus:ring-2 focus:ring-[#388e3c]/40 transition placeholder:text-gray-500"
+          required
+        />
+        <p class="text-xs text-gray-600">Si no conoce su número registrado o lo olvidó, solicítelo a la clínica.</p>
+      </div>
+      <div class="w-full flex justify-between gap-2">
+        <a href="/" class="mt-4 px-6 py-2 bg-[#234D20] text-white rounded-xl font-semibold hover:bg-[#1a3a15] transition flex items-center justify-center h-10">
+          Regresar
+        </a>
+        <button
+          id="loginBtn"
+          type="button"
+          class="mt-4 px-6 py-2 bg-gradient-to-r from-[#388e3c]/90 to-[#234D20]/90 text-white rounded-xl font-semibold hover:from-[#256029] hover:to-[#1a3a15] transition shadow flex items-center justify-center h-10"
+        >
+          Iniciar sesión
+        </button>
+      </div>
+    </form>
+  </div>
 </Layout>
 
-<div id="api-result" class="hidden p-4 bg-white text-sm overflow-auto"></div>
-
 <script type="module">
-
   const btn = document.getElementById('loginBtn');
   const out = document.getElementById('api-result');
 
   btn.addEventListener('click', async () => {
     try {
-      const { data: Codigo } = await axios.get('http://localhost:3000/api/v1/Pacientes');
-      const inputVal = document.getElementById('InputCodigo').value;
-      if (Codigo && Codigo.length > 0 && inputVal === Codigo[0].Codigo) {
-		console.log('Código correcto');
-		window.location.href = '/DashboardPaciente';
+      const { data: Pacientes } = await axios.get('http://localhost:3000/api/v1/Pacientes');
+      const inputVal = document.getElementById('InputTelefono').value.trim();
+      // Busca si algún paciente tiene ese teléfono
+      const encontrado = Pacientes && Pacientes.find(p => p.Telefono === inputVal);
+      if (encontrado) {
+        window.location.href = '/DashboardPaciente';
         return;
       } else {
-        console.log('Código incorrecto');
-		console.log(Codigo[0].Codigo + ' vs ' + inputVal);
-		document.getElementById('api-result').classList.remove('hidden');
-        out.textContent = 'Código incorrecto';
+        out.textContent = 'Número incorrecto';
         out.classList.remove('hidden');
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
       out.textContent = `Error: ${error.message}`;
       out.classList.remove('hidden');
     }
