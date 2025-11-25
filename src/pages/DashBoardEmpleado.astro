@@ -1,152 +1,589 @@
 ---
-import NavBar from "../components/NavBar.astro";
 import Layout from "../layouts/Layout.astro";
+import NavBar from "../components/NavBar.astro";
+import TopTag from "../components/TopTag.astro";
+import axios from "axios";
+
+// Manejo seguro de las peticiones API
+let citas = [];
+let pacientes = [];
+let empleados = [];
+let detallesCitas = [];
+
+try {
+    const [citasRes, pacientesRes, empleadosRes, detallesRes] =
+        await Promise.all([
+            axios
+                .get("http://localhost:3001/api/v1/Citas")
+                .catch(() => ({ data: [] })),
+            axios
+                .get("http://localhost:3001/api/v1/Pacientes")
+                .catch(() => ({ data: [] })),
+            axios
+                .get("http://localhost:3001/api/v1/Trabajadores")
+                .catch(() => ({ data: [] })),
+            axios
+                .get("http://localhost:3001/api/v1/DetalleCitas")
+                .catch(() => ({ data: [] })),
+        ]);
+
+    citas = citasRes.data || [];
+    pacientes = pacientesRes.data || [];
+    empleados = empleadosRes.data || [];
+    detallesCitas = detallesRes.data || [];
+} catch (error) {
+    console.error("Error cargando datos:", error);
+}
+
+// Función para formatear fecha
+const formatDate = (dateString) => {
+    if (!dateString) return "";
+    try {
+        const date = new Date(dateString);
+        return date.toISOString().split("T")[0];
+    } catch {
+        return "";
+    }
+};
+
+// Función para formatear hora (solo HH:MM)
+const formatTime = (timeString) => {
+    if (!timeString) return "";
+    if (timeString.includes(":")) {
+        return timeString.substring(0, 5);
+    }
+    return timeString;
+};
+
+// Función para calcular la edad
+const calcularEdad = (fechaNacimiento) => {
+    if (!fechaNacimiento) return "";
+    try {
+        const hoy = new Date();
+        const nacimiento = new Date(fechaNacimiento);
+        let edad = hoy.getFullYear() - nacimiento.getFullYear();
+        const mes = hoy.getMonth() - nacimiento.getMonth();
+        if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+            edad--;
+        }
+        return `${edad} años`;
+    } catch {
+        return "";
+    }
+};
+
+// Helpers para obtener datos
+const getNombrePaciente = (idPaciente) => {
+    if (!idPaciente || !Array.isArray(pacientes))
+        return "Paciente no encontrado";
+    const paciente = pacientes.find((p) => p.id == idPaciente);
+    return paciente
+        ? `${paciente.firstname || ""} ${paciente.lastname || ""}`.trim()
+        : "Paciente no encontrado";
+};
+
+const getPacienteData = (idPaciente) => {
+    if (!idPaciente || !Array.isArray(pacientes)) return {};
+    return pacientes.find((p) => p.id == idPaciente) || {};
+};
+
+const getEmpleadoData = (idEmpleado) => {
+    if (!idEmpleado || !Array.isArray(empleados)) return {};
+    return empleados.find((e) => e.id == idEmpleado) || {};
+};
+
+const getDetalleCita = (idCita) => {
+    if (!idCita || !Array.isArray(detallesCitas)) return {};
+    return detallesCitas.find((d) => d.IdAppointment == idCita) || {};
+};
+
+const citasParaMostrar = Array.isArray(citas) ? citas : [];
+
+// Escapar caracteres para JavaScript
+const escapeJS = (str) => {
+    if (!str) return "";
+    return String(str)
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, "\\n")
+        .replace(/\r/g, "\\r");
+};
 ---
-<Layout>
-	<div class="flex h-screen dashboard-container">
-		<NavBar />
-		<div class="flex-1 flex flex-col overflow-hidden">
-			<!-- Header -->
-			<header class="dashboard-header shadow-sm">
-				<div class="flex justify-between items-center px-6 py-4">
-					<h1>Dashboard</h1>
-					<div class="flex items-center space-x-4">
-						<span class="welcome-text">Bienvenido, Empleado</span>
-						<button onclick="logout()" class="logout-button">
-							Cerrar Sesión
-						</button>
-					</div>
-				</div>
-			</header>
 
-			<main class="dashboard-main">
-				<!-- Estadísticas principales -->
-				<div class="dashboard-grid">
-					<div class="dashboard-stat-card text-white">
-						<div class="dashboard-stat-content">
-							<div class="dashboard-stat-info">
-								<p class="dashboard-stat-title">Total User</p>
-								<p class="dashboard-stat-value">40,689</p>
-								<p class="dashboard-stat-subtitle">8.5% Up from yesterday</p>
-							</div>
-							<div class="dashboard-stat-icon">
-								<i class="fa-solid fa-users"></i>
-							</div>
-						</div>
-					</div>
+<Layout title="Dashboard Empleado">
+    <div
+        class="flex h-screen overflow-hidden bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8]"
+    >
+        <NavBar />
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+            <!-- Background Elements for depth -->
+            <div
+                class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#2F5D50]/10 rounded-full blur-3xl pointer-events-none"
+            >
+            </div>
+            <div
+                class="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-[#2F5D50]/5 rounded-full blur-3xl pointer-events-none"
+            >
+            </div>
 
-					<div class="dashboard-stat-card text-white">
-						<div class="dashboard-stat-content">
-							<div class="dashboard-stat-info">
-								<p class="dashboard-stat-title">Total Order</p>
-								<p class="dashboard-stat-value">10,293</p>
-								<p class="dashboard-stat-subtitle">1.3% Up from past week</p>
-							</div>
-							<div class="dashboard-stat-icon">
-								<i class="fa-solid fa-shopping-cart"></i>
-							</div>
-						</div>
-					</div>
+            <TopTag titulo="Dashboard Empleado" nombreUsuario="Empleado" />
 
-					<div class="dashboard-stat-card text-white">
-						<div class="dashboard-stat-content">
-							<div class="dashboard-stat-info">
-								<p class="dashboard-stat-title">Total Sales</p>
-								<p class="dashboard-stat-value">$89,000</p>
-								<p class="dashboard-stat-subtitle">4.3% Down from yesterday</p>
-							</div>
-							<div class="dashboard-stat-icon">
-								<i class="fa-solid fa-chart-line"></i>
-							</div>
-						</div>
-					</div>
+            <main
+                class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-[#2F5D50]/20 scrollbar-track-transparent relative z-10"
+            >
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+                    <!-- Columna 1: Lista de Citas -->
+                    <div
+                        class="glass-panel rounded-3xl flex flex-col overflow-hidden animate-fade-in-up stagger-1 border border-white/40 shadow-xl"
+                    >
+                        <div
+                            class="p-6 border-b border-[#2F5D50]/10 bg-[#2F5D50]/5"
+                        >
+                            <h2
+                                class="text-xl font-bold text-[#2F5D50] mb-4 flex items-center gap-2"
+                            >
+                                <i class="fa-regular fa-calendar-check"></i>
+                                Agenda de Citas
+                            </h2>
+                            <div class="relative group">
+                                <i
+                                    class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-[#2F5D50] transition-colors"
+                                ></i>
+                                <input
+                                    type="text"
+                                    id="buscarCitaInput"
+                                    class="glass-input w-full pl-11 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                                    placeholder="Buscar por paciente, servicio..."
+                                />
+                            </div>
+                        </div>
 
-					<div class="dashboard-stat-card text-white">
-						<div class="dashboard-stat-content">
-							<div class="dashboard-stat-info">
-								<p class="dashboard-stat-title">Total Pending</p>
-								<p class="dashboard-stat-value">2,040</p>
-								<p class="dashboard-stat-subtitle">1.8% Up from yesterday</p>
-							</div>
-							<div class="dashboard-stat-icon">
-								<i class="fa-solid fa-clock"></i>
-							</div>
-						</div>
-					</div>
-				</div>
+                        <div
+                            class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"
+                            id="citasList"
+                        >
+                            {
+                                citasParaMostrar.length > 0 ? (
+                                    citasParaMostrar.map((cita) => {
+                                        const paciente = getPacienteData(
+                                            cita.idpatient,
+                                        );
+                                        const edad = calcularEdad(
+                                            paciente.birthday,
+                                        );
+                                        const nombrePaciente =
+                                            getNombrePaciente(cita.idpatient);
+                                        const empleado = getEmpleadoData(
+                                            cita.idemployed,
+                                        );
+                                        const nombreEmpleado = empleado
+                                            ? `${empleado.firstname || ""} ${empleado.lastname || ""}`.trim()
+                                            : "Empleado no encontrado";
+                                        const detalleCita = getDetalleCita(
+                                            cita.id,
+                                        );
 
-				<!-- Gráfica de ventas y próximas citas -->
-				<div class="dashboard-stats-grid">
-					<!-- Gráfica de ventas -->
-					<div class="dashboard-content-card">
-						<h3 class="dashboard-card-title">Sales Details</h3>
-						<div class="sales-chart-container">
-							<div class="sales-chart-placeholder">
-								<div class="sales-chart-graphic">
-									<span class="sales-chart-percentage">54%</span>
-								</div>
-								<p class="sales-chart-text">Gráfica de ventas mensuales</p>
-							</div>
-						</div>
-					</div>
+                                        return (
+                                            <div
+                                                class="cita-item p-5 rounded-2xl border border-white/50 hover:border-[#2F5D50]/30 hover:bg-white/80 cursor-pointer transition-all group bg-white/40 backdrop-blur-sm shadow-sm hover:shadow-md hover:-translate-y-1"
+                                                data-cita-id={cita.id || ""}
+                                                data-paciente-id={
+                                                    cita.idpatient || ""
+                                                }
+                                                data-empleado-id={
+                                                    cita.idemployed || ""
+                                                }
+                                                data-paciente-nombre={escapeJS(
+                                                    nombrePaciente,
+                                                )}
+                                                data-paciente-edad={escapeJS(
+                                                    edad,
+                                                )}
+                                                data-paciente-email={escapeJS(
+                                                    paciente.email || "",
+                                                )}
+                                                data-paciente-telefono={escapeJS(
+                                                    paciente.phone || "",
+                                                )}
+                                                data-cita-hora={escapeJS(
+                                                    formatTime(cita.inithour),
+                                                )}
+                                                data-cita-duracion={escapeJS(
+                                                    `${formatTime(cita.inithour)} - ${formatTime(cita.endhour)}`,
+                                                )}
+                                                data-cita-servicio={escapeJS(
+                                                    cita.reason || "",
+                                                )}
+                                                data-cita-estado={escapeJS(
+                                                    cita.status || "",
+                                                )}
+                                                data-cita-fecha={escapeJS(
+                                                    formatDate(cita.currentday),
+                                                )}
+                                                data-empleado-nombre={escapeJS(
+                                                    nombreEmpleado,
+                                                )}
+                                                data-cita-notas={escapeJS(
+                                                    cita.reason || "",
+                                                )}
+                                                data-diagnostico={escapeJS(
+                                                    detalleCita.diagnostic ||
+                                                        "",
+                                                )}
+                                                data-nota-terapeutica={escapeJS(
+                                                    detalleCita.therapeuticNote ||
+                                                        "",
+                                                )}
+                                            >
+                                                <div class="flex justify-between items-start mb-3">
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="w-10 h-10 rounded-full bg-[#2F5D50]/10 flex items-center justify-center text-[#2F5D50] font-bold">
+                                                            {nombrePaciente.charAt(
+                                                                0,
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <h3 class="font-bold text-gray-800 group-hover:text-[#2F5D50] transition-colors text-lg leading-tight">
+                                                                {nombrePaciente}
+                                                            </h3>
+                                                            <p class="text-xs text-gray-500 font-medium">
+                                                                {edad}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <span
+                                                        class={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm ${
+                                                            cita.status ===
+                                                            "confirmed"
+                                                                ? "bg-green-100 text-green-700"
+                                                                : cita.status ===
+                                                                    "pending"
+                                                                  ? "bg-yellow-100 text-yellow-700"
+                                                                  : "bg-red-100 text-red-700"
+                                                        }`}
+                                                    >
+                                                        {cita.status ||
+                                                            "Pendiente"}
+                                                    </span>
+                                                </div>
+                                                <div class="flex items-center gap-4 text-sm text-gray-600 mb-3 bg-white/30 p-2 rounded-lg">
+                                                    <div class="flex items-center gap-2">
+                                                        <i class="fa-regular fa-clock text-[#2F5D50]" />
+                                                        <span class="font-medium">
+                                                            {formatTime(
+                                                                cita.inithour,
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                    <div class="w-px h-4 bg-gray-300" />
+                                                    <div class="flex items-center gap-2">
+                                                        <i class="fa-regular fa-calendar text-[#2F5D50]" />
+                                                        <span class="font-medium">
+                                                            {formatDate(
+                                                                cita.currentday,
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="text-sm text-gray-500 italic flex items-start gap-2">
+                                                    <i class="fa-solid fa-quote-left text-[#2F5D50]/40 text-xs mt-1" />
+                                                    {cita.reason ||
+                                                        "Sin motivo especificado"}
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div class="flex flex-col items-center justify-center h-64 text-gray-400">
+                                        <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                                            <i class="fa-regular fa-calendar-xmark text-4xl text-gray-300" />
+                                        </div>
+                                        <p class="font-medium">
+                                            No hay citas programadas
+                                        </p>
+                                    </div>
+                                )
+                            }
+                        </div>
+                    </div>
 
-					<!-- Próximas citas -->
-					<div class="dashboard-content-card">
-						<h3 class="dashboard-card-title">Próximas Citas Hoy</h3>
-						<div class="appointments-list">
-							<div class="appointment-item">
-								<div class="appointment-info">
-									<p class="appointment-time">10:00 AM</p>
-									<p class="appointment-patient">PACIENTE 1</p>
-								</div>
-								<span class="status-pending">PENDIENTE</span>
-							</div>
-							<div class="appointment-item">
-								<div class="appointment-info">
-									<p class="appointment-time">10:00 AM</p>
-									<p class="appointment-patient">PACIENTE 2</p>
-								</div>
-								<span class="status-pending">PENDIENTE</span>
-							</div>
-							<div class="appointment-item">
-								<div class="appointment-info">
-									<p class="appointment-time">11:00 AM</p>
-									<p class="appointment-patient">PACIENTE 3</p>
-								</div>
-								<span class="status-confirmed">CONFIRMADA</span>
-							</div>
-						</div>
-					</div>
-				</div>
+                    <!-- Columna 2: Detalles -->
+                    <div
+                        class="glass-panel rounded-3xl flex flex-col overflow-hidden animate-fade-in-up stagger-2 relative border border-white/40 shadow-xl"
+                    >
+                        <div
+                            class="p-6 border-b border-[#2F5D50]/10 bg-[#2F5D50]/5 flex justify-between items-center"
+                        >
+                            <h2
+                                class="text-xl font-bold text-[#2F5D50] flex items-center gap-2"
+                            >
+                                <i class="fa-solid fa-circle-info"></i>
+                                Detalles de la Cita
+                            </h2>
+                            <button
+                                id="btnIniciarConsulta"
+                                class="glass-button px-5 py-2.5 rounded-xl text-white bg-[#2F5D50] font-bold hover:bg-[#234D20] transition-all text-sm hidden shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-1 flex items-center gap-2"
+                            >
+                                <i class="fa-solid fa-stethoscope"></i>
+                                Iniciar Consulta
+                            </button>
+                        </div>
 
-				<!-- Acciones rápidas -->
-				<div class="dashboard-actions-grid">
-					<a href="/Paciente" class="quick-action-card">
-						<i class="fa-solid fa-user-plus quick-action-icon"></i>
-						<p class="quick-action-text">Registrar Paciente</p>
-					</a>
-					<a href="/Agenda" class="quick-action-card">
-						<i class="fa-solid fa-calendar-days quick-action-icon"></i>
-						<p class="quick-action-text">Agenda</p>
-					</a>
-					<a href="/ProductoServicio" class="quick-action-card">
-						<i class="fa-solid fa-cart-plus quick-action-icon"></i>
-						<p class="quick-action-text">Productos/Servicios</p>
-					</a>
-					<a href="/HistorialCita" class="quick-action-card">
-						<i class="fa-solid fa-box-archive quick-action-icon"></i>
-						<p class="quick-action-text">Historial de Citas</p>
-					</a>
-				</div>
-			</main>
-		</div>
-	</div>
+                        <div
+                            class="flex-1 overflow-y-auto p-8 custom-scrollbar"
+                            id="detallesContainer"
+                        >
+                            <div
+                                class="flex flex-col items-center justify-center h-full text-gray-400"
+                            >
+                                <div
+                                    class="w-24 h-24 rounded-full bg-[#2F5D50]/5 flex items-center justify-center mb-6 animate-pulse"
+                                >
+                                    <i
+                                        class="fa-solid fa-hand-pointer text-4xl text-[#2F5D50]/40"
+                                    ></i>
+                                </div>
+                                <p class="text-lg font-medium text-gray-500">
+                                    Selecciona una cita para ver los detalles
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
 
-	<script>
-		function logout() {
-			localStorage.removeItem('token');
-			localStorage.removeItem('userRole');
-			window.location.href = '/';
-		}
-	</script>
+    <script is:inline>
+        // Variables globales
+        let citaSeleccionada = null;
+        let todasLasCitas = [];
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // GSAP Animations
+            if (typeof gsap !== "undefined") {
+                gsap.from(".glass-panel", {
+                    duration: 0.8,
+                    y: 30,
+                    opacity: 0,
+                    stagger: 0.1,
+                    ease: "power3.out",
+                });
+                gsap.from(".cita-item", {
+                    duration: 0.5,
+                    opacity: 0,
+                    y: 10,
+                    stagger: 0.05,
+                    delay: 0.2,
+                    ease: "power2.out",
+                });
+            }
+
+            todasLasCitas = Array.from(document.querySelectorAll(".cita-item"));
+
+            // Event Listeners para citas
+            todasLasCitas.forEach((item) => {
+                item.addEventListener("click", function () {
+                    seleccionarCita(this);
+                });
+            });
+
+            // Búsqueda
+            const buscarInput = document.getElementById("buscarCitaInput");
+            if (buscarInput) {
+                buscarInput.addEventListener("input", function (e) {
+                    const termino = e.target.value.toLowerCase();
+                    todasLasCitas.forEach((cita) => {
+                        const texto = cita.innerText.toLowerCase();
+                        if (texto.includes(termino)) {
+                            cita.style.display = "block";
+                            // Re-animar entrada
+                            if (typeof gsap !== "undefined") {
+                                gsap.to(cita, {
+                                    opacity: 1,
+                                    y: 0,
+                                    duration: 0.3,
+                                });
+                            }
+                        } else {
+                            cita.style.display = "none";
+                        }
+                    });
+                });
+            }
+
+            // Botón Iniciar Consulta
+            document
+                .getElementById("btnIniciarConsulta")
+                ?.addEventListener("click", function () {
+                    if (citaSeleccionada) {
+                        alert(
+                            `Iniciando consulta para: ${citaSeleccionada.paciente.nombre}`,
+                        );
+                        // Redirección o lógica adicional
+                    }
+                });
+        });
+
+        function seleccionarCita(elemento) {
+            // Remover clase activa de todos
+            todasLasCitas.forEach((c) => {
+                c.classList.remove(
+                    "border-[#2F5D50]",
+                    "bg-[#2F5D50]/10",
+                    "ring-2",
+                    "ring-[#2F5D50]/20",
+                );
+                c.classList.add("border-white/50", "bg-white/40");
+            });
+
+            // Agregar clase activa al seleccionado
+            elemento.classList.remove("border-white/50", "bg-white/40");
+            elemento.classList.add(
+                "border-[#2F5D50]",
+                "bg-[#2F5D50]/10",
+                "ring-2",
+                "ring-[#2F5D50]/20",
+            );
+
+            // Extraer datos
+            const ds = elemento.dataset;
+            citaSeleccionada = {
+                id: ds.citaId,
+                paciente: {
+                    id: ds.pacienteId,
+                    nombre: ds.pacienteNombre,
+                    edad: ds.pacienteEdad,
+                    email: ds.pacienteEmail,
+                    telefono: ds.pacienteTelefono,
+                },
+                empleado: {
+                    id: ds.empleadoId,
+                    nombre: ds.empleadoNombre,
+                },
+                cita: {
+                    hora: ds.citaHora,
+                    duracion: ds.citaDuracion,
+                    servicio: ds.citaServicio,
+                    estado: ds.citaEstado,
+                    fecha: ds.citaFecha,
+                    notas: ds.citaNotas,
+                    diagnostico: ds.diagnostico,
+                    notaTerapeutica: ds.notaTerapeutica,
+                },
+            };
+
+            mostrarDetalles(citaSeleccionada);
+        }
+
+        function mostrarDetalles(data) {
+            const container = document.getElementById("detallesContainer");
+            const btnIniciar = document.getElementById("btnIniciarConsulta");
+
+            if (btnIniciar) {
+                btnIniciar.classList.remove("hidden");
+                // Animate button entrance
+                if (typeof gsap !== "undefined") {
+                    gsap.fromTo(
+                        btnIniciar,
+                        { opacity: 0, y: -10 },
+                        { opacity: 1, y: 0, duration: 0.3 },
+                    );
+                }
+            }
+
+            // Animación de salida
+            if (typeof gsap !== "undefined") {
+                gsap.to(container, {
+                    opacity: 0,
+                    duration: 0.2,
+                    onComplete: () => {
+                        renderizarContenido(container, data);
+                        // Animación de entrada
+                        gsap.to(container, { opacity: 1, duration: 0.3 });
+                    },
+                });
+            } else {
+                renderizarContenido(container, data);
+            }
+        }
+
+        function renderizarContenido(container, data) {
+            container.innerHTML = `
+                <div class="space-y-8">
+                    <!-- Header Paciente -->
+                    <div class="flex items-center gap-6 pb-8 border-b border-[#2F5D50]/10">
+                        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-[#2F5D50] to-[#1a3c33] flex items-center justify-center text-3xl font-bold text-white shadow-lg">
+                            ${data.paciente.nombre.charAt(0)}
+                        </div>
+                        <div>
+                            <h3 class="text-3xl font-bold text-gray-800 mb-1">${data.paciente.nombre}</h3>
+                            <div class="flex items-center gap-3 text-gray-500 font-medium">
+                                <span class="bg-gray-100 px-2 py-1 rounded-lg text-xs uppercase tracking-wide">Paciente</span>
+                                <span>${data.paciente.edad}</span>
+                                <span>•</span>
+                                <span>${data.paciente.email}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info Cita -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-5 rounded-2xl bg-white/60 border border-white/60 shadow-sm hover:shadow-md transition-all">
+                            <span class="text-xs font-bold text-[#2F5D50] uppercase tracking-wider block mb-2">Fecha</span>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-regular fa-calendar text-xl text-gray-400"></i>
+                                <p class="font-bold text-gray-800 text-lg">${data.cita.fecha}</p>
+                            </div>
+                        </div>
+                        <div class="p-5 rounded-2xl bg-white/60 border border-white/60 shadow-sm hover:shadow-md transition-all">
+                            <span class="text-xs font-bold text-[#2F5D50] uppercase tracking-wider block mb-2">Horario</span>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-regular fa-clock text-xl text-gray-400"></i>
+                                <p class="font-bold text-gray-800 text-lg">${data.cita.duracion}</p>
+                            </div>
+                        </div>
+                        <div class="p-5 rounded-2xl bg-[#2F5D50]/5 border border-[#2F5D50]/10 col-span-2 shadow-sm">
+                            <span class="text-xs font-bold text-[#2F5D50] uppercase tracking-wider block mb-2">Servicio Solicitado</span>
+                            <p class="font-bold text-[#2F5D50] text-xl">${data.cita.servicio}</p>
+                        </div>
+                    </div>
+
+                    <!-- Detalles Médicos -->
+                    <div class="space-y-4">
+                        <h4 class="font-bold text-gray-800 flex items-center gap-2 text-lg">
+                            <div class="w-8 h-8 rounded-lg bg-[#2F5D50]/10 flex items-center justify-center">
+                                <i class="fa-solid fa-file-medical text-[#2F5D50]"></i>
+                            </div>
+                            Información Médica
+                        </h4>
+                        
+                        <div class="p-5 rounded-2xl bg-white/40 border border-white/50 hover:bg-white/60 transition-colors">
+                            <span class="text-xs font-bold text-gray-400 uppercase block mb-2">Diagnóstico Previo</span>
+                            <p class="text-gray-700 text-sm leading-relaxed italic">
+                                "${data.cita.diagnostico || "No hay diagnóstico registrado."}"
+                            </p>
+                        </div>
+
+                        <div class="p-5 rounded-2xl bg-white/40 border border-white/50 hover:bg-white/60 transition-colors">
+                            <span class="text-xs font-bold text-gray-400 uppercase block mb-2">Nota Terapéutica</span>
+                            <p class="text-gray-700 text-sm leading-relaxed italic">
+                                "${data.cita.notaTerapeutica || "No hay notas terapéuticas registradas."}"
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Contacto -->
+                    <div class="flex gap-4 pt-4 border-t border-[#2F5D50]/10">
+                        <a href="tel:${data.paciente.telefono}" class="flex-1 py-4 rounded-xl bg-green-50 text-green-700 font-bold text-center hover:bg-green-100 transition-all hover:-translate-y-1 shadow-sm">
+                            <i class="fa-solid fa-phone mr-2"></i>Llamar
+                        </a>
+                        <a href="mailto:${data.paciente.email}" class="flex-1 py-4 rounded-xl bg-blue-50 text-blue-700 font-bold text-center hover:bg-blue-100 transition-all hover:-translate-y-1 shadow-sm">
+                            <i class="fa-solid fa-envelope mr-2"></i>Email
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
 </Layout>

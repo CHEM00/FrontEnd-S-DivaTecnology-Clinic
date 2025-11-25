@@ -1,0 +1,109 @@
+---
+export interface Props {
+  id: string;
+  title: string;
+  size?: "sm" | "md" | "lg" | "xl";
+  position?: "center" | "right";
+  formId: string;
+  submitText?: string;
+  cancelText?: string;
+}
+
+const {
+  id,
+  title,
+  size = "md",
+  position = "center",
+  formId,
+  submitText = "GUARDAR",
+  cancelText = "CANCELAR",
+} = Astro.props;
+
+const sizeClasses = {
+  sm: "max-w-md",
+  md: "max-w-lg",
+  lg: "max-w-2xl",
+  xl: "max-w-4xl",
+};
+
+const positionClasses = {
+  center: "items-center justify-center p-4",
+  right: "justify-end h-full",
+};
+---
+
+<div id={id} class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
+  <!-- Backdrop -->
+  <div
+    class="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+    onclick={`cerrarModal('${id}')`}
+  >
+  </div>
+
+  <!-- Modal Container -->
+  <div
+    class={`flex min-h-full ${positionClasses[position]} pointer-events-none`}
+  >
+    <div
+      class={`
+            relative w-full ${sizeClasses[size]} 
+            glass-panel pointer-events-auto
+            ${position === "right" ? "h-full rounded-l-2xl border-r-0 my-0" : "rounded-2xl shadow-2xl my-8"}
+            flex flex-col overflow-hidden transition-all duration-300 transform scale-95 opacity-0
+            modal-content-wrapper
+        `}
+      style="max-height: 90vh;"
+    >
+      <!-- Header -->
+      <div
+        class="flex justify-between items-center px-6 py-4 border-b border-[#2F5D50]/10 flex-shrink-0 bg-white/40"
+      >
+        <h3 class="text-[#2F5D50] text-xl font-bold m-0 tracking-tight">
+          {title}
+        </h3>
+        <button
+          class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-[#2F5D50]/10 transition-colors"
+          onclick={`cerrarModal('${id}')`}
+        >
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-6 overflow-y-auto flex-1 min-h-0 custom-scrollbar">
+        <form id={formId} class="h-full space-y-4">
+          <slot />
+        </form>
+      </div>
+
+      <!-- Footer -->
+      <div
+        class="flex justify-end gap-3 px-6 py-4 border-t border-[#2F5D50]/10 bg-white/40 flex-shrink-0"
+      >
+        <button
+          type="button"
+          class="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-all"
+          onclick={`cerrarModal('${id}')`}
+        >
+          {cancelText}
+        </button>
+        <button
+          type="submit"
+          form={formId}
+          class="px-6 py-2.5 rounded-xl bg-[#2F5D50] text-white font-medium hover:bg-[#234D20] shadow-lg hover:shadow-[#2F5D50]/30 transition-all transform hover:-translate-y-0.5"
+        >
+          {submitText}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+</style>

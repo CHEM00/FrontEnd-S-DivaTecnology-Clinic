@@ -1,62 +1,102 @@
-<button
-  id="dropdownDefaultButton"
-  data-dropdown-toggle="dropdown"
-  class="text-green-800 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-[#E7FFEF] dark:hover:bg-green-700 dark:focus:ring-green-800"
-  type="button"
-  >Acciones
-  <svg
-    class="w-2.5 h-2.5 ms-3"
-    aria-hidden="true"
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 10 6"
+---
+interface Props {
+  id: string;
+  label?: string;
+}
+
+const { id, label = "Acciones" } = Astro.props;
+---
+
+<div class="relative inline-block text-left dropdown-container">
+  <button
+    id={`btn-${id}`}
+    data-dropdown-id={id}
+    type="button"
+    class="inline-flex w-full justify-center gap-x-1.5 rounded-lg glass-input px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-white/60 shadow-sm ring-1 ring-inset ring-gray-300/50"
+    aria-expanded="false"
+    aria-haspopup="true"
   >
-    <path
-      stroke="currentColor"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="2"
-      d="m1 1 4 4 4-4"
+    {label}
+    <svg
+      class="-mr-1 h-5 w-5 text-gray-500"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      aria-hidden="true"
     >
-    </path>
-  </svg>
-</button>
-<!-- Dropdown menu -->
-<div
-  id="dropdown"
-  class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-44 dark:bg-[#E7FFEF]"
->
-  <ul
-    class="py-2 text-sm text-gray-700 dark:text-gray-200"
-    aria-labelledby="dropdownDefaultButton"
+      <path
+        fill-rule="evenodd"
+        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+        clip-rule="evenodd"></path>
+    </svg>
+  </button>
+
+  <div
+    id={`menu-${id}`}
+    class="absolute right-0 z-20 mt-2 w-40 origin-top-right rounded-xl glass-panel shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden transform opacity-0 scale-95 transition-all duration-200 ease-out overflow-hidden"
+    role="menu"
+    aria-orientation="vertical"
+    aria-labelledby={`btn-${id}`}
+    tabindex="-1"
   >
-    <li>
-      <a
-        href="#"
-        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-        >Dashboard
-      </a>
-    </li>
-    <li>
-      <a
-        href="#"
-        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-        >Settings
-      </a>
-    </li>
-    <li>
-      <a
-        href="#"
-        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-        >Earnings
-      </a>
-    </li>
-    <li>
-      <a
-        href="#"
-        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-        >Sign out
-      </a>
-    </li>
-  </ul>
+    <div class="py-1" role="none">
+      <slot />
+    </div>
+  </div>
 </div>
+
+<script>
+  function setupDropdowns() {
+    const buttons = document.querySelectorAll("[data-dropdown-id]");
+
+    buttons.forEach((btn) => {
+      // Remove old listeners to prevent duplicates if re-run
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+
+      newBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = newBtn.getAttribute("data-dropdown-id");
+        const menu = document.getElementById(`menu-${id}`);
+
+        // Close all other dropdowns
+        document.querySelectorAll('[id^="menu-"]').forEach((m) => {
+          if (m.id !== `menu-${id}`) {
+            m.classList.add("hidden", "opacity-0", "scale-95");
+            m.classList.remove("opacity-100", "scale-100");
+          }
+        });
+
+        // Toggle current
+        if (menu.classList.contains("hidden")) {
+          menu.classList.remove("hidden");
+          // Small delay to allow transition
+          requestAnimationFrame(() => {
+            menu.classList.remove("opacity-0", "scale-95");
+            menu.classList.add("opacity-100", "scale-100");
+          });
+        } else {
+          menu.classList.remove("opacity-100", "scale-100");
+          menu.classList.add("opacity-0", "scale-95");
+          setTimeout(() => {
+            menu.classList.add("hidden");
+          }, 100);
+        }
+      });
+    });
+
+    // Close on click outside
+    document.addEventListener("click", () => {
+      document.querySelectorAll('[id^="menu-"]').forEach((m) => {
+        m.classList.remove("opacity-100", "scale-100");
+        m.classList.add("opacity-0", "scale-95");
+        setTimeout(() => {
+          m.classList.add("hidden");
+        }, 100);
+      });
+    });
+  }
+
+  // Run on load and after Astro swaps (if using ViewTransitions)
+  setupDropdowns();
+  document.addEventListener("astro:page-load", setupDropdowns);
+</script>

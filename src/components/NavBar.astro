@@ -1,51 +1,286 @@
 ---
 const iconos = [
-    { icon: "fa-bars", label: "Menú", href: "#" },
+    { icon: "fa-bars", label: "Menú", href: "#", action: "toggle" },
     { icon: "fa-house", label: "Inicio", href: "/DashboardAdmin" },
     { icon: "fa-user-plus", label: "Registrar paciente", href: "/Paciente" },
-    { icon: "fa-cart-plus", label: "Productos y servicios", href: "/ProductoServicio" },
+    {
+        icon: "fa-cart-plus",
+        label: "Productos y servicios",
+        href: "/ProductoServicio",
+    },
     { icon: "fa-calendar-days", label: "Agenda", href: "/Agenda" },
-    { icon: "fa-box-archive", label: "Historial de citas", href: "/HistorialCita" },
+    {
+        icon: "fa-box-archive",
+        label: "Historial de citas",
+        href: "/HistorialCita",
+    },
     { icon: "fa-money-bill", label: "Pagos", href: "/Pago" },
     { icon: "fa-universal-access", label: "Roles y permisos", href: "/Roles" },
     { icon: "fa-user-nurse", label: "Empleados", href: "/Empleado" },
     { icon: "fa-gear", label: "Configuración", href: "/configuracion" },
 ];
+
+const currentPath = Astro.url.pathname;
 ---
-<div id="Contenedor" class="transition-all duration-300 w-16 h-full bg-[#2E7D6D]" tabindex="0">
-    <ol id="NavList" class="w-full h-full flex flex-col">
-        {iconos.map((item, idx) => (
-        <li
-            id={idx === 0 ? "IconMenu" : undefined}
-            class="flex-1 flex items-center justify-center cursor-pointer group"
+
+<!-- Mobile Toggle Button (Floating) -->
+<button
+    id="MobileToggle"
+    onclick="toggleNavBar()"
+    class="lg:hidden fixed top-4 left-4 z-[9999] glass-button p-3 rounded-full shadow-lg hover:bg-[#236c5d] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E7D6D] active:scale-95"
+    aria-label="Abrir menú"
+>
+    <i class="fa-solid fa-bars fa-lg text-white"></i>
+</button>
+
+<!-- Backdrop overlay for mobile -->
+<div
+    id="NavBackdrop"
+    class="fixed inset-0 bg-black/60 z-[9998] hidden lg:hidden transition-opacity duration-300 backdrop-blur-sm cursor-pointer"
+    onclick="closeNavBar()"
+>
+</div>
+
+<!-- Navigation Bar -->
+<aside
+    id="Contenedor"
+    class="fixed lg:relative top-0 left-0 h-screen glass-panel z-[9999] transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0 w-72 lg:w-24 flex flex-col shadow-2xl lg:shadow-none flex-shrink-0 border-r border-white/20 overflow-hidden !bg-white lg:!bg-white/70"
+>
+    <!-- Logo / Header Area -->
+    <div
+        class="h-20 flex items-center justify-center border-b border-white/10 mb-2"
+    >
+        <div
+            class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2F5D50] to-[#1a3c33] flex items-center justify-center shadow-lg"
         >
-            {idx === 0 ? (
-                <a href={item.href} onclick="toggleNavBar(); return false;" class="flex items-center w-full h-full justify-center hover:bg-gray-600">
-                    <i class={`fa-solid text-white ${item.icon} fa-xl`}></i>
-                    <span class="ml-4 hidden label">{item.label}</span>
-                </a>
-            ) : (
-                <a href={item.href} class="flex items-center w-full h-full justify-center text-[#FFFFFF] hover:bg-gray-600">
-                    <i class={`fa-solid ${item.icon} fa-xl`}></i>
-                    <span class="ml-4 hidden label">{item.label}</span>
-                </a>
-            )}
-        </li>
-        ))}
-    </ol>
-    <script type="text/javascript" is:inline>
-        function toggleNavBar() {
-            const cont = document.getElementById('Contenedor');
-            const labels = document.querySelectorAll('.label');
-            if (cont.classList.contains('w-16')) {
-                cont.classList.remove('w-16');
-                cont.classList.add('w-48');
-                labels.forEach(l => l.classList.remove('hidden'));
+            <i class="fa-solid fa-heart-pulse text-white text-2xl"></i>
+        </div>
+        <span
+            class="ml-3 font-bold text-[#2F5D50] text-xl lg:hidden label-text tracking-tight"
+            >Clínica</span
+        >
+    </div>
+
+    <nav class="flex-1 overflow-y-auto custom-scrollbar py-2 px-3">
+        <ul class="flex flex-col w-full gap-3">
+            {
+                iconos.map((item, idx) => {
+                    const isActive = currentPath === item.href;
+                    return (
+                        <li class="w-full relative group">
+                            <a
+                                href={item.href}
+                                onclick={
+                                    item.action === "toggle"
+                                        ? "toggleNavBar(); return false;"
+                                        : "handleNavClick()"
+                                }
+                                class={`
+                                flex items-center w-full p-3 rounded-2xl transition-all duration-300 group
+                                ${idx === 0 ? "justify-center lg:justify-center mb-4 bg-[#2F5D50]/5 hover:bg-[#2F5D50]/10 border border-[#2F5D50]/10" : "justify-start lg:justify-center"}
+                                ${isActive && idx !== 0 ? "bg-[#2F5D50] text-white shadow-lg shadow-[#2F5D50]/30" : "text-[#2F5D50] hover:bg-white/60 hover:shadow-md"}
+                                nav-link relative overflow-hidden
+                            `}
+                            >
+                                {/* Active Indicator Line (Left) */}
+                                {isActive && idx !== 0 && (
+                                    <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white/30 rounded-r-full" />
+                                )}
+
+                                <div
+                                    class={`w-10 h-10 flex items-center justify-center flex-shrink-0 rounded-xl transition-transform duration-300 group-hover:scale-110 ${isActive && idx !== 0 ? "bg-white/20" : "bg-white/40 group-hover:bg-white/80"}`}
+                                >
+                                    <i
+                                        class={`fa-solid ${item.icon} text-xl ${isActive && idx !== 0 ? "text-white" : "text-[#2F5D50]"}`}
+                                    />
+                                </div>
+
+                                <span
+                                    class={`ml-4 font-medium whitespace-nowrap transition-all duration-300 ${idx === 0 ? "lg:hidden" : "lg:hidden label-text"} ${isActive && idx !== 0 ? "text-white" : "text-[#2F5D50]"}`}
+                                >
+                                    {item.label}
+                                </span>
+
+                                {/* Tooltip for Desktop Collapsed */}
+                                {idx !== 0 && (
+                                    <div class="absolute left-full ml-4 px-3 py-2 bg-[#2F5D50] text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:translate-x-0 translate-x-[-10px] transition-all duration-300 z-50 whitespace-nowrap shadow-xl pointer-events-none hidden lg:block tooltip-container">
+                                        {item.label}
+                                        <div class="absolute left-0 top-1/2 -translate-y-1/2 -ml-1 w-2 h-2 bg-[#2F5D50] transform rotate-45" />
+                                    </div>
+                                )}
+                            </a>
+                        </li>
+                    );
+                })
+            }
+        </ul>
+    </nav>
+
+    <!-- Footer / User Profile (Optional) -->
+    <div class="p-4 border-t border-white/10 mt-auto">
+        <button
+            class="w-full flex items-center justify-center p-3 rounded-xl hover:bg-red-50 text-red-600 transition-colors group"
+            onclick="logout()"
+        >
+            <div
+                class="w-10 h-10 flex items-center justify-center rounded-xl bg-red-100 group-hover:bg-red-200 transition-colors"
+            >
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </div>
+            <span class="ml-3 font-medium lg:hidden label-text"
+                >Cerrar Sesión</span
+            >
+        </button>
+    </div>
+</aside>
+
+<script is:inline>
+    function toggleNavBar() {
+        const cont = document.getElementById("Contenedor");
+        const backdrop = document.getElementById("NavBackdrop");
+        const labels = document.querySelectorAll(".label-text");
+        const navLinks = document.querySelectorAll(".nav-link");
+        const tooltips = document.querySelectorAll(".tooltip-container");
+        const isMobile = window.innerWidth < 1024;
+
+        if (isMobile) {
+            // Mobile: Toggle Drawer
+            const isClosed = cont.classList.contains("-translate-x-full");
+
+            if (isClosed) {
+                // Open
+                cont.classList.remove("-translate-x-full");
+                backdrop.classList.remove("hidden");
+                document.body.style.overflow = "hidden";
             } else {
-                cont.classList.remove('w-48');
-                cont.classList.add('w-16');
-                labels.forEach(l => l.classList.add('hidden'));
+                // Close
+                cont.classList.add("-translate-x-full");
+                backdrop.classList.add("hidden");
+                document.body.style.overflow = "";
+            }
+        } else {
+            // Desktop: Toggle Sidebar Width
+            const isCollapsed = cont.classList.contains("lg:w-24");
+
+            if (isCollapsed) {
+                // Expand
+                cont.classList.remove("lg:w-24");
+                cont.classList.add("lg:w-72");
+
+                // Show labels with a slight delay for smoothness
+                setTimeout(() => {
+                    labels.forEach((l) => l.classList.remove("lg:hidden"));
+                    // Animate labels if GSAP is available
+                    if (typeof gsap !== "undefined") {
+                        gsap.fromTo(
+                            labels,
+                            { opacity: 0, x: -10 },
+                            { opacity: 1, x: 0, duration: 0.3, stagger: 0.02 },
+                        );
+                    }
+                }, 100);
+
+                // Adjust layout
+                navLinks.forEach((link, idx) => {
+                    if (idx !== 0) {
+                        link.classList.remove("lg:justify-center");
+                        link.classList.add("lg:justify-start");
+                    }
+                });
+
+                // Hide tooltips when expanded
+                tooltips.forEach((t) => t.classList.add("hidden"));
+            } else {
+                // Collapse
+                cont.classList.remove("lg:w-72");
+                cont.classList.add("lg:w-24");
+
+                labels.forEach((l) => l.classList.add("lg:hidden"));
+
+                navLinks.forEach((link, idx) => {
+                    if (idx !== 0) {
+                        link.classList.remove("lg:justify-start");
+                        link.classList.add("lg:justify-center");
+                    }
+                });
+
+                // Show tooltips when collapsed
+                tooltips.forEach((t) => t.classList.remove("hidden"));
             }
         }
-    </script>
-</div>
+    }
+
+    function closeNavBar() {
+        const cont = document.getElementById("Contenedor");
+        const backdrop = document.getElementById("NavBackdrop");
+
+        if (window.innerWidth < 1024) {
+            cont.classList.add("-translate-x-full");
+            backdrop.classList.add("hidden");
+            document.body.style.overflow = "";
+        }
+    }
+
+    function handleNavClick() {
+        if (window.innerWidth < 1024) {
+            setTimeout(closeNavBar, 150);
+        }
+    }
+
+    function logout() {
+        if (confirm("¿Estás seguro de que deseas cerrar sesión?")) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.href = "/";
+        }
+    }
+
+    window.addEventListener("resize", () => {
+        const cont = document.getElementById("Contenedor");
+        const backdrop = document.getElementById("NavBackdrop");
+
+        if (window.innerWidth >= 1024) {
+            backdrop.classList.add("hidden");
+            document.body.style.overflow = "";
+            cont.classList.remove("-translate-x-full");
+
+            // Ensure desktop state is consistent
+            if (
+                !cont.classList.contains("lg:w-24") &&
+                !cont.classList.contains("lg:w-72")
+            ) {
+                cont.classList.add("lg:w-24");
+            }
+        } else {
+            // Mobile state
+            if (backdrop.classList.contains("hidden")) {
+                cont.classList.add("-translate-x-full");
+            }
+        }
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeNavBar();
+    });
+</script>
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(47, 93, 80, 0.2);
+        border-radius: 2px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(47, 93, 80, 0.4);
+    }
+
+    /* Smooth bezier for width transition */
+    #Contenedor {
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+</style>

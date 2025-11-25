@@ -3,14 +3,16 @@ import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
-import axios from "axios";
 
 let table = [];
 try {
-	const response = await axios.get(
-		"http://localhost:3001/api/v1/Productos&Servicios",
-	);
-	table = response.data;
+	const response = await fetch("http://localhost:3001/api/v1/Roles");
+	if (response.ok) {
+		table = await response.json();
+	} else {
+		console.error("Error en la respuesta:", response.status);
+		table = [];
+	}
 } catch (error) {
 	console.error("Error fetching data:", error);
 	table = [];
@@ -27,13 +29,13 @@ const escapeJS = (str) => {
 };
 ---
 
-<Layout title="Productos y Servicios">
+<Layout title="Roles y Permisos">
 	<div
 		class="flex h-screen overflow-hidden bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8]"
 	>
 		<NavBar />
 		<div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-			<!-- Background Elements for depth -->
+			<!-- Background Elements -->
 			<div
 				class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#2F5D50]/10 rounded-full blur-3xl pointer-events-none"
 			>
@@ -43,10 +45,7 @@ const escapeJS = (str) => {
 			>
 			</div>
 
-			<TopTag
-				titulo="Gestión de Productos y Servicios"
-				nombreUsuario="Administrador"
-			/>
+			<TopTag titulo="Gestión de Roles" nombreUsuario="Administrador" />
 
 			<main
 				class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-[#2F5D50]/20 scrollbar-track-transparent relative z-10"
@@ -59,22 +58,18 @@ const escapeJS = (str) => {
 						<h1
 							class="text-3xl font-bold text-[#2F5D50] tracking-tight"
 						>
-							Lista de Productos y Servicios
+							Lista de Roles
 						</h1>
 						<p class="text-gray-500 mt-1">
-							Administra el catálogo de servicios y productos
+							Administra los roles y sus accesos
 						</p>
 					</div>
 					<button
-						class="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-[#2F5D50] hover:bg-[#234D20] transition-all shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-1"
+						class="glass-button px-6 py-2.5 rounded-xl flex items-center gap-2 text-white bg-[#2F5D50] hover:bg-[#234D20] transition-all shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-0.5"
 						onclick="abrirModalAgregar()"
 					>
-						<div
-							class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center"
-						>
-							<i class="fa-solid fa-plus text-sm"></i>
-						</div>
-						<span class="font-semibold">Agregar Nuevo</span>
+						<i class="fa-solid fa-plus"></i>
+						Agregar Rol
 					</button>
 				</div>
 
@@ -92,14 +87,7 @@ const escapeJS = (str) => {
 										class="p-5 font-bold text-center w-16 rounded-tl-2xl"
 										>Sel</th
 									>
-									<th class="p-5 font-bold">Nombre</th>
-									<th class="p-5 font-bold">Precio</th>
-									<th
-										class="p-5 font-bold hidden md:table-cell"
-										>Descripción</th
-									>
-									<th class="p-5 font-bold text-center"
-										>Tipo</th
+									<th class="p-5 font-bold">Nombre del Rol</th
 									>
 									<th
 										class="p-5 font-bold text-center w-32 rounded-tr-2xl"
@@ -109,19 +97,12 @@ const escapeJS = (str) => {
 							</thead>
 							<tbody class="divide-y divide-[#2F5D50]/5">
 								{
-									table.map((item) => {
+									table.map((rol) => {
 										const nombreEscaped = escapeJS(
-											item.name,
+											rol.name,
 										);
-										const precioEscaped = escapeJS(
-											item.value,
-										);
-										const descripcionEscaped = escapeJS(
-											item.description,
-										);
-										const tipoEscaped = escapeJS(item.type);
 										const nombreCompletoEscaped = escapeJS(
-											item.name,
+											rol.name,
 										);
 
 										return (
@@ -130,39 +111,25 @@ const escapeJS = (str) => {
 													<div class="flex items-center justify-center">
 														<input
 															type="checkbox"
-															class="producto-servicio-checkbox w-5 h-5 rounded-md border-gray-300 text-[#2F5D50] focus:ring-[#2F5D50] cursor-pointer"
-															value={item.id}
+															class="rol-checkbox w-5 h-5 rounded-md border-gray-300 text-[#2F5D50] focus:ring-[#2F5D50] cursor-pointer"
+															value={rol.id}
 														/>
 													</div>
 												</td>
 												<td class="p-5">
-													<div class="font-bold text-gray-800 text-lg">
-														{item.name}
+													<div class="flex items-center gap-3">
+														<div class="w-10 h-10 rounded-full bg-[#2F5D50]/10 flex items-center justify-center text-[#2F5D50]">
+															<i class="fa-solid fa-user-shield" />
+														</div>
+														<div class="font-bold text-gray-800 text-lg">
+															{rol.name}
+														</div>
 													</div>
-												</td>
-												<td class="p-5">
-													<span class="font-bold text-[#2F5D50] bg-[#2F5D50]/10 px-3 py-1 rounded-lg">
-														${item.value}
-													</span>
-												</td>
-												<td class="p-5 hidden md:table-cell">
-													<div class="text-gray-600 text-sm max-w-xs truncate bg-white/50 px-3 py-1 rounded-lg border border-white/40">
-														{item.description}
-													</div>
-												</td>
-												<td class="p-5 text-center">
-													<span
-														class={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm ${item.type === "service" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}
-													>
-														{item.type === "service"
-															? "Servicio"
-															: "Adicional"}
-													</span>
 												</td>
 												<td class="p-5 text-center">
 													<button
 														class="w-8 h-8 rounded-full bg-white/50 hover:bg-[#2F5D50] hover:text-white text-[#2F5D50] transition-all shadow-sm flex items-center justify-center mx-auto"
-														onclick={`abrirModalAcciones(${item.id}, '${nombreEscaped}', '${precioEscaped}', '${descripcionEscaped}', '${tipoEscaped}', '${nombreCompletoEscaped}')`}
+														onclick={`abrirModalAcciones(${rol.id}, '${nombreEscaped}', '${nombreCompletoEscaped}')`}
 														title="Acciones"
 													>
 														<i class="fa-solid fa-ellipsis-vertical" />
@@ -183,7 +150,7 @@ const escapeJS = (str) => {
 						<div class="text-sm text-gray-600 font-medium">
 							Mostrando <span class="font-bold text-[#2F5D50]"
 								>{table.length}</span
-							> items
+							> roles
 						</div>
 						<div class="flex gap-2">
 							<button
@@ -238,11 +205,11 @@ const escapeJS = (str) => {
 						class="text-xl font-bold text-[#2F5D50]"
 						id="modal-title"
 					>
-						Acciones
+						Acciones de Rol
 					</h3>
 					<p class="text-sm text-gray-500 mt-2">
-						Gestionar: <span
-							id="nombreProductoServicioAcciones"
+						Gestionar rol: <span
+							id="nombreRolAcciones"
 							class="font-bold text-[#2F5D50]"></span>
 					</p>
 				</div>
@@ -295,11 +262,11 @@ const escapeJS = (str) => {
 						></i>
 					</div>
 					<h3 class="text-xl font-bold text-gray-900">
-						¿Eliminar item?
+						¿Eliminar rol?
 					</h3>
 					<p class="text-sm text-gray-500 mt-2">
-						Estás a punto de eliminar <span
-							id="nombreProductoServicioEliminar"
+						Estás a punto de eliminar el rol <span
+							id="nombreRolEliminar"
 							class="font-bold text-gray-800"></span>. Esta acción
 						no se puede deshacer.
 					</p>
@@ -322,127 +289,52 @@ const escapeJS = (str) => {
 		</div>
 	</div>
 
-	<!-- Modal Agregar -->
+	<!-- Modal Agregar Rol -->
 	<FormModal
-		id="modalAgregarProductoServicio"
-		title="Nuevo Producto/Servicio"
-		formId="formAgregarProductoServicio"
+		id="modalAgregarRol"
+		title="Nuevo Rol"
+		formId="formAgregarRol"
 		submitText="Guardar"
 		cancelText="Cancelar"
-		size="lg"
+		size="md"
 	>
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-			<div class="flex flex-col">
-				<label class="text-sm font-medium text-gray-700 mb-1"
-					>Nombre *</label
+		<div class="space-y-4">
+			<div>
+				<label class="block text-sm font-bold text-gray-700 mb-1"
+					>Nombre del Rol *</label
 				>
 				<input
 					type="text"
 					id="agregarNombre"
-					class="glass-input w-full rounded-lg px-4 py-2"
+					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
 					required
-					placeholder="Ej: Consulta General"
+					placeholder="Ej: Administrador"
 				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-medium text-gray-700 mb-1"
-					>Precio *</label
-				>
-				<input
-					type="number"
-					id="agregarPrecio"
-					class="glass-input w-full rounded-lg px-4 py-2"
-					required
-					placeholder="0.00"
-					step="0.01"
-					min="0"
-				/>
-			</div>
-			<div class="flex flex-col md:col-span-2">
-				<label class="text-sm font-medium text-gray-700 mb-1"
-					>Descripción *</label
-				>
-				<textarea
-					id="agregarDescripcion"
-					class="glass-input w-full rounded-lg px-4 py-2"
-					required
-					rows="3"
-					placeholder="Detalles del servicio..."></textarea>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-medium text-gray-700 mb-1"
-					>Tipo *</label
-				>
-				<select
-					id="agregarTipo"
-					class="glass-input w-full rounded-lg px-4 py-2"
-					required
-				>
-					<option value="">Seleccione...</option>
-					<option value="service">Servicio</option>
-					<option value="additional">Adicional</option>
-				</select>
 			</div>
 		</div>
 	</FormModal>
 
-	<!-- Modal Editar -->
+	<!-- Modal Editar Rol -->
 	<FormModal
-		id="modalEditarProductoServicio"
-		title="Editar Producto/Servicio"
-		formId="formEditarProductoServicio"
+		id="modalEditarRol"
+		title="Editar Rol"
+		formId="formEditarRol"
 		submitText="Actualizar"
 		cancelText="Cancelar"
-		size="lg"
+		size="md"
 	>
 		<input type="hidden" id="editarId" />
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-			<div class="flex flex-col">
-				<label class="text-sm font-medium text-gray-700 mb-1"
-					>Nombre *</label
+		<div class="space-y-4">
+			<div>
+				<label class="block text-sm font-bold text-gray-700 mb-1"
+					>Nombre del Rol *</label
 				>
 				<input
 					type="text"
 					id="editarNombre"
-					class="glass-input w-full rounded-lg px-4 py-2"
+					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
 					required
 				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-medium text-gray-700 mb-1"
-					>Precio *</label
-				>
-				<input
-					type="number"
-					id="editarPrecio"
-					class="glass-input w-full rounded-lg px-4 py-2"
-					required
-					step="0.01"
-					min="0"
-				/>
-			</div>
-			<div class="flex flex-col md:col-span-2">
-				<label class="text-sm font-medium text-gray-700 mb-1"
-					>Descripción *</label
-				>
-				<textarea
-					id="editarDescripcion"
-					class="glass-input w-full rounded-lg px-4 py-2"
-					required
-					rows="3"></textarea>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-medium text-gray-700 mb-1"
-					>Tipo *</label
-				>
-				<select
-					id="editarTipo"
-					class="glass-input w-full rounded-lg px-4 py-2"
-					required
-				>
-					<option value="service">Servicio</option>
-					<option value="additional">Adicional</option>
-				</select>
 			</div>
 		</div>
 	</FormModal>
@@ -501,36 +393,21 @@ const escapeJS = (str) => {
 	</div>
 
 	<script>
-		/**
-		 * @typedef {Object} ProductoServicioData
-		 * @property {string} [name]
-		 * @property {number} [value]
-		 * @property {string} [description]
-		 * @property {string} [type]
-		 * @property {string} [nombreCompleto]
-		 */
-
 		// Variables globales
-		/** @type {number | null} */
-		let productoServicioSeleccionado = null;
-		/** @type {ProductoServicioData} */
-		let productoServicioData = {};
+		let rolSeleccionado = null;
+		let rolData = {};
 
 		// Función para verificar checkbox seleccionado
-		/**
-		 * @param {string | number} id
-		 * @returns {boolean}
-		 */
-		function verificarCheckboxSeleccionado(id) {
-			const idNum = Number(id);
+		function verificarCheckboxSeleccionado(rolId) {
+			const idNum = Number(rolId);
 			if (isNaN(idNum)) return false;
 
 			const checkbox = document.querySelector(
-				`.producto-servicio-checkbox[value="${id}"]`,
+				`.rol-checkbox[value="${rolId}"]`,
 			);
 			if (!checkbox || !checkbox.checked) {
 				mostrarError(
-					"Por favor, seleccione el item marcando la casilla.",
+					"Por favor, seleccione el rol marcando la casilla.",
 				);
 				return false;
 			}
@@ -538,152 +415,118 @@ const escapeJS = (str) => {
 		}
 
 		// Abrir modal de acciones
-		// Abrir modal de acciones
-		window.abrirModalAcciones = function (
-			id,
-			name,
-			value,
-			description,
-			type,
-			nombreCompleto,
-		) {
+		window.abrirModalAcciones = function (id, nombre, nombreCompleto) {
 			if (!verificarCheckboxSeleccionado(id)) return;
 
-			productoServicioSeleccionado = Number(id);
-			productoServicioData = {
-				name,
-				value,
-				description,
-				type,
-				nombreCompleto,
-			};
+			rolSeleccionado = Number(id);
+			rolData = { nombre, nombreCompleto };
 
-			const nombreEl = document.getElementById(
-				"nombreProductoServicioAcciones",
-			);
-			if (nombreEl) nombreEl.textContent = nombreCompleto;
-
-			const modal = document.getElementById("modalAcciones");
-			if (modal) modal.classList.remove("hidden");
+			document.getElementById("nombreRolAcciones").textContent =
+				nombreCompleto;
+			document.getElementById("modalAcciones").classList.remove("hidden");
 		};
 
 		// Abrir modal agregar
 		window.abrirModalAgregar = function () {
-			const form = document.getElementById("formAgregarProductoServicio");
+			const form = document.getElementById("formAgregarRol");
 			if (form) form.reset();
-			const modal = document.getElementById(
-				"modalAgregarProductoServicio",
-			);
-			if (modal) modal.classList.remove("hidden");
+			document
+				.getElementById("modalAgregarRol")
+				.classList.remove("hidden");
 		};
 
 		// Cerrar modales
-		/**
-		 * @param {string} modalId
-		 */
 		window.cerrarModal = function (modalId) {
 			const modal = document.getElementById(modalId);
 			if (modal) modal.classList.add("hidden");
 		};
 
 		// Mostrar mensajes
-		function mostrarExito(mensaje: string) {
-			const msgEl = document.getElementById("mensajeExito");
-			if (msgEl) msgEl.textContent = mensaje;
-			const modal = document.getElementById("modalExito");
-			if (modal) modal.classList.remove("hidden");
+		function mostrarExito(mensaje) {
+			document.getElementById("mensajeExito").textContent = mensaje;
+			document.getElementById("modalExito").classList.remove("hidden");
 		}
 
-		function mostrarError(mensaje: string) {
-			const msgEl = document.getElementById("mensajeError");
-			if (msgEl) msgEl.textContent = mensaje;
-			const modal = document.getElementById("modalError");
-			if (modal) modal.classList.remove("hidden");
+		function mostrarError(mensaje) {
+			document.getElementById("mensajeError").textContent = mensaje;
+			document.getElementById("modalError").classList.remove("hidden");
 		}
 
 		// Event Listeners
 		document.addEventListener("DOMContentLoaded", function () {
+			// GSAP Animations
+			if (typeof gsap !== "undefined") {
+				gsap.from(".glass-panel", {
+					duration: 0.8,
+					y: 30,
+					opacity: 0,
+					stagger: 0.1,
+					ease: "power3.out",
+				});
+				gsap.from("tr", {
+					duration: 0.5,
+					opacity: 0,
+					y: 10,
+					stagger: 0.05,
+					delay: 0.2,
+					ease: "power2.out",
+				});
+			}
+
 			// Botones de acción
 			document
 				.getElementById("btnEditarAccion")
 				?.addEventListener("click", function () {
-					window.cerrarModal("modalAcciones");
+					cerrarModal("modalAcciones");
 					abrirModalEditar();
 				});
 
 			document
 				.getElementById("btnEliminarAccion")
 				?.addEventListener("click", function () {
-					window.cerrarModal("modalAcciones");
+					cerrarModal("modalAcciones");
 					abrirModalConfirmarEliminar();
 				});
 
 			document
 				.getElementById("btnConfirmarEliminar")
 				?.addEventListener("click", function () {
-					if (productoServicioSeleccionado !== null) {
-						eliminarProductoServicio(productoServicioSeleccionado);
-					}
+					eliminarRol(rolSeleccionado);
 				});
 		});
 
 		// Abrir modal de edición
 		function abrirModalEditar() {
-			if (!productoServicioSeleccionado) return;
+			if (!rolSeleccionado) return;
 
-			const editarId = document.getElementById("editarId");
-			const editarNombre = document.getElementById("editarNombre");
-			const editarPrecio = document.getElementById("editarPrecio");
-			const editarDescripcion =
-				document.getElementById("editarDescripcion");
-			const editarTipo = document.getElementById("editarTipo");
+			document.getElementById("editarId").value = rolSeleccionado;
+			document.getElementById("editarNombre").value =
+				rolData.nombre || "";
 
-			if (editarId) editarId.value = productoServicioSeleccionado;
-			if (editarNombre)
-				editarNombre.value = productoServicioData.name || "";
-			if (editarPrecio)
-				editarPrecio.value = productoServicioData.value || "";
-			if (editarDescripcion)
-				editarDescripcion.value =
-					productoServicioData.description || "";
-			if (editarTipo) editarTipo.value = productoServicioData.type || "";
-
-			const modal = document.getElementById(
-				"modalEditarProductoServicio",
-			);
-			if (modal) modal.classList.remove("hidden");
+			document
+				.getElementById("modalEditarRol")
+				.classList.remove("hidden");
 		}
 
 		// Abrir modal de confirmación de eliminación
 		function abrirModalConfirmarEliminar() {
-			const nombreEl = document.getElementById(
-				"nombreProductoServicioEliminar",
-			);
-			if (nombreEl)
-				nombreEl.textContent =
-					productoServicioData.nombreCompleto || "";
-
-			const modal = document.getElementById("modalConfirmarEliminar");
-			if (modal) modal.classList.remove("hidden");
+			document.getElementById("nombreRolEliminar").textContent =
+				rolData.nombreCompleto;
+			document
+				.getElementById("modalConfirmarEliminar")
+				.classList.remove("hidden");
 		}
 
-		// Función para eliminar
-		/**
-		 * @param {number} id
-		 */
-		async function eliminarProductoServicio(id) {
+		// Función para eliminar rol
+		async function eliminarRol(id) {
 			try {
 				const response = await fetch(
-					`/api/v1/Productos&Servicios/${id}`,
-					{
-						method: "DELETE",
-						headers: { "Content-Type": "application/json" },
-					},
+					`http://localhost:3001/api/v1/Roles/${id}`,
+					{ method: "DELETE" },
 				);
-
 				if (response.ok) {
-					window.cerrarModal("modalConfirmarEliminar");
-					mostrarExito("Eliminado correctamente");
+					cerrarModal("modalConfirmarEliminar");
+					mostrarExito("Rol eliminado correctamente");
 					setTimeout(() => location.reload(), 1500);
 				} else {
 					const errorData = await response.json();
@@ -701,35 +544,33 @@ const escapeJS = (str) => {
 
 		// Manejar envío Agregar
 		document
-			.getElementById("formAgregarProductoServicio")
+			.getElementById("formAgregarRol")
 			?.addEventListener("submit", async function (e) {
 				e.preventDefault();
 
-				const nombreEl = document.getElementById("agregarNombre");
-				const precioEl = document.getElementById("agregarPrecio");
-				const descEl = document.getElementById("agregarDescripcion");
-				const tipoEl = document.getElementById("agregarTipo");
+				const nombre = document
+					.getElementById("agregarNombre")
+					.value.trim();
+				if (!nombre) {
+					mostrarError("El campo Nombre es obligatorio");
+					return;
+				}
 
-				const data = {
-					name: nombreEl?.value,
-					value: parseFloat(precioEl?.value || "0"),
-					description: descEl?.value,
-					type: tipoEl?.value,
-				};
+				const rolData = { name: nombre };
 
 				try {
 					const response = await fetch(
-						"/api/v1/Productos&Servicios",
+						"http://localhost:3001/api/v1/Roles",
 						{
 							method: "POST",
 							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify(data),
+							body: JSON.stringify(rolData),
 						},
 					);
 
 					if (response.ok) {
-						window.cerrarModal("modalAgregarProductoServicio");
-						mostrarExito("Agregado correctamente");
+						cerrarModal("modalAgregarRol");
+						mostrarExito("Rol agregado correctamente");
 						setTimeout(() => location.reload(), 1500);
 					} else {
 						const errorData = await response.json();
@@ -740,42 +581,40 @@ const escapeJS = (str) => {
 									"Desconocido"),
 						);
 					}
-				} catch (error: any) {
+				} catch (error) {
 					mostrarError("Error de conexión: " + error.message);
 				}
 			});
 
 		// Manejar envío Editar
 		document
-			.getElementById("formEditarProductoServicio")
+			.getElementById("formEditarRol")
 			?.addEventListener("submit", async function (e) {
 				e.preventDefault();
 
-				const nombreEl = document.getElementById("editarNombre");
-				const precioEl = document.getElementById("editarPrecio");
-				const descEl = document.getElementById("editarDescripcion");
-				const tipoEl = document.getElementById("editarTipo");
+				const nombre = document
+					.getElementById("editarNombre")
+					.value.trim();
+				if (!nombre) {
+					mostrarError("El campo Nombre es obligatorio");
+					return;
+				}
 
-				const data = {
-					name: nombreEl?.value,
-					value: parseFloat(precioEl?.value || "0"),
-					description: descEl?.value,
-					type: tipoEl?.value,
-				};
+				const rolData = { name: nombre };
 
 				try {
 					const response = await fetch(
-						`/api/v1/Productos&Servicios/${productoServicioSeleccionado}`,
+						`http://localhost:3001/api/v1/Roles/${rolSeleccionado}`,
 						{
 							method: "PATCH",
 							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify(data),
+							body: JSON.stringify(rolData),
 						},
 					);
 
 					if (response.ok) {
-						window.cerrarModal("modalEditarProductoServicio");
-						mostrarExito("Actualizado correctamente");
+						cerrarModal("modalEditarRol");
+						mostrarExito("Rol actualizado correctamente");
 						setTimeout(() => location.reload(), 1500);
 					} else {
 						const errorData = await response.json();
@@ -786,7 +625,7 @@ const escapeJS = (str) => {
 									"Desconocido"),
 						);
 					}
-				} catch (error: any) {
+				} catch (error) {
 					mostrarError("Error de conexión: " + error.message);
 				}
 			});
@@ -795,12 +634,9 @@ const escapeJS = (str) => {
 		document
 			.getElementById("selectAll")
 			?.addEventListener("change", function (e) {
-				const target = e.target as HTMLInputElement;
-				const checkboxes = document.querySelectorAll(
-					".producto-servicio-checkbox",
-				);
+				const checkboxes = document.querySelectorAll(".rol-checkbox");
 				checkboxes.forEach((checkbox) => {
-					(checkbox as HTMLInputElement).checked = target.checked;
+					checkbox.checked = e.target.checked;
 				});
 			});
 	</script>

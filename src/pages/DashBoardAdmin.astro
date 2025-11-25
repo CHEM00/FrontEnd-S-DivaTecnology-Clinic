@@ -1,185 +1,577 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
+import TopTag from "../components/TopTag.astro";
+const today = new Date().toISOString().split("T")[0];
+const res = await fetch(`http://localhost:3001/api/v1/Benefit?date=${today}`);
+const appointmentStatus = await fetch(
+	`http://localhost:3001/api/v1/AppointmentStatus?date=${today}`,
+).then((res) => res.json());
+const benefit = await res.json();
 ---
 
-<Layout title="Administrador">
-	<div class="pagos-container">
-		<!-- Panel lateral izquierdo -->
+<Layout title="Dashboard Administrador">
+	<div
+		class="flex h-[100dvh] overflow-hidden bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8]"
+	>
 		<NavBar />
-		<!-- Contenido principal -->
-		<div class="flex-1 flex flex-col">
-            <main>
-				<div class="parent h-screen">
-					<div class="top">
-						<div class="div1 m-auto w-full px-4 border-gray-300 border p-10 bg-white/90 shadow-lg rounded-lg h-auto">
-							<!-- Row: title left, switch/select right -->
-							<div class="flex items-center justify-between p-5">
-								<h2 class="text-xl font-semibold">Venta de adicionales</h2>
+		<div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+			<!-- Background Elements for depth -->
+			<div
+				class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#2F5D50]/10 rounded-full blur-3xl pointer-events-none"
+			>
+			</div>
+			<div
+				class="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-[#2F5D50]/5 rounded-full blur-3xl pointer-events-none"
+			>
+			</div>
+
+			<TopTag titulo="Dashboard General" nombreUsuario="Administrador" />
+
+			<main
+				class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-[#2F5D50]/20 scrollbar-track-transparent relative z-10"
+			>
+				<!-- Grid Principal con mayor separación -->
+				<div
+					class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:h-full h-auto"
+				>
+					<!-- Columna Izquierda: Gráficos y Estadísticas (8 columnas) -->
+					<div class="lg:col-span-8 flex flex-col gap-8">
+						<!-- Fila Superior: Gráfico Principal -->
+						<div
+							class="glass-panel rounded-3xl p-8 h-[400px] lg:h-[32rem] flex flex-col relative overflow-hidden group hover:shadow-2xl transition-all duration-500 border border-white/60 !bg-white shadow-sm"
+						>
+							<div
+								class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 z-10 gap-4 sm:gap-0 flex-shrink-0"
+							>
 								<div>
-									<select class="border border-gray-300 rounded px-3 py-1 bg-white text-sm">
+									<h2
+										class="text-2xl font-bold text-[#2F5D50] tracking-tight flex items-center gap-3"
+									>
+										<div
+											class="w-10 h-10 rounded-xl bg-[#2F5D50]/10 flex items-center justify-center"
+										>
+											<i
+												class="fa-solid fa-chart-column text-[#2F5D50]"
+											></i>
+										</div>
+										Venta de Adicionales
+									</h2>
+									<p class="text-sm text-gray-500 mt-1 ml-14">
+										Rendimiento del equipo en tiempo real
+									</p>
+								</div>
+								<div class="relative z-20">
+									<select
+										class="appearance-none glass-input rounded-xl px-5 py-2.5 pr-10 text-sm font-bold text-[#2F5D50] cursor-pointer hover:bg-white/80 transition-colors focus:ring-2 focus:ring-[#2F5D50]/20 outline-none shadow-sm"
+									>
 										<option value="today">Hoy</option>
-										<option value="yesterday">Ayer</option>
-										<option value="lastWeek">Semana pasada</option>
-										<option value="thisMonth">Mes</option>
+										<option value="week">Esta Semana</option
+										>
+										<option value="month">Este Mes</option>
 									</select>
+									<div
+										class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2F5D50]"
+									>
+										<i
+											class="fa-solid fa-chevron-down text-xs"
+										></i>
+									</div>
 								</div>
 							</div>
-							<!-- Chart container: ocupa casi todo el espacio disponible -->
-							<div class="p-4 rounded h-1/2 flex flex-col">
-								<div id="columnchart_material" class="w-full flex-1"></div>
+							<div
+								class="w-full flex-grow overflow-x-auto overflow-y-hidden z-10 min-h-0"
+							>
+								<div
+									id="columnchart_material"
+									class="w-full h-full min-w-[300px]"
+								>
+								</div>
 							</div>
 						</div>
 
-						<!-- Contenedor donde iran los ingresos hasta el momento de acuerdo a las citas concluidas -->
-					<div class="div2 m-auto w-full h-full px-4 border-gray-300 border p-10 bg-white/90 shadow-lg rounded-lg">
-							<!-- Row: title left, switch/select right -->
-							<div class="flex items-center justify-between p-5">
-								<h2 class="text-xl font-semibold">Ingreso actual en curso</h2>
-								<div>
-									<select id="" class="border border-gray-300 rounded px-3 py-1 bg-white text-sm">
-										<option value="today">Hoy</option>
-										<option value="yesterday">Ayer</option>
-										<option value="lastWeek">Semana pasada</option>
-										<option value="thisMonth">Mes</option>
-									</select>
+						<!-- Fila Inferior: KPIs -->
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+							<!-- Ingresos Card -->
+							<div
+								class="glass-panel rounded-3xl p-8 flex flex-col justify-between relative overflow-hidden group hover:-translate-y-2 transition-all duration-300 border border-white/60 !bg-white shadow-lg hover:shadow-2xl min-h-[18rem]"
+							>
+								<div
+									class="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-all duration-500 transform group-hover:scale-110 group-hover:rotate-12"
+								>
+									<i
+										class="fa-solid fa-sack-dollar text-8xl text-[#2F5D50]"
+									></i>
 								</div>
-							</div>
-							<!-- Chart container: ocupa casi todo el espacio disponible -->
-							<div class="p-4 rounded h-1/2 flex flex-col-2 justify-between">
-								<div class="h-auto w-auto flex items-center justify-center text-2xl font-bold rounded">
-									$450.00 MXN
-								</div>
-								<div class="flex justify-center items-center">
-									<p>Ingresos generados por citas concluidas hasta el momento.</p>
-								</div>
-							</div>
-						</div>
-					
-						<div class="div3 m-auto w-full h-full px-4 border-gray-300 border p-10 bg-white/90 shadow-lg rounded-lg">
-							<!-- Row: title left, switch/select right -->
-							<div class="flex items-center justify-between p-5">
-								<h2 class="text-xl font-semibold">Número de citas totales: 6</h2>
-								<div>
-									<select id="" class="border border-gray-300 rounded px-3 py-1 bg-white text-sm">
-										<option value="today">Hoy</option>
-										<option value="yesterday">Ayer</option>
-										<option value="lastWeek">Semana pasada</option>
-										<option value="thisMonth">Mes</option>
-									</select>
-								</div>
-							</div>
-							<!-- Chart container: ocupa casi todo el espacio disponible -->
-							<div class="p-4 rounded h-1/2 flex flex-col">
-								<div class="w-auto flex items-center justify-between text-2xl rounded h-auto">
-									<ol class="justify-items-start flex-row">
-										<li><p class="text-black">Concluidas: 1</p></li>
-										<li><p class="text-black">Confirmadas: 3</p></li>
-										<li><p class="text-black">Pendientes: 2</p></li>
-										<li><p class="text-black">Canceladas: 0</p></li>
-										<li><p class="text-black">No asistidas: 0</p></li>
-									</ol>
-								</div>
-							</div>
-						</div>
-					</div>
-					
 
-				<div class="div4 box-border m-auto w-full h-full px-4 border-gray-300 border p-5 bg-white/90 shadow-lg rounded-lg overflow-y-auto">
-					<div class="w-auto h-auto overflow-hidden"> <!-- Contenedor que tendra el menu de citas -->
-						<div class="flex justify-between justify-items-center">
-							<h2><p>Citas en curso</p></h2>
-							<input type="date" name="" id="" class="w-auto h-auto">
-						</div>
-						<!-- Contenedor de las fichas de las citas -->
-						<div class="mt-4 space-y-4">
-							<!-- Ficha de cita individual -->
-							<div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md">
-								<div class="flex justify-between items-center mb-2 font-bold">
-									<p class="text-xl">Hora: 10:00 AM</p>									
+								<div class="z-10">
+									<div
+										class="flex justify-between items-start mb-3"
+									>
+										<div class="flex items-center gap-4">
+											<div
+												class="w-12 h-12 rounded-2xl bg-[#2F5D50]/10 flex items-center justify-center text-[#2F5D50] shadow-inner"
+											>
+												<i
+													class="fa-solid fa-chart-line text-xl"
+												></i>
+											</div>
+											<div>
+												<h3
+													class="text-lg font-bold text-gray-700"
+												>
+													Ingreso Actual
+												</h3>
+												<p
+													class="text-xs text-gray-500"
+												>
+													Basado en citas concluidas
+												</p>
+											</div>
+										</div>
+										<input
+											type="date"
+											id="ingresos-date"
+											class="glass-input rounded-lg px-2 py-1 text-xs font-bold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20 bg-white/50"
+										/>
+									</div>
+									<div class="mt-auto z-10 pt-4">
+										<div class="flex items-baseline gap-1">
+											<span
+												class="text-3xl font-bold text-[#2F5D50]"
+												>$</span
+											>
+											<span
+												id="ingresos-valor"
+												class="text-6xl font-black text-[#2F5D50] tracking-tighter counter-value"
+												data-target="450"
+											>
+												{
+													benefit[0]
+														?.total_ganancia || 0
+												}</span
+											>
+										</div>
+										<div
+											class="mt-6 w-full bg-gray-200/50 rounded-full h-3 overflow-hidden"
+										>
+											<div
+												class="bg-gradient-to-r from-[#2F5D50] to-[#4a9680] h-full rounded-full animate-pulse shadow-[0_0_10px_rgba(47,93,80,0.4)]"
+												style="width: 45%"
+											>
+											</div>
+										</div>
+									</div>
 								</div>
-								<h3 class="text-lg mb-2">Paciente: María López</h3>
-								<p class="mb-1">Valoracion</p>
+							</div>
+
+							<!-- Resumen de Citas Card -->
+							<div
+								class="glass-panel rounded-3xl p-8 border border-white/60 !bg-white shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 min-h-[18rem] overflow-y-auto custom-scrollbar"
+							>
+								<div
+									class="flex justify-between items-center mb-6"
+								>
+									<div class="flex items-center gap-4">
+										<div
+											class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-inner"
+										>
+											<i
+												class="fa-solid fa-calendar-check text-xl"
+											></i>
+										</div>
+										<div>
+											<h3
+												class="text-lg font-bold text-gray-700"
+											>
+												Resumen
+											</h3>
+											<p class="text-xs text-gray-500">
+												Estado de citas hoy
+											</p>
+										</div>
+										<input
+											type="date"
+											id="account-appointment-date"
+											class="glass-input rounded-lg px-2 py-1 text-xs font-bold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20 bg-white/50"
+										/>
+									</div>
+									<span
+										class="bg-[#2F5D50] text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg shadow-[#2F5D50]/20 flex items-center gap-2"
+									>
+										Total: <span
+											id="account-appointment-total"
+											class="counter-value"
+											data-target="6"
+											>{
+												appointmentStatus[0].citas
+													.totalcitas || 0
+											}</span
+										>
+									</span>
+								</div>
+
+								<div class="space-y-3">
+									{
+										[
+											{
+												label: "Concluidas",
+												id: "account-appointment-concluidas",
+												count:
+													appointmentStatus[0].citas
+														.concluidas || 0,
+												color: "green",
+												icon: "fa-check",
+											},
+											{
+												label: "Confirmadas",
+												id: "account-appointment-confirmadas",
+												count:
+													appointmentStatus[0].citas
+														.confirmada || 0,
+												color: "blue",
+												icon: "fa-thumbs-up",
+											},
+											{
+												label: "Pendientes",
+												id: "account-appointment-pendientes",
+												count:
+													appointmentStatus[0].citas
+														.espera || 0,
+												color: "yellow",
+												icon: "fa-clock",
+											},
+											{
+												label: "Canceladas",
+												id: "account-appointment-canceladas",
+												count:
+													appointmentStatus[0].citas
+														.cancelada || 0,
+												color: "red",
+												icon: "fa-xmark",
+											},
+										].map((item) => (
+											<div class="flex justify-between items-center p-3 hover:bg-white/60 rounded-xl transition-all cursor-default group border border-transparent hover:border-white/40">
+												<div class="flex items-center gap-4">
+													<div
+														class={`w-3 h-3 rounded-full bg-${item.color}-500 shadow-[0_0_8px_rgba(0,0,0,0.3)] shadow-${item.color}-500/50 group-hover:scale-125 transition-transform`}
+													/>
+													<span class="text-sm font-semibold text-gray-600 group-hover:text-gray-900 transition-colors">
+														{item.label}
+													</span>
+												</div>
+												<span
+													class="font-bold text-gray-800 bg-white/80 px-3 py-1 rounded-lg shadow-sm border border-gray-100 counter-value min-w-[2rem] text-center"
+													data-target={item.count}
+												>
+													<span id={item.id}>
+														{item.count}
+													</span>
+												</span>
+											</div>
+										))
+									}
+								</div>
 							</div>
 						</div>
 					</div>
-					<div class="w-auto h-auto overflow-hidden"> <!-- Contenedor que tendra el menu de citas -->
-						<div class="mt-4 space-y-4">
-							<div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md">
-								<div class="flex justify-between items-center mb-2 font-bold">
-									<p class="text-xl">Hora: 11:00 AM</p>									
+
+					<!-- Columna Derecha: Citas en Curso (4 columnas) -->
+					<div class="lg:col-span-4 h-full min-h-[600px]">
+						<div
+							class="glass-panel rounded-3xl flex flex-col h-full overflow-hidden border border-white/60 !bg-white shadow-xl"
+						>
+							<div
+								class="p-6 border-b border-[#2F5D50]/10 bg-white/40 backdrop-blur-md sticky top-0 z-20"
+							>
+								<div
+									class="flex justify-between items-center mb-6"
+								>
+									<h2
+										class="text-xl font-bold text-[#2F5D50] flex items-center gap-2"
+									>
+										<i class="fa-regular fa-calendar-days"
+										></i>
+										Agenda del Día
+									</h2>
+									<button
+										class="w-10 h-10 rounded-xl bg-white/50 hover:bg-[#2F5D50] hover:text-white flex items-center justify-center text-[#2F5D50] transition-all shadow-sm"
+									>
+										<i class="fa-solid fa-filter"></i>
+									</button>
 								</div>
-								<h3 class="text-lg mb-2">Paciente: Juan Pérez</h3>
-								<p class="mb-1">Masaje relajante - $800.00 MXN</p>
+								<div class="relative group">
+									<input
+										type="date"
+										class="w-full glass-input rounded-xl px-4 py-3 text-sm font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#2F5D50]/20 transition-all"
+									/>
+									<div
+										class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2F5D50] group-hover:scale-110 transition-transform"
+									>
+										<i class="fa-regular fa-calendar"></i>
+									</div>
+								</div>
 							</div>
-						</div>
-					</div>
-					<div class="w-auto h-auto overflow-hidden"> <!-- Contenedor que tendra el menu de citas -->
-						<div class="mt-4 space-y-4">
-							<div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md">
-								<div class="flex justify-between items-center mb-2 font-bold">
-									<p class="text-xl">Hora: 01:00 PM</p>									
-								</div>
-								<h3 class="text-lg mb-2">Paciente: Ana García</h3>
-								<p class="mb-1">Terapia física - $500.00 MXN</p>
+
+							<div
+								class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
+							>
+								{
+									[
+										{
+											time: "10:00 AM",
+											patient: "María López",
+											type: "Valoración",
+											status: "En curso",
+											color: "green",
+											avatar: "M",
+										},
+										{
+											time: "11:00 AM",
+											patient: "Juan Pérez",
+											type: "Masaje relajante",
+											price: "$800",
+											status: "Pendiente",
+											color: "blue",
+											avatar: "J",
+										},
+										{
+											time: "01:00 PM",
+											patient: "Ana García",
+											type: "Terapia física",
+											price: "$500",
+											status: "Pendiente",
+											color: "blue",
+											avatar: "A",
+										},
+										{
+											time: "03:00 PM",
+											patient: "Luis Martínez",
+											type: "Paquete (Sesión 2/5)",
+											status: "Confirmada",
+											color: "yellow",
+											avatar: "L",
+										},
+										{
+											time: "04:30 PM",
+											patient: "Carla Rodríguez",
+											type: "Masaje terapéutico",
+											price: "$700",
+											status: "Pendiente",
+											color: "blue",
+											avatar: "C",
+										},
+									].map((cita) => (
+										<div class="bg-white/60 hover:bg-white/90 transition-all duration-300 p-5 rounded-2xl border border-white/50 shadow-sm hover:shadow-lg cursor-pointer group relative overflow-hidden transform hover:-translate-y-1">
+											<div
+												class={`absolute left-0 top-0 bottom-0 w-1.5 bg-${cita.color}-500`}
+											/>
+
+											<div class="flex justify-between items-start mb-3 pl-3 flex-wrap gap-2">
+												<span class="font-bold text-[#2F5D50] text-xs bg-[#2F5D50]/10 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+													<i class="fa-regular fa-clock" />
+													{cita.time}
+												</span>
+												<span
+													class={`text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-${cita.color}-100 text-${cita.color}-700 font-bold shadow-sm`}
+												>
+													{cita.status}
+												</span>
+											</div>
+
+											<div class="flex items-center gap-4 pl-3">
+												<div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#2F5D50] to-[#1a3c33] flex items-center justify-center text-white font-bold shadow-md group-hover:scale-110 transition-transform duration-300 border-2 border-white flex-shrink-0">
+													{cita.avatar}
+												</div>
+												<div class="min-w-0">
+													<h4 class="font-bold text-gray-800 leading-tight group-hover:text-[#2F5D50] transition-colors text-base truncate">
+														{cita.patient}
+													</h4>
+													<p class="text-xs text-gray-500 mt-1 font-medium flex items-center gap-1 flex-wrap">
+														{cita.type}
+														{cita.price && (
+															<span class="text-[#2F5D50] font-bold bg-[#2F5D50]/5 px-1.5 rounded whitespace-nowrap">
+																{cita.price}
+															</span>
+														)}
+													</p>
+												</div>
+											</div>
+
+											<div class="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+												<div class="w-8 h-8 rounded-full bg-[#2F5D50] flex items-center justify-center text-white shadow-lg hover:bg-[#234D20]">
+													<i class="fa-solid fa-chevron-right text-xs" />
+												</div>
+											</div>
+										</div>
+									))
+								}
 							</div>
-						</div>
-					</div>
-					<div class="w-auto h-auto overflow-hidden"> <!-- Contenedor que tendra el menu de citas -->
-						<div class="mt-4 space-y-4">
-							<div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md">
-								<div class="flex justify-between items-center mb-2 font-bold">
-									<p class="text-xl">Hora: 03:00 PM</p>									
-								</div>
-								<h3 class="text-lg mb-2">Paciente: Luis Martínez</h3>
-								<p class="mb-1">Paquete: 5 sesiones | Numero de sesion: 2</p>
-							</div>
-						</div>
-					</div>
-					<div class="w-auto h-auto overflow-hidden"> <!-- Contenedor que tendra el menu de citas -->
-						<div class="mt-4 space-y-4">
-							<div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md">
-								<div class="flex justify-between items-center mb-2 font-bold">
-									<p class="text-xl">Hora: 04:30 PM</p>									
-								</div>
-								<h3 class="text-lg mb-2">Paciente: Carla Rodríguez</h3>
-								<p class="mb-1">Masaje terapéutico - $700.00 MXN</p>
+
+							<div
+								class="p-4 bg-white/40 border-t border-[#2F5D50]/10 text-center backdrop-blur-sm"
+							>
+								<button
+									class="text-sm font-bold text-[#2F5D50] hover:text-[#1a3c33] transition-colors flex items-center justify-center gap-2 w-full py-3 rounded-xl hover:bg-white/60 group"
+								>
+									Ver agenda completa <i
+										class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"
+									></i>
+								</button>
 							</div>
 						</div>
 					</div>
 				</div>
-				<div class="div5 p-5 border border-gray-300 rounded-lg bg-white/90 shadow-lg">
-					<!-- Detalles adicionales o información extendida -->
-					<h2 class="text-xl font-semibold mb-2 flex justify-center">Detalles de la cita</h2>
-					<div class="flex justify-center items-center">
-						<p class="text-black">Selecciona una cita para ver más detalles.</p>
-					</div>
-				</div>
-			</div>	
 			</main>
 		</div>
 	</div>
-</Layout>
 
-<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="text/javascript">
-    	google.charts.load('current', {'packages':['bar']});
-    	google.charts.setOnLoadCallback(drawChart);
-  		
+	<!-- Este script se encarga de cargar el grafico de barras -->
+	<script
+		type="text/javascript"
+		src="https://www.gstatic.com/charts/loader.js"></script>
+	<script type="text/javascript">
+		google.charts.load("current", { packages: ["bar"] });
+		google.charts.setOnLoadCallback(drawChart);
 		function drawChart() {
-        	var data = google.visualization.arrayToDataTable([
-        	['', 'Nayelli', 'Jacqueline', 'Jessika'],
-			['Hoy', 1, 3, 2]
-		]);
+			var data = google.visualization.arrayToDataTable([
+				["", "Nayelli", "Jacqueline", "Jessika"],
+				["Ventas", 1, 3, 2],
+			]);
 
-        var options = {
-        	chart: {
-            	title: 'Adicionales vendidos por fisios',
-        	}
-        };
+			var options = {
+				chart: {
+					title: "",
+					subtitle: "",
+				},
+				bars: "vertical",
+				vAxis: {
+					format: "decimal",
+					textStyle: { color: "#333", bold: true },
+				},
+				hAxis: { textStyle: { color: "#333", bold: true } },
+				height: "100%",
+				colors: ["#2F5D50", "#4ade80", "#22d3ee"],
+				backgroundColor: "transparent",
+				legend: {
+					position: "bottom",
+					textStyle: { color: "#333", fontSize: 12 },
+				},
+				animation: {
+					startup: true,
+					duration: 1000,
+					easing: "out",
+				},
+				chartArea: { width: "85%", height: "75%" },
+			};
 
-        var chart = new google.charts.Bar(document.getElementById('columnchart_material'));
+			var chart = new google.charts.Bar(
+				document.getElementById("columnchart_material"),
+			);
 
-        chart.draw(data, google.charts.Bar.convertOptions(options));
-    }
-</script>
+			chart.draw(data, google.charts.Bar.convertOptions(options));
+		}
+		window.addEventListener("resize", drawChart);
+	</script>
+	<!-- Este script se encarga de actualizar el valor de ingresos acorde a la fecha seleccionada. -->
+	<script>
+		document.addEventListener("DOMContentLoaded", () => {
+			const dateInput = document.getElementById("ingresos-date");
+			const valorSpan = document.getElementById("ingresos-valor");
+
+			if (dateInput) {
+				const today = new Date().toISOString().split("T")[0];
+				dateInput.value = today;
+				dateInput.addEventListener("change", async (e) => {
+					const date = e.target.value;
+					try {
+						const res = await fetch(`/api/v1/Benefit?date=${date}`);
+						if (res.ok) {
+							const data = await res.json();
+							if (valorSpan) {
+								if (data && data.length > 0) {
+									valorSpan.textContent =
+										data[0].total_ganancia;
+								} else {
+									valorSpan.textContent = "0";
+								}
+							}
+						}
+					} catch (err) {
+						console.error(err);
+					}
+				});
+			}
+		});
+	</script>
+	<!-- Este script se encarga de actualizar el numero de citas acorde a la fecha seleccionada. -->
+	<script>
+		document.addEventListener("DOMContentLoaded", () => {
+			const dateInput = document.getElementById(
+				"account-appointment-date",
+			);
+			const citasTotalSpan = document.getElementById(
+				"account-appointment-total",
+			);
+			const citasConcluidasSpan = document.getElementById(
+				"account-appointment-concluidas",
+			);
+			const citasConfirmadasSpan = document.getElementById(
+				"account-appointment-confirmadas",
+			);
+			const citasPendientesSpan = document.getElementById(
+				"account-appointment-pendientes",
+			);
+			const citasCanceladasSpan = document.getElementById(
+				"account-appointment-canceladas",
+			);
+
+			if (dateInput) {
+				const today = new Date().toISOString().split("T")[0];
+				dateInput.value = today;
+				dateInput.addEventListener("change", async (e) => {
+					const date = e.target.value;
+					try {
+						const res = await fetch(
+							`/api/v1/AppointmentStatus?date=${date}`,
+						);
+						if (res.ok) {
+							const data = await res.json();
+							if (data && data.length > 0 && data[0].citas) {
+								const citas = data[0].citas;
+								if (citasTotalSpan)
+									citasTotalSpan.textContent =
+										citas.totalcitas || "0";
+								if (citasConcluidasSpan)
+									citasConcluidasSpan.textContent =
+										citas.concluida || "0";
+								if (citasConfirmadasSpan)
+									citasConfirmadasSpan.textContent =
+										citas.confirmada || "0";
+								if (citasPendientesSpan)
+									citasPendientesSpan.textContent =
+										citas.espera || "0";
+								if (citasCanceladasSpan)
+									citasCanceladasSpan.textContent =
+										citas.cancelada || "0";
+							} else {
+								if (citasTotalSpan)
+									citasTotalSpan.textContent = "0";
+								if (citasConcluidasSpan)
+									citasConcluidasSpan.textContent = "0";
+								if (citasConfirmadasSpan)
+									citasConfirmadasSpan.textContent = "0";
+								if (citasPendientesSpan)
+									citasPendientesSpan.textContent = "0";
+								if (citasCanceladasSpan)
+									citasCanceladasSpan.textContent = "0";
+							}
+						}
+					} catch (err) {
+						console.error(err);
+					}
+				});
+			}
+		});
+	</script>
+</Layout>
