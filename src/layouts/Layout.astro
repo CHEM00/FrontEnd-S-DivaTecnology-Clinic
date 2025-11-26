@@ -1,16 +1,43 @@
-<!DOCTYPE html>
+---
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
 <html lang="es">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" href="/src/styles/global.css">
-	<!--Etiqueta de fontAwesome-->
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-	<title>{Astro.props.title || "Inicio de sesión"}</title>
-</head>
-<body>
-	<header> <slot name="header"/> </header>
-	<main> <slot/> </main>
-	<footer> <slot name="footer"/> </footer>
-</body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="stylesheet" href="/src/styles/global.css" />
+		<!-- FontAwesome -->
+		<link
+			rel="stylesheet"
+			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+			crossorigin="anonymous"
+			referrerpolicy="no-referrer"
+		/>
+		<title>{title || "Clínica"}</title>
+
+		<!-- GSAP & Axios -->
+		<script
+			src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"
+			defer></script>
+		<script
+			src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"
+			defer></script>
+		<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" defer
+		></script>
+	</head>
+	<body class="font-sans text-gray-900 antialiased">
+		<!-- Background Animation -->
+		<div
+			class="fixed inset-0 -z-50 bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8] animate-gradient-slow"
+		>
+		</div>
+
+		<slot />
+	</body>
 </html>

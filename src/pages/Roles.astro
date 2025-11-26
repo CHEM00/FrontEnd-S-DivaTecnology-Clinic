@@ -1,0 +1,649 @@
+---
+import Layout from "../layouts/Layout.astro";
+import NavBar from "../components/NavBar.astro";
+import TopTag from "../components/TopTag.astro";
+import FormModal from "../components/modals/FormModal.astro";
+
+let table = [];
+try {
+    const response = await fetch("http://localhost:3001/api/v1/Roles");
+    if (response.ok) {
+        table = await response.json();
+    } else {
+        console.error("Error en la respuesta:", response.status);
+        table = [];
+    }
+} catch (error) {
+    console.error("Error fetching data:", error);
+    table = [];
+}
+
+// Función para escapar caracteres problemáticos en JavaScript
+const escapeJS = (str) => {
+    if (!str) return "";
+    return String(str)
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, "\\n")
+        .replace(/\r/g, "\\r");
+};
+---
+
+<Layout title="Roles">
+    <div
+        class="flex h-[100dvh] overflow-hidden bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8]"
+    >
+        <NavBar />
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+            <!-- Background Elements -->
+            <div
+                class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#2F5D50]/10 rounded-full blur-3xl pointer-events-none"
+            >
+            </div>
+            <div
+                class="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-[#2F5D50]/5 rounded-full blur-3xl pointer-events-none"
+            >
+            </div>
+
+            <TopTag titulo="Gestión de Roles" nombreUsuario="Administrador" />
+
+            <main
+                class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-[#2F5D50]/20 scrollbar-track-transparent relative z-10"
+            >
+                <!-- Header con título y botones -->
+                <div
+                    class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 animate-fade-in-up stagger-1"
+                >
+                    <div>
+                        <h1
+                            class="text-3xl font-bold text-[#2F5D50] tracking-tight"
+                        >
+                            Lista de Roles
+                        </h1>
+                        <p class="text-gray-500 mt-1">
+                            Administra los roles de usuario
+                        </p>
+                    </div>
+                    <div class="flex gap-3">
+                        <a
+                            href="/Permisos"
+                            class="glass-button px-5 py-2.5 rounded-xl flex items-center gap-2 text-[#2F5D50] font-medium hover:bg-white/60 transition-all shadow-sm border border-[#2F5D50]/20"
+                        >
+                            <i class="fa-solid fa-key"></i>
+                            Ver Permisos
+                        </a>
+                        <button
+                            class="glass-button px-6 py-2.5 rounded-xl flex items-center gap-2 text-white bg-[#2F5D50] hover:bg-[#234D20] transition-all shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-0.5"
+                            onclick="abrirModalAgregar()"
+                        >
+                            <i class="fa-solid fa-plus"></i>
+                            Agregar Rol
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabla Container -->
+                <div
+                    class="glass-panel rounded-3xl overflow-hidden animate-fade-in-up stagger-2 border border-white/40 shadow-xl"
+                >
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr
+                                    class="bg-[#2F5D50]/5 text-[#2F5D50] border-b border-[#2F5D50]/10"
+                                >
+                                    <th
+                                        class="p-5 font-bold text-center w-16 rounded-tl-2xl"
+                                        >Sel</th
+                                    >
+                                    <th class="p-5 font-bold">Nombre del Rol</th
+                                    >
+                                    <th
+                                        class="p-5 font-bold text-center w-32 rounded-tr-2xl"
+                                        >Acciones</th
+                                    >
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#2F5D50]/5">
+                                {
+                                    table.map((rol) => {
+                                        const nombreEscaped = escapeJS(
+                                            rol.name,
+                                        );
+                                        const nombreCompletoEscaped = escapeJS(
+                                            rol.name,
+                                        );
+
+                                        return (
+                                            <tr class="hover:bg-white/60 transition-colors group">
+                                                <td class="p-5 text-center">
+                                                    <div class="flex items-center justify-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            class="rol-checkbox w-5 h-5 rounded-md border-gray-300 text-[#2F5D50] focus:ring-[#2F5D50] cursor-pointer"
+                                                            value={rol.id}
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td class="p-5">
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="w-10 h-10 rounded-full bg-[#2F5D50]/10 flex items-center justify-center text-[#2F5D50]">
+                                                            <i class="fa-solid fa-user-tag" />
+                                                        </div>
+                                                        <div class="font-bold text-gray-800 text-lg">
+                                                            {rol.name}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="p-5 text-center">
+                                                    <button
+                                                        class="w-8 h-8 rounded-full bg-white/50 hover:bg-[#2F5D50] hover:text-white text-[#2F5D50] transition-all shadow-sm flex items-center justify-center mx-auto"
+                                                        onclick={`abrirModalAcciones(${rol.id}, '${nombreEscaped}', '${nombreCompletoEscaped}')`}
+                                                        title="Acciones"
+                                                    >
+                                                        <i class="fa-solid fa-ellipsis-vertical" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div
+                        class="p-4 border-t border-[#2F5D50]/10 flex justify-between items-center bg-white/30 backdrop-blur-sm"
+                    >
+                        <div class="text-sm text-gray-600 font-medium">
+                            Mostrando <span class="font-bold text-[#2F5D50]"
+                                >{table.length}</span
+                            > roles
+                        </div>
+                        <div class="flex gap-2">
+                            <button
+                                class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/50 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-white/50 disabled:hover:text-[#2F5D50] shadow-sm"
+                                disabled
+                            >
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+                            <button
+                                class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/50 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all shadow-sm"
+                            >
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal de Acciones -->
+    <div
+        id="modalAcciones"
+        class="fixed inset-0 z-50 hidden"
+        aria-labelledby="modal-title"
+        role="dialog"
+        aria-modal="true"
+    >
+        <div
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+            onclick="cerrarModal('modalAcciones')"
+        >
+        </div>
+        <div
+            class="flex min-h-full items-center justify-center p-4 text-center sm:p-0"
+        >
+            <div
+                class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg p-6"
+            >
+                <div class="absolute right-4 top-4">
+                    <button
+                        type="button"
+                        class="text-gray-400 hover:text-gray-500"
+                        onclick="cerrarModal('modalAcciones')"
+                    >
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="text-center mb-6">
+                    <h3
+                        class="text-xl font-bold text-[#2F5D50]"
+                        id="modal-title"
+                    >
+                        Acciones de Rol
+                    </h3>
+                    <p class="text-sm text-gray-500 mt-2">
+                        Gestionar rol: <span
+                            id="nombreRolAcciones"
+                            class="font-bold text-[#2F5D50]"></span>
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <button
+                        id="btnEditarAccion"
+                        class="flex flex-col items-center justify-center p-4 rounded-xl border border-[#2F5D50]/20 hover:bg-[#2F5D50]/5 transition-all group"
+                    >
+                        <div
+                            class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"
+                        >
+                            <i class="fa-solid fa-pen-to-square text-xl"></i>
+                        </div>
+                        <span class="font-medium text-gray-700">Editar</span>
+                    </button>
+                    <button
+                        id="btnEliminarAccion"
+                        class="flex flex-col items-center justify-center p-4 rounded-xl border border-red-200 hover:bg-red-50 transition-all group"
+                    >
+                        <div
+                            class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"
+                        >
+                            <i class="fa-solid fa-trash text-xl"></i>
+                        </div>
+                        <span class="font-medium text-gray-700">Eliminar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar Eliminar -->
+    <div id="modalConfirmarEliminar" class="fixed inset-0 z-50 hidden">
+        <div
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm"
+            onclick="cerrarModal('modalConfirmarEliminar')"
+        >
+        </div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div
+                class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:w-full sm:max-w-md p-6"
+            >
+                <div class="text-center">
+                    <div
+                        class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-4"
+                    >
+                        <i
+                            class="fa-solid fa-triangle-exclamation text-3xl text-red-600"
+                        ></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900">
+                        ¿Eliminar rol?
+                    </h3>
+                    <p class="text-sm text-gray-500 mt-2">
+                        Estás a punto de eliminar el rol <span
+                            id="nombreRolEliminar"
+                            class="font-bold text-gray-800"></span>. Esta acción
+                        no se puede deshacer.
+                    </p>
+                </div>
+                <div class="mt-6 flex gap-3">
+                    <button
+                        type="button"
+                        class="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
+                        onclick="cerrarModal('modalConfirmarEliminar')"
+                        >Cancelar</button
+                    >
+                    <button
+                        type="button"
+                        id="btnConfirmarEliminar"
+                        class="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium shadow-lg shadow-red-600/30"
+                        >Sí, Eliminar</button
+                    >
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar Rol -->
+    <FormModal
+        id="modalAgregarRol"
+        title="Nuevo Rol"
+        formId="formAgregarRol"
+        submitText="Guardar"
+        cancelText="Cancelar"
+        size="md"
+    >
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1"
+                    >Nombre del Rol *</label
+                >
+                <input
+                    type="text"
+                    id="agregarNombre"
+                    class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                    required
+                    placeholder="Ej: Administrador"
+                />
+            </div>
+        </div>
+    </FormModal>
+
+    <!-- Modal Editar Rol -->
+    <FormModal
+        id="modalEditarRol"
+        title="Editar Rol"
+        formId="formEditarRol"
+        submitText="Actualizar"
+        cancelText="Cancelar"
+        size="md"
+    >
+        <input type="hidden" id="editarId" />
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1"
+                    >Nombre del Rol *</label
+                >
+                <input
+                    type="text"
+                    id="editarNombre"
+                    class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                    required
+                />
+            </div>
+        </div>
+    </FormModal>
+
+    <!-- Modal Exito/Error -->
+    <div id="modalExito" class="fixed inset-0 z-[60] hidden">
+        <div
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm"
+            onclick="cerrarModal('modalExito')"
+        >
+        </div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div
+                class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:w-full sm:max-w-sm p-6 text-center"
+            >
+                <div
+                    class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4"
+                >
+                    <i class="fa-solid fa-check text-green-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">¡Éxito!</h3>
+                <p id="mensajeExito" class="text-sm text-gray-500 mb-4"></p>
+                <button
+                    type="button"
+                    class="w-full px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 font-medium"
+                    onclick="cerrarModal('modalExito')">Aceptar</button
+                >
+            </div>
+        </div>
+    </div>
+
+    <div id="modalError" class="fixed inset-0 z-[60] hidden">
+        <div
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm"
+            onclick="cerrarModal('modalError')"
+        >
+        </div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div
+                class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:w-full sm:max-w-sm p-6 text-center"
+            >
+                <div
+                    class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4"
+                >
+                    <i class="fa-solid fa-xmark text-red-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Error</h3>
+                <p id="mensajeError" class="text-sm text-gray-500 mb-4"></p>
+                <button
+                    type="button"
+                    class="w-full px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium"
+                    onclick="cerrarModal('modalError')">Aceptar</button
+                >
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let rolSeleccionado = null;
+        let rolData = {};
+
+        // Función para verificar checkbox seleccionado
+        function verificarCheckboxSeleccionado(rolId) {
+            const idNum = Number(rolId);
+            if (isNaN(idNum)) return false;
+
+            const checkbox = document.querySelector(
+                `.rol-checkbox[value="${rolId}"]`,
+            );
+            if (!checkbox || !checkbox.checked) {
+                mostrarError(
+                    "Por favor, seleccione el rol marcando la casilla.",
+                );
+                return false;
+            }
+            return true;
+        }
+
+        // Abrir modal de acciones
+        window.abrirModalAcciones = function (id, nombre, nombreCompleto) {
+            if (!verificarCheckboxSeleccionado(id)) return;
+
+            rolSeleccionado = Number(id);
+            rolData = { nombre, nombreCompleto };
+
+            document.getElementById("nombreRolAcciones").textContent =
+                nombreCompleto;
+            document.getElementById("modalAcciones").classList.remove("hidden");
+        };
+
+        // Abrir modal agregar
+        window.abrirModalAgregar = function () {
+            const form = document.getElementById("formAgregarRol");
+            if (form) form.reset();
+            document
+                .getElementById("modalAgregarRol")
+                .classList.remove("hidden");
+        };
+
+        // Cerrar modales
+        window.cerrarModal = function (modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.add("hidden");
+        };
+
+        // Mostrar mensajes
+        function mostrarExito(mensaje) {
+            document.getElementById("mensajeExito").textContent = mensaje;
+            document.getElementById("modalExito").classList.remove("hidden");
+        }
+
+        function mostrarError(mensaje) {
+            document.getElementById("mensajeError").textContent = mensaje;
+            document.getElementById("modalError").classList.remove("hidden");
+        }
+
+        // Event Listeners
+        document.addEventListener("DOMContentLoaded", function () {
+            // GSAP Animations
+            // GSAP Animations
+            // if (typeof gsap !== "undefined") {
+            //     gsap.from(".glass-panel", {
+            //         duration: 0.8,
+            //         y: 30,
+            //         opacity: 0,
+            //         stagger: 0.1,
+            //         ease: "power3.out",
+            //     });
+            //     gsap.from("tr", {
+            //         duration: 0.5,
+            //         opacity: 0,
+            //         y: 10,
+            //         stagger: 0.05,
+            //         delay: 0.2,
+            //         ease: "power2.out",
+            //     });
+            // }
+
+            // Botones de acción
+            document
+                .getElementById("btnEditarAccion")
+                ?.addEventListener("click", function () {
+                    cerrarModal("modalAcciones");
+                    abrirModalEditar();
+                });
+
+            document
+                .getElementById("btnEliminarAccion")
+                ?.addEventListener("click", function () {
+                    cerrarModal("modalAcciones");
+                    abrirModalConfirmarEliminar();
+                });
+
+            document
+                .getElementById("btnConfirmarEliminar")
+                ?.addEventListener("click", function () {
+                    eliminarRol(rolSeleccionado);
+                });
+        });
+
+        // Abrir modal de edición
+        function abrirModalEditar() {
+            if (!rolSeleccionado) return;
+
+            document.getElementById("editarId").value = rolSeleccionado;
+            document.getElementById("editarNombre").value =
+                rolData.nombre || "";
+
+            document
+                .getElementById("modalEditarRol")
+                .classList.remove("hidden");
+        }
+
+        // Abrir modal de confirmación de eliminación
+        function abrirModalConfirmarEliminar() {
+            document.getElementById("nombreRolEliminar").textContent =
+                rolData.nombreCompleto;
+            document
+                .getElementById("modalConfirmarEliminar")
+                .classList.remove("hidden");
+        }
+
+        // Función para eliminar rol
+        async function eliminarRol(id) {
+            try {
+                const response = await fetch(`/api/v1/Roles/${id}`, {
+                    method: "DELETE",
+                });
+                if (response.ok) {
+                    cerrarModal("modalConfirmarEliminar");
+                    mostrarExito("Rol eliminado correctamente");
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    const errorData = await response.json();
+                    mostrarError(
+                        "Error al eliminar: " +
+                            (errorData.message ||
+                                errorData.error ||
+                                "Desconocido"),
+                    );
+                }
+            } catch (error) {
+                mostrarError("Error de conexión: " + error.message);
+            }
+        }
+
+        // Manejar envío Agregar
+        document
+            .getElementById("formAgregarRol")
+            ?.addEventListener("submit", async function (e) {
+                e.preventDefault();
+
+                const nombre = document
+                    .getElementById("agregarNombre")
+                    .value.trim();
+                if (!nombre) {
+                    mostrarError("El campo Nombre es obligatorio");
+                    return;
+                }
+
+                const rolData = { name: nombre };
+
+                try {
+                    const response = await fetch("/api/v1/Roles", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(rolData),
+                    });
+
+                    if (response.ok) {
+                        cerrarModal("modalAgregarRol");
+                        mostrarExito("Rol agregado correctamente");
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        const errorData = await response.json();
+                        mostrarError(
+                            "Error al agregar: " +
+                                (errorData.message ||
+                                    errorData.error ||
+                                    "Desconocido"),
+                        );
+                    }
+                } catch (error) {
+                    mostrarError("Error de conexión: " + error.message);
+                }
+            });
+
+        // Manejar envío Editar
+        document
+            .getElementById("formEditarRol")
+            ?.addEventListener("submit", async function (e) {
+                e.preventDefault();
+
+                const nombre = document
+                    .getElementById("editarNombre")
+                    .value.trim();
+                if (!nombre) {
+                    mostrarError("El campo Nombre es obligatorio");
+                    return;
+                }
+
+                const rolData = { name: nombre };
+
+                try {
+                    const response = await fetch(
+                        `/api/v1/Roles/${rolSeleccionado}`,
+                        {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(rolData),
+                        },
+                    );
+
+                    if (response.ok) {
+                        cerrarModal("modalEditarRol");
+                        mostrarExito("Rol actualizado correctamente");
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        const errorData = await response.json();
+                        mostrarError(
+                            "Error al actualizar: " +
+                                (errorData.message ||
+                                    errorData.error ||
+                                    "Desconocido"),
+                        );
+                    }
+                } catch (error) {
+                    mostrarError("Error de conexión: " + error.message);
+                }
+            });
+
+        // Seleccionar todos los checkboxes
+        document
+            .getElementById("selectAll")
+            ?.addEventListener("change", function (e) {
+                const checkboxes = document.querySelectorAll(".rol-checkbox");
+                checkboxes.forEach((checkbox) => {
+                    checkbox.checked = e.target.checked;
+                });
+            });
+    </script>
+</Layout>

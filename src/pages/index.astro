@@ -1,64 +1,131 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
 ---
 
-<Layout>	
-	<div class="flex flex-col md:flex-row h-screen overflow-hidden">
-		<div id="ContenedorIzquierdo" class="w-full md:w-1/2 h-64 md:h-screen bg-[#f1f1f1] flex items-center justify-center">
-			<img src="LogoJess.png" alt="Logo de la clinica" class="" />
-		</div>
-		<div id="ContenedorDerecho" class="w-full md:w-1/2 h-auto md:h-screen bg-[#234D20] flex items-center justify-center py-8 md:py-0">
-			<form id="loginForm" class="border border-black w-full max-w-md bg-gray-100 rounded-md shadow-2xl mx-4">
-				<div class="flex flex-col items-center justify-center space-y-4 p-6">
-					<span class="text-2xl font-medium mb-4">Inicio de sesión médico</span>
-					<div class="w-full flex flex-col space-y-2">
-						
-					</div>
-					<div class="w-full flex flex-col space-y-2">
-						
-					</div>
-					<button type="submit" class="mt-4 px-6 py-2 bg-[#234D20] text-white rounded hover:bg-[#1a3a15] transition">
-						Iniciar sesión
-					</button>
-				</div>
-				<div class="m-4 text-center">
-					<p class="text-sm text-gray-600">Acceso exclusivo para personal médico autorizado</p>
-					<p class="text-sm mt-2">Si eres paciente, da click <a href="/LogPaciente" class="text-blue-800 underline">aquí</a> para visualizar tu historial clínico</p>
-				</div>
-			</form>
-		</div>
-	</div>
-
-	<script>
-		// Manejo del formulario de login en caso se maneje con API
-		document.getElementById('loginForm').addEventListener('submit', async (e) => {
-			e.preventDefault();
-			
-			const correo = document.getElementById('correo').value;
-			const contrasena = document.getElementById('contrasena').value;
-
-			try {
-				const response = await fetch('/api/auth/login', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({ correo, contrasena })
-				});
-
-				const data = await response.json();
-
-				if (response.ok) {
-					// Almacenar el JWT y redirigir
-					localStorage.setItem('jwt', data.token);
-					window.location.href = '/DashBoardAdmin';
-				} else {
-					alert(data.message || 'Error en el inicio de sesión');
-				}
-			} catch (error) {
-				console.error('Error:', error);
-				alert('Error de conexión');
-			}
-		});
-	</script>
+<Layout>
+  <div
+    class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#eafaf1] via-[#d0ecd7] to-[#b2d8c5] relative overflow-hidden"
+  >
+    {/* Logo decorativo grande, aún más sutil y difuminado */}
+    <img
+      src="/LogoJess.png"
+      alt="Logo de la clínica"
+      class="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[420px] opacity-7 blur-[60px] object-contain z-0"
+      aria-hidden="true"
+    />
+    {/* Card de login con efecto liquid glass */}
+    <form
+      id="loginForm"
+      class="relative z-10 w-full max-w-md mx-4
+        rounded-[2.5rem] border border-white/30
+        bg-white/30 backdrop-blur-2xl shadow-2xl
+        flex flex-col gap-6 items-center
+        p-8 md:p-12
+        ring-1 ring-[#b2d8c5]/40"
+      style="box-shadow: 0 12px 48px 0 rgba(35,77,32,0.10), 0 1.5px 8px 0 rgba(178,216,197,0.10);"
+    >
+      {/* Logo pequeño centrado */}
+      <img
+        src="/LogoJess.png"
+        alt="Logo de la clínica"
+        class="w-32 h-32 object-contain rounded-full shadow-lg mb-2 border-2 border-white/60 bg-white/70"
+      />
+      <span class="text-2xl font-bold text-[#234D20] drop-shadow"
+        >Inicio de sesión</span
+      >
+      {/* Campos de login */}
+      <div class="flex flex-col gap-4 w-full">
+        <input
+          id="username"
+          type="text"
+          placeholder="Usuario"
+          class="px-4 py-2 rounded-xl border border-gray-200 bg-white/60 backdrop-blur focus:outline-none focus:ring-2 focus:ring-[#388e3c]/40 transition placeholder:text-gray-500"
+          required
+        />
+        <input
+          id="password"
+          type="password"
+          placeholder="Contraseña"
+          class="px-4 py-2 rounded-xl border border-gray-200 bg-white/60 backdrop-blur focus:outline-none focus:ring-2 focus:ring-[#388e3c]/40 transition placeholder:text-gray-500"
+          required
+        />
+      </div>
+      <button
+        type="submit"
+        class="w-full py-2 rounded-xl font-semibold shadow-sm transition
+          bg-[#234D20] hover:bg-[#388e3c] focus:bg-[#256029]
+          text-white text-base tracking-wide
+          focus:outline-none focus:ring-2 focus:ring-[#388e3c]/40
+          duration-200"
+      >
+        Iniciar sesión
+      </button>
+      <div class="text-center space-y-2 w-full">
+        <p class="text-sm text-gray-700 drop-shadow-sm">
+          Acceso exclusivo para personal médico autorizado
+        </p>
+        <p class="text-sm">
+          Si eres paciente, da click
+          <a href="/LogPaciente" class="text-green-800 underline">aquí</a>
+          para visualizar tu historial clínico
+        </p>
+      </div>
+    </form>
+  </div>
 </Layout>
+
+<script>
+  const loginForm = document.getElementById("loginForm");
+
+  if (loginForm) {
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const usernameInput = document.getElementById(
+        "username",
+      ) as HTMLInputElement;
+      const passwordInput = document.getElementById(
+        "password",
+      ) as HTMLInputElement;
+
+      const username = usernameInput?.value;
+      const password = passwordInput?.value;
+
+      try {
+        const response = await fetch("/api/v1/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email: username, password: password }),
+        });
+
+        const data = await response.json();
+
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+
+          if (data.user) {
+            localStorage.setItem("user", JSON.stringify(data.user));
+
+            const roleId = data.user.idrol;
+
+            if (roleId === 3) {
+              window.location.href = "/DashBoardEmpleado";
+            } else if (roleId === 2) {
+              window.location.href = "/DashboardAdmin";
+            } else {
+              window.location.href = "/DashboardAdmin";
+            }
+          } else {
+            window.location.href = "/DashboardAdmin";
+          }
+        } else {
+          alert(data.message || "Error al iniciar sesión");
+        }
+      } catch (error) {
+        console.error("Error al iniciar sesión:", error);
+      }
+    });
+  }
+</script>

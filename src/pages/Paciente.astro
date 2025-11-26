@@ -1,1972 +1,562 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
-import HeaderEmpleado from '../components/HeaderEmpleado.astro';
+import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
-import axios from "axios";
 
-const table = await axios.get("http://localhost:3001/api/v1/Pacientes").then((res) => res.data);
+interface Paciente {
+	id: number;
+	firstname: string;
+	lastname: string;
+	motherlastname: string;
+	birthday: string;
+	phone: string;
+	email: string;
+	photo: string;
+	created_at: string;
+	updated_at: string;
+}
 
-// Función para formatear fecha
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toISOString().split('T')[0];
-};
+let pacientes: Paciente[] = [];
+let error = "";
 
-// Función para escapar caracteres problemáticos en JavaScript
-const escapeJS = (str) => {
-  if (!str) return '';
-  return String(str)
-    .replace(/'/g, "\\'")
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r');
-};
+try {
+	const response = await fetch("http://localhost:3001/api/v1/Pacientes");
+	if (response.ok) {
+		const data = await response.json();
+		if (Array.isArray(data)) {
+			pacientes = data;
+		} else if (data && Array.isArray(data.body)) {
+			pacientes = data.body;
+		} else {
+			pacientes = [];
+		}
+	} else {
+		error = "Error al cargar los pacientes";
+	}
+} catch (e) {
+	console.error("Error de conexión:", e);
+	error = "Error de conexión con el servidor";
+}
 ---
 
 <Layout title="Pacientes">
-	<div class="pagos-container">
+	<div
+		class="flex h-[100dvh] overflow-hidden bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8]"
+	>
 		<NavBar />
-		<div class="flex-1 flex flex-col overflow-hidden">
-			<HeaderEmpleado titulo="PACIENTES" nombreUsuario="EMPLEADO" />
-            <main class="pagos-content">
-                <!-- Header con título y botón agregar -->
-                <div class="pagos-header">
-                    <h1 class="pagos-title">LISTA DE PACIENTES</h1>
-                    <div class="pagos-controls">
-                        <div class="pagos-buttons">
-                            <button 
-                                class="btn-action flex items-center gap-2"
-                                onclick="abrirModalAgregar()"
-                            >
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                                </svg>
-                                Agregar Paciente
-                            </button>
-                        </div>
-                    </div>
-                </div>
+		<div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+			<!-- Background Elements for depth -->
+			<div
+				class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#2F5D50]/10 rounded-full blur-3xl pointer-events-none"
+			>
+			</div>
+			<div
+				class="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-[#2F5D50]/5 rounded-full blur-3xl pointer-events-none"
+			>
+			</div>
 
-                <!-- Tabla completamente responsiva -->
-                 <!-- TABLA CON DISEÑO DE VERSIÓN VIEJA -->
-                <div class="table-responsive-container">
-                    <!-- Vista Desktop Completa (1400px+) -->
-                    <div class="table-view table-desktop-full">
-                        <div class="table-header grid-cols-12">
-                            <div class="col-checkbox">Seleccionar</div>
-                            <div class="col-nombre">Nombre</div>
-                            <div class="col-apellido">Apellido Paterno</div>
-                            <div class="col-apellido">Apellido Materno</div>
-                            <div class="col-telefono">Teléfono</div>
-                            <div class="col-email">Correo</div>
-                            <div class="col-asistencia">Asistidas</div>
-                            <div class="col-asistencia">No Asistidas</div>
-                            <div class="col-asistencia">Canceladas</div>
-                            <div class="col-estado">Sanción</div>
-                            <div class="col-estado">Tiene Paquete</div>
-                            <div class="col-acciones">Acciones</div>
-                        </div>
-                        
-                        <div class="table-body">
-                            {table.map((paciente) => {
-                                const firstnameEscaped = escapeJS(paciente.firstname);
-                                const lastnameEscaped = escapeJS(paciente.lastname);
-                                const motherlastnameEscaped = escapeJS(paciente.motherlastname);
-                                const phoneEscaped = escapeJS(paciente.phone);
-                                const emailEscaped = escapeJS(paciente.email);
-                                const birthdateEscaped = escapeJS(formatDate(paciente.birthdate));
-                                const photoEscaped = escapeJS(paciente.photo);
-                                const assistappointmentEscaped = escapeJS(paciente.assistappointment || 0);
-                                const noassistappointmentEscaped = escapeJS(paciente.noassistappointment || 0);
-                                const canceledappointmentEscaped = escapeJS(paciente.canceledappointment || 0);
-                                const sanctionEscaped = escapeJS(paciente.sanction || false);
-                                const havepackageEscaped = escapeJS(paciente.havepackage || false);
-                                const nombreCompletoEscaped = escapeJS(`${paciente.firstname} ${paciente.lastname}`);
-                                
-                                return (
-                                    <div class="table-row grid-cols-12">
-                                        <div class="col-checkbox">
-                                            <input type="checkbox" class="paciente-checkbox" value={paciente.id} />
-                                        </div>
-                                        <div class="col-nombre">{paciente.firstname}</div>
-                                        <div class="col-apellido">{paciente.lastname}</div>
-                                        <div class="col-apellido">{paciente.motherlastname}</div>
-                                        <div class="col-telefono">{paciente.phone}</div>
-                                        <div class="col-email">{paciente.email}</div>
-                                        <div class="col-asistencia">{paciente.assistappointment || 0}</div>
-                                        <div class="col-asistencia">{paciente.noassistappointment || 0}</div>
-                                        <div class="col-asistencia">{paciente.canceledappointment || 0}</div>
-                                        <div class="col-estado">
-                                            <span class={`status-badge ${paciente.sanction ? 'sanctioned' : 'not-sanctioned'}`}>
-                                                {paciente.sanction ? 'Sí' : 'No'}
-                                            </span>
-                                        </div>
-                                        <div class="col-estado">
-                                            <span class={`status-badge ${paciente.havepackage ? 'has-package' : 'no-package'}`}>
-                                                {paciente.havepackage ? 'Sí' : 'No'}
-                                            </span>
-                                        </div>
-                                        <div class="col-acciones">
-                                            <button 
-                                                class="btn-action"
-                                                onclick={`abrirModalAcciones(${paciente.id}, '${firstnameEscaped}', '${lastnameEscaped}', '${motherlastnameEscaped}', '${phoneEscaped}', '${emailEscaped}', '${birthdateEscaped}', '${photoEscaped}', '${assistappointmentEscaped}', '${noassistappointmentEscaped}', '${canceledappointmentEscaped}', '${sanctionEscaped}', '${havepackageEscaped}', '${nombreCompletoEscaped}')`}
-                                            >
-                                                Acciones
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+			<TopTag
+				titulo="Gestión de Pacientes"
+				nombreUsuario="Administrador"
+			/>
 
-                    <!-- Vista Desktop Compacta (1200px - 1399px) -->
-                    <div class="table-view table-desktop-compact">
-                        <div class="table-header grid-cols-9">
-                            <div class="col-checkbox">Sel</div>
-                            <div class="col-nombre">Nombre</div>
-                            <div class="col-apellido">Ap. Paterno</div>
-                            <div class="col-telefono">Teléfono</div>
-                            <div class="col-email">Correo</div>
-                            <div class="col-asistencia-compact">Asist</div>
-                            <div class="col-asistencia-compact">No Asist</div>
-                            <div class="col-estado-compact">Sanción</div>
-                            <div class="col-acciones">Acciones</div>
-                        </div>
-                        
-                        <div class="table-body">
-                            {table.map((paciente) => {
-                                const firstnameEscaped = escapeJS(paciente.firstname);
-                                const lastnameEscaped = escapeJS(paciente.lastname);
-                                const motherlastnameEscaped = escapeJS(paciente.motherlastname);
-                                const phoneEscaped = escapeJS(paciente.phone);
-                                const emailEscaped = escapeJS(paciente.email);
-                                const birthdateEscaped = escapeJS(formatDate(paciente.birthdate));
-                                const photoEscaped = escapeJS(paciente.photo);
-                                const assistappointmentEscaped = escapeJS(paciente.assistappointment || 0);
-                                const noassistappointmentEscaped = escapeJS(paciente.noassistappointment || 0);
-                                const canceledappointmentEscaped = escapeJS(paciente.canceledappointment || 0);
-                                const sanctionEscaped = escapeJS(paciente.sanction || false);
-                                const havepackageEscaped = escapeJS(paciente.havepackage || false);
-                                const nombreCompletoEscaped = escapeJS(`${paciente.firstname} ${paciente.lastname}`);
-                                
-                                return (
-                                    <div class="table-row grid-cols-9">
-                                        <div class="col-checkbox">
-                                            <input type="checkbox" class="paciente-checkbox" value={paciente.id} />
-                                        </div>
-                                        <div class="col-nombre">{paciente.firstname}</div>
-                                        <div class="col-apellido">{paciente.lastname}</div>
-                                        <div class="col-telefono">{paciente.phone}</div>
-                                        <div class="col-email">{paciente.email}</div>
-                                        <div class="col-asistencia-compact">{paciente.assistappointment || 0}</div>
-                                        <div class="col-asistencia-compact">{paciente.noassistappointment || 0}</div>
-                                        <div class="col-estado-compact">
-                                            <span class={`status-badge ${paciente.sanction ? 'sanctioned' : 'not-sanctioned'}`}>
-                                                {paciente.sanction ? 'Sí' : 'No'}
-                                            </span>
-                                        </div>
-                                        <div class="col-acciones">
-                                            <button 
-                                                class="btn-action"
-                                                onclick={`abrirModalAcciones(${paciente.id}, '${firstnameEscaped}', '${lastnameEscaped}', '${motherlastnameEscaped}', '${phoneEscaped}', '${emailEscaped}', '${birthdateEscaped}', '${photoEscaped}', '${assistappointmentEscaped}', '${noassistappointmentEscaped}', '${canceledappointmentEscaped}', '${sanctionEscaped}', '${havepackageEscaped}', '${nombreCompletoEscaped}')`}
-                                            >
-                                                Acciones
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+			<main
+				class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-[#2F5D50]/20 scrollbar-track-transparent relative z-10"
+			>
+				<!-- Header con título y botón agregar -->
+				<div
+					class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 animate-fade-in-up stagger-1"
+				>
+					<div>
+						<h1
+							class="text-3xl font-bold text-[#2F5D50] tracking-tight"
+						>
+							Lista de Pacientes
+						</h1>
+						<p class="text-gray-500 mt-1">
+							Administra la información de tus pacientes
+						</p>
+					</div>
+					<button
+						class="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-[#2F5D50] hover:bg-[#234D20] transition-all shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-1"
+						onclick="abrirModal('modalFormulario', 'crear')"
+					>
+						<div
+							class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center"
+						>
+							<i class="fa-solid fa-plus text-sm"></i>
+						</div>
+						<span class="font-semibold">Nuevo Paciente</span>
+					</button>
+				</div>
 
-                    <!-- Vista Tablet (768px - 1199px) -->
-                    <div class="table-view table-tablet">
-                        <div class="table-header grid-cols-6">
-                            <div class="col-checkbox">Sel</div>
-                            <div class="col-nombre-tablet">Nombre</div>
-                            <div class="col-telefono-tablet">Teléfono</div>
-                            <div class="col-email-tablet">Correo</div>
-                            <div class="col-estado-tablet">Estado</div>
-                            <div class="col-acciones">Acciones</div>
-                        </div>
-                        
-                        <div class="table-body">
-                            {table.map((paciente) => {
-                                const firstnameEscaped = escapeJS(paciente.firstname);
-                                const lastnameEscaped = escapeJS(paciente.lastname);
-                                const motherlastnameEscaped = escapeJS(paciente.motherlastname);
-                                const phoneEscaped = escapeJS(paciente.phone);
-                                const emailEscaped = escapeJS(paciente.email);
-                                const birthdateEscaped = escapeJS(formatDate(paciente.birthdate));
-                                const photoEscaped = escapeJS(paciente.photo);
-                                const assistappointmentEscaped = escapeJS(paciente.assistappointment || 0);
-                                const noassistappointmentEscaped = escapeJS(paciente.noassistappointment || 0);
-                                const canceledappointmentEscaped = escapeJS(paciente.canceledappointment || 0);
-                                const sanctionEscaped = escapeJS(paciente.sanction || false);
-                                const havepackageEscaped = escapeJS(paciente.havepackage || false);
-                                const nombreCompletoEscaped = escapeJS(`${paciente.firstname} ${paciente.lastname}`);
-                                
-                                return (
-                                    <div class="table-row grid-cols-6">
-                                        <div class="col-checkbox">
-                                            <input type="checkbox" class="paciente-checkbox" value={paciente.id} />
-                                        </div>
-                                        <div class="col-nombre-tablet">
-                                            <div class="font-medium">{paciente.firstname} {paciente.lastname}</div>
-                                            <div class="text-sm text-gray-500">{paciente.motherlastname}</div>
-                                        </div>
-                                        <div class="col-telefono-tablet">{paciente.phone}</div>
-                                        <div class="col-email-tablet">{paciente.email}</div>
-                                        <div class="col-estado-tablet">
-                                            <div class="flex flex-col gap-1">
-                                                <span class={`status-badge status-badge-sm ${paciente.sanction ? 'sanctioned' : 'not-sanctioned'}`}>
-                                                    Sanción: {paciente.sanction ? 'Sí' : 'No'}
-                                                </span>
-                                                <span class={`status-badge status-badge-sm ${paciente.havepackage ? 'has-package' : 'no-package'}`}>
-                                                    Paquete: {paciente.havepackage ? 'Sí' : 'No'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="col-acciones">
-                                            <button 
-                                                class="btn-action"
-                                                onclick={`abrirModalAcciones(${paciente.id}, '${firstnameEscaped}', '${lastnameEscaped}', '${motherlastnameEscaped}', '${phoneEscaped}', '${emailEscaped}', '${birthdateEscaped}', '${photoEscaped}', '${assistappointmentEscaped}', '${noassistappointmentEscaped}', '${canceledappointmentEscaped}', '${sanctionEscaped}', '${havepackageEscaped}', '${nombreCompletoEscaped}')`}
-                                            >
-                                                Acciones
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+				{
+					error && (
+						<div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-xl shadow-sm animate-fade-in-up flex items-center gap-3">
+							<i class="fa-solid fa-triangle-exclamation text-xl" />
+							<div>
+								<p class="font-bold">Error</p>
+								<p>{error}</p>
+							</div>
+						</div>
+					)
+				}
 
-                    <!-- Vista Móvil (hasta 767px) -->
-                    <div class="table-view table-mobile">
-                        <div class="table-body">
-                            {table.map((paciente) => {
-                                const firstnameEscaped = escapeJS(paciente.firstname);
-                                const lastnameEscaped = escapeJS(paciente.lastname);
-                                const motherlastnameEscaped = escapeJS(paciente.motherlastname);
-                                const phoneEscaped = escapeJS(paciente.phone);
-                                const emailEscaped = escapeJS(paciente.email);
-                                const birthdateEscaped = escapeJS(formatDate(paciente.birthdate));
-                                const photoEscaped = escapeJS(paciente.photo);
-                                const assistappointmentEscaped = escapeJS(paciente.assistappointment || 0);
-                                const noassistappointmentEscaped = escapeJS(paciente.noassistappointment || 0);
-                                const canceledappointmentEscaped = escapeJS(paciente.canceledappointment || 0);
-                                const sanctionEscaped = escapeJS(paciente.sanction || false);
-                                const havepackageEscaped = escapeJS(paciente.havepackage || false);
-                                const nombreCompletoEscaped = escapeJS(`${paciente.firstname} ${paciente.lastname}`);
-                                
-                                return (
-                                    <div class="mobile-card">
-                                        <div class="mobile-card-header">
-                                            <div class="flex items-center gap-3">
-                                                <input type="checkbox" class="paciente-checkbox" value={paciente.id} />
-                                                <div>
-                                                    <h3 class="font-semibold text-gray-900">{paciente.firstname} {paciente.lastname}</h3>
-                                                    <p class="text-sm text-gray-600">{paciente.email}</p>
-                                                </div>
-                                            </div>
-                                            <button 
-                                                class="btn-action-mobile"
-                                                onclick={`abrirModalAcciones(${paciente.id}, '${firstnameEscaped}', '${lastnameEscaped}', '${motherlastnameEscaped}', '${phoneEscaped}', '${emailEscaped}', '${birthdateEscaped}', '${photoEscaped}', '${assistappointmentEscaped}', '${noassistappointmentEscaped}', '${canceledappointmentEscaped}', '${sanctionEscaped}', '${havepackageEscaped}', '${nombreCompletoEscaped}')`}
-                                            >
-                                                Acciones
-                                            </button>
-                                        </div>
-                                        
-                                        <div class="mobile-card-content">
-                                            <div class="grid grid-cols-2 gap-3">
-                                                <div class="mobile-field">
-                                                    <span class="mobile-label">Apellido Materno:</span>
-                                                    <span class="mobile-value">{paciente.motherlastname}</span>
-                                                </div>
-                                                <div class="mobile-field">
-                                                    <span class="mobile-label">Teléfono:</span>
-                                                    <span class="mobile-value">{paciente.phone}</span>
-                                                </div>
-                                                <div class="mobile-field">
-                                                    <span class="mobile-label">Asistidas:</span>
-                                                    <span class="mobile-value">{paciente.assistappointment || 0}</span>
-                                                </div>
-                                                <div class="mobile-field">
-                                                    <span class="mobile-label">No Asistidas:</span>
-                                                    <span class="mobile-value">{paciente.noassistappointment || 0}</span>
-                                                </div>
-                                                <div class="mobile-field">
-                                                    <span class="mobile-label">Canceladas:</span>
-                                                    <span class="mobile-value">{paciente.canceledappointment || 0}</span>
-                                                </div>
-                                                <div class="mobile-field">
-                                                    <span class="mobile-label">Sanción:</span>
-                                                    <span class={`status-badge status-badge-sm ${paciente.sanction ? 'sanctioned' : 'not-sanctioned'}`}>
-                                                        {paciente.sanction ? 'Sí' : 'No'}
-                                                    </span>
-                                                </div>
-                                                <div class="mobile-field">
-                                                    <span class="mobile-label">Tiene Paquete:</span>
-                                                    <span class={`status-badge status-badge-sm ${paciente.havepackage ? 'has-package' : 'no-package'}`}>
-                                                        {paciente.havepackage ? 'Sí' : 'No'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
+				<!-- Tabla Container -->
+				<div
+					class="glass-panel rounded-3xl overflow-hidden animate-fade-in-up stagger-2 border border-white/40 shadow-xl"
+				>
+					<div class="overflow-x-auto custom-scrollbar">
+						<table class="w-full text-left border-collapse">
+							<thead>
+								<tr
+									class="bg-[#2F5D50]/5 text-[#2F5D50] border-b border-[#2F5D50]/10"
+								>
+									<th class="p-5 font-bold rounded-tl-2xl"
+										>Paciente</th
+									>
+									<th
+										class="p-5 font-bold hidden md:table-cell"
+										>Contacto</th
+									>
+									<th
+										class="p-5 font-bold hidden lg:table-cell"
+										>Fecha Nac.</th
+									>
+									<th
+										class="p-5 font-bold text-center w-32 rounded-tr-2xl"
+										>Acciones</th
+									>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-[#2F5D50]/5">
+								{
+									pacientes.map((p) => (
+										<tr class="hover:bg-white/60 transition-colors group paciente-row">
+											<td class="p-5">
+												<div class="flex items-center gap-4">
+													<div class="h-12 w-12 rounded-full bg-gradient-to-br from-[#2F5D50] to-[#1a3c33] flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300">
+														{p.firstname}
+													</div>
+													<div>
+														<div class="font-bold text-gray-800 text-lg">
+															{p.firstname}{" "}
+															{p.lastname}
+														</div>
+														<div class="text-sm text-gray-500 lg:hidden flex items-center gap-1 mt-1">
+															<i class="fa-regular fa-envelope text-[#2F5D50]/60" />
+															{p.email}
+														</div>
+													</div>
+												</div>
+											</td>
+											<td class="p-5 hidden md:table-cell">
+												<div class="flex flex-col gap-1">
+													<span class="text-gray-700 font-medium flex items-center gap-2">
+														<i class="fa-regular fa-envelope text-[#2F5D50]/60" />
+														{p.email}
+													</span>
+													<span class="text-sm text-gray-500 flex items-center gap-2">
+														<i class="fa-solid fa-phone text-[#2F5D50]/60" />
+														{p.phone}
+													</span>
+												</div>
+											</td>
+											<td class="p-5 hidden lg:table-cell">
+												<div class="text-gray-600 font-medium bg-white/50 px-3 py-1 rounded-lg border border-white/40 inline-flex items-center gap-2">
+													<i class="fa-solid fa-cake-candles text-[#2F5D50]/60" />
+													{new Date(
+														p.birthday,
+													).toLocaleDateString()}
+												</div>
+											</td>
+											<td class="p-5 text-center">
+												<div class="flex justify-center gap-2">
+													<button
+														class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 hover:scale-110 transition-all flex items-center justify-center shadow-sm"
+														onclick={`prepararEdicion(${JSON.stringify(p)})`}
+														title="Editar"
+													>
+														<i class="fa-solid fa-pen-to-square" />
+													</button>
+													<button
+														class="w-9 h-9 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 hover:scale-110 transition-all flex items-center justify-center shadow-sm"
+														onclick={`confirmarEliminacion(${p.id}, '${p.firstname} ${p.lastname}')`}
+														title="Eliminar"
+													>
+														<i class="fa-solid fa-trash" />
+													</button>
+												</div>
+											</td>
+										</tr>
+									))
+								}
+								{
+									pacientes.length === 0 && !error && (
+										<tr>
+											<td
+												colspan="4"
+												class="p-12 text-center text-gray-500"
+											>
+												<div class="flex flex-col items-center gap-4">
+													<div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center">
+														<i class="fa-solid fa-user-slash text-4xl text-gray-400" />
+													</div>
+													<p class="text-lg font-medium">
+														No hay pacientes
+														registrados
+													</p>
+													<button
+														class="text-[#2F5D50] font-bold hover:underline"
+														onclick="abrirModal('modalFormulario', 'crear')"
+													>
+														Crear el primer paciente
+													</button>
+												</div>
+											</td>
+										</tr>
+									)
+								}
+							</tbody>
+						</table>
+					</div>
 
-				<!-- PAGINACIÓN -->
-				<div class="historial-pagination">
-					<div class="text-sm text-gray-600">1–10 de {table.length}</div>
-					<div class="flex items-center gap-3">
-						<span class="text-sm text-gray-600">Filas por página:</span>
-						<select class="historial-select" id="rowsPerPage">
-							<option>10</option>
-							<option>25</option>
-							<option>50</option>
-						</select>
-						<div class="flex items-center gap-2">
-							<button class="btn-action px-3 py-1 text-sm" onclick="cambiarPagina(-1)">⟨</button>
-							<span class="text-sm text-gray-600">1/{Math.ceil(table.length / 10)}</span>
-							<button class="btn-action px-3 py-1 text-sm" onclick="cambiarPagina(1)">⟩</button>
+					<!-- Pagination -->
+					<div
+						class="p-4 border-t border-[#2F5D50]/10 flex justify-between items-center bg-white/30 backdrop-blur-sm"
+					>
+						<div class="text-sm text-gray-600 font-medium">
+							Mostrando <span class="font-bold text-[#2F5D50]"
+								>{pacientes.length}</span
+							> registros
+						</div>
+						<div class="flex gap-2">
+							<button
+								class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/50 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-white/50 disabled:hover:text-[#2F5D50] shadow-sm"
+								disabled
+							>
+								<i class="fa-solid fa-chevron-left"></i>
+							</button>
+							<button
+								class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/50 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all shadow-sm"
+							>
+								<i class="fa-solid fa-chevron-right"></i>
+							</button>
 						</div>
 					</div>
 				</div>
-            </main>	
+			</main>
 		</div>
 	</div>
 
-	<!-- Modal de Acciones -->
-	<div id="modalAcciones" class="modal-overlay hidden">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h2 class="modal-title">¿Qué acción deseas realizar?</h2>
-				<button type="button" class="close-button" onclick="cerrarModal('modalAcciones')">
-					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-					</svg>
-				</button>
-			</div>
-			<div class="modal-body">
-				<div class="space-y-4">
-					<div class="text-center">
-						<p class="text-gray-600">Selecciona la acción que deseas realizar para el paciente:</p>
-						<p id="nombrePacienteAcciones" class="font-semibold text-lg text-[#2F5D50] mt-2"></p>
-					</div>
-					<div class="flex flex-col sm:flex-row justify-center gap-4 mt-6">
-						<button 
-							id="btnEditarAccion"
-							class="btn-editar-accion flex items-center justify-center gap-2"
-						>
-							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-							</svg>
-							Editar Paciente
-						</button>
-						<button 
-							id="btnEliminarAccion"
-							class="btn-eliminar-accion flex items-center justify-center gap-2"
-						>
-							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-							</svg>
-							Eliminar Paciente
-						</button>
-					</div>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn-secondary" onclick="cerrarModal('modalAcciones')">
-					Cancelar
-				</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Modal de Confirmación Eliminar -->
-	<div id="modalConfirmarEliminar" class="modal-overlay hidden">
-		<div class="modal-content max-w-md">
-			<div class="modal-header">
-				<h2 class="modal-title text-red-600">Confirmar Eliminación</h2>
-				<button type="button" class="close-button" onclick="cerrarModal('modalConfirmarEliminar')">
-					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-					</svg>
-				</button>
-			</div>
-			<div class="modal-body">
-				<div class="text-center">
-					<svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"/>
-					</svg>
-					<h3 class="text-lg font-semibold text-gray-900 mb-2">¿Estás seguro de eliminar este paciente?</h3>
-					<p class="text-gray-600 mb-4">Esta acción no se puede deshacer. Se eliminarán todos los datos del paciente:</p>
-					<p id="nombrePacienteEliminar" class="font-semibold text-red-600 text-lg"></p>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<div class="flex flex-col sm:flex-row gap-3 w-full">
-					<button type="button" class="btn-secondary flex-1" onclick="cerrarModal('modalConfirmarEliminar')">
-						Cancelar
-					</button>
-					<button type="button" id="btnConfirmarEliminar" class="btn-eliminar-confirmar flex-1">
-						Sí, Eliminar
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Modal Agregar Paciente -->
+	<!-- Modal Formulario (Crear/Editar) -->
 	<FormModal
-		id="modalAgregarPaciente"
-		title="AGREGAR PACIENTE"
-		formId="formAgregarPaciente"
-		submitText="GUARDAR"
-		cancelText="CANCELAR"
+		id="modalFormulario"
+		title="Nuevo Paciente"
+		formId="pacienteForm"
+		submitText="Guardar"
+		cancelText="Cancelar"
 		size="lg"
 	>
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+		<input type="hidden" id="pacienteId" name="id" />
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">NOMBRE *</label>
-				<input 
-					type="text" 
-					id="agregarNombre"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-					placeholder="Ingrese el nombre"
+				<label class="text-sm font-bold text-gray-700 mb-1 ml-1"
+					>Nombre *</label
 				>
+				<input
+					type="text"
+					name="firstname"
+					id="firstname"
+					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+					required
+					placeholder="Ej. Juan"
+				/>
 			</div>
 			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">APELLIDO PATERNO *</label>
-				<input 
-					type="text" 
-					id="agregarApellidoPaterno"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-					placeholder="Ingrese el apellido paterno"
+				<label class="text-sm font-bold text-gray-700 mb-1 ml-1"
+					>Apellido Paterno *</label
 				>
+				<input
+					type="text"
+					name="lastname"
+					id="lastname"
+					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+					required
+					placeholder="Ej. Pérez"
+				/>
 			</div>
 			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">APELLIDO MATERNO *</label>
-				<input 
-					type="text" 
-					id="agregarApellidoMaterno"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-					placeholder="Ingrese el apellido materno"
+				<label class="text-sm font-bold text-gray-700 mb-1 ml-1"
+					>Apellido Materno *</label
 				>
+				<input
+					type="text"
+					name="motherlastname"
+					id="motherlastname"
+					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+					required
+					placeholder="Ej. López"
+				/>
 			</div>
 			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">FECHA DE NACIMIENTO *</label>
-				<input 
-					type="date" 
-					id="agregarBirthday"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
+				<label class="text-sm font-bold text-gray-700 mb-1 ml-1"
+					>Fecha de Nacimiento *</label
 				>
+				<input
+					type="date"
+					name="birthdate"
+					id="birthdate"
+					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+					required
+				/>
 			</div>
 			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">TELÉFONO *</label>
-				<input 
-					type="tel" 
-					id="agregarPhone"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-					placeholder="Ej: 5551234567"
-					maxlength="10"
-					pattern="[0-9]{10}"
+				<label class="text-sm font-bold text-gray-700 mb-1 ml-1"
+					>Teléfono *</label
 				>
+				<input
+					type="tel"
+					name="phone"
+					id="phone"
+					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+					required
+					placeholder="Ej. 55 1234 5678"
+				/>
 			</div>
 			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">CORREO ELECTRÓNICO *</label>
-				<input 
-					type="email" 
-					id="agregarEmail"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+				<label class="text-sm font-bold text-gray-700 mb-1 ml-1"
+					>Email *</label
+				>
+				<input
+					type="email"
+					name="email"
+					id="email"
+					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
 					required
 					placeholder="ejemplo@correo.com"
-				>
+				/>
 			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">FOTO (URL)</label>
-				<input 
-					type="url" 
-					id="agregarPhoto"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					placeholder="https://ejemplo.com/foto.jpg"
+			<div class="flex flex-col md:col-span-2">
+				<label class="text-sm font-bold text-gray-700 mb-1 ml-1"
+					>Asignar Empleado</label
 				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">CITAS ASISTIDAS</label>
-				<input 
-					type="number" 
-					id="agregarAssistAppointment"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					value="0"
-					min="0"
-				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">CITAS NO ASISTIDAS</label>
-				<input 
-					type="number" 
-					id="agregarNoAssistAppointment"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					value="0"
-					min="0"
-				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">CITAS CANCELADAS</label>
-				<input 
-					type="number" 
-					id="agregarCanceledAppointment"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					value="0"
-					min="0"
-				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">SANCIÓN</label>
-				<select 
-					id="agregarSanction"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full"
-				>
-					<option value="false">No</option>
-					<option value="true">Sí</option>
-				</select>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">PAQUETE</label>
-				<select 
-					id="agregarHavePackage"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full"
-				>
-					<option value="false">No</option>
-					<option value="true">Sí</option>
-				</select>
-			</div>
-			<div class="flex flex-col">
-    <label class="text-[#2F5D50] font-medium mb-2 text-sm">EMPLEADO ASIGNADO *</label>
-    <select 
-        id="agregarIdEmployed"
-        class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full"
-        required
-    >
-        <option value="">Cargando empleados...</option>
-    </select>
-</div>
-		</div>
-	</FormModal>
-
-	<!-- Modal Editar Paciente -->
-	<FormModal
-		id="modalEditarPaciente"
-		title="EDITAR PACIENTE"
-		formId="formEditarPaciente"
-		submitText="ACTUALIZAR"
-		cancelText="CANCELAR"
-		size="lg"
-	>
-		<input type="hidden" id="editarId">
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">NOMBRE *</label>
-				<input 
-					type="text" 
-					id="editarNombre"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">APELLIDO PATERNO *</label>
-				<input 
-					type="text" 
-					id="editarApellidoPaterno"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">APELLIDO MATERNO *</label>
-				<input 
-					type="text" 
-					id="editarApellidoMaterno"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">FECHA DE NACIMIENTO *</label>
-				<input 
-					type="date" 
-					id="editarBirthday"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">TELÉFONO *</label>
-				<input 
-					type="tel" 
-					id="editarPhone"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-					maxlength="10"
-					pattern="[0-9]{10}"
-				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">CORREO ELECTRÓNICO *</label>
-				<input 
-					type="email" 
-					id="editarEmail"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">FOTO (URL)</label>
-				<input 
-					type="url" 
-					id="editarPhoto"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					placeholder="https://ejemplo.com/foto.jpg"
-				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">CITAS ASISTIDAS</label>
-				<input 
-					type="number" 
-					id="editarAssistAppointment"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					min="0"
-				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">CITAS NO ASISTIDAS</label>
-				<input 
-					type="number" 
-					id="editarNoAssistAppointment"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					min="0"
-				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">CITAS CANCELADAS</label>
-				<input 
-					type="number" 
-					id="editarCanceledAppointment"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					min="0"
-				>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">SANCIÓN</label>
-				<select 
-					id="editarSanction"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full"
-				>
-					<option value="false">No</option>
-					<option value="true">Sí</option>
-				</select>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">TIENE PAQUETE</label>
-				<select 
-					id="editarHavePackage"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full"
-				>
-					<option value="false">No</option>
-					<option value="true">Sí</option>
-				</select>
+				<div class="relative">
+					<select
+						id="employeeSelect"
+						class="glass-input w-full rounded-xl px-4 py-2.5 appearance-none cursor-pointer focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+					>
+						<option value="">Seleccione un empleado...</option>
+					</select>
+					<div
+						class="absolute right-4 top-1/2 -translate-y-1/2 text-[#2F5D50] pointer-events-none"
+					>
+						<i class="fa-solid fa-chevron-down text-xs"></i>
+					</div>
+				</div>
 			</div>
 		</div>
 	</FormModal>
 
-	<!-- Modal de éxito personalizado -->
-	<div id="modalExito" class="modal-overlay hidden">
-		<div class="modal-content max-w-md">
-			<div class="modal-header">
-				<h2 class="modal-title text-green-600">Éxito</h2>
-				<button type="button" class="close-button" onclick="cerrarModal('modalExito')">
-					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-					</svg>
-				</button>
-			</div>
-			<div class="modal-body">
-				<div class="text-center">
-					<svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-					</svg>
-					<h3 class="text-lg font-semibold text-gray-900 mb-2" id="mensajeExito"></h3>
+	<!-- Modal Confirmación Eliminación -->
+	<div id="modalEliminar" class="fixed inset-0 z-50 hidden">
+		<div
+			class="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+			onclick="cerrarModal('modalEliminar')"
+		>
+		</div>
+		<div class="flex min-h-full items-center justify-center p-4">
+			<div
+				class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:w-full sm:max-w-md p-6 text-center"
+			>
+				<div
+					class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-4"
+				>
+					<i
+						class="fa-solid fa-triangle-exclamation text-3xl text-red-600"
+					></i>
 				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn-secondary w-full" onclick="cerrarModal('modalExito')">
-					Aceptar
-				</button>
+				<h3 class="text-xl font-bold text-gray-900">
+					Eliminar Paciente
+				</h3>
+				<p class="text-sm text-gray-500 mt-2">
+					¿Estás seguro de que deseas eliminar a <span
+						id="nombrePacienteEliminar"
+						class="font-bold text-gray-800"></span>? Esta acción no
+					se puede deshacer.
+				</p>
+				<div class="mt-6 flex gap-3">
+					<button
+						type="button"
+						class="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+						onclick="cerrarModal('modalEliminar')">Cancelar</button
+					>
+					<button
+						type="button"
+						onclick="ejecutarEliminacion()"
+						class="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium shadow-lg shadow-red-600/30 transition-all transform hover:scale-105"
+						>Eliminar</button
+					>
+				</div>
 			</div>
 		</div>
 	</div>
 
-	<!-- Modal de error personalizado -->
-	<div id="modalError" class="modal-overlay hidden">
-		<div class="modal-content max-w-md">
-			<div class="modal-header">
-				<h2 class="modal-title text-red-600">Error</h2>
-				<button type="button" class="close-button" onclick="cerrarModal('modalError')">
-					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-					</svg>
-				</button>
-			</div>
-			<div class="modal-body">
-				<div class="text-center">
-					<svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"/>
-					</svg>
-					<h3 class="text-lg font-semibold text-gray-900 mb-2" id="mensajeError"></h3>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn-secondary w-full" onclick="cerrarModal('modalError')">
-					Aceptar
-				</button>
-			</div>
-		</div>
-	</div>
+	<script is:inline>
+		// --- Lógica de Modales y CRUD ---
+		let pacienteIdEliminar = null;
 
-	<script>
-		// Variables globales
-		let pacienteSeleccionado = null;
-		let pacienteData = {};
-		let empleadosList = [];
+		window.abrirModal = async (id, modo) => {
+			const modal = document.getElementById(id);
+			if (!modal) return;
 
-		// Función para cargar empleados - MEJORADA con manejo de errores
+			modal.classList.remove("hidden");
+
+			// Cargar empleados si es el formulario
+			if (id === "modalFormulario") {
+				await cargarEmpleados();
+
+				const title = document.getElementById(
+					"modal-title-modalFormulario",
+				); // ID generado por FormModal
+				const form = document.getElementById("pacienteForm");
+
+				if (modo === "crear") {
+					if (title) title.textContent = "Nuevo Paciente";
+					form.reset();
+					document.getElementById("pacienteId").value = "";
+				}
+			}
+		};
+
+		window.cerrarModal = (id) => {
+			const modal = document.getElementById(id);
+			if (modal) modal.classList.add("hidden");
+		};
+
+		window.prepararEdicion = async (paciente) => {
+			await abrirModal("modalFormulario", "editar");
+			const title = document.getElementById(
+				"modal-title-modalFormulario",
+			);
+			if (title) title.textContent = "Editar Paciente";
+
+			// Llenar formulario
+			document.getElementById("pacienteId").value = paciente.id;
+			document.getElementById("firstname").value = paciente.firstname;
+			document.getElementById("lastname").value = paciente.lastname;
+			document.getElementById("motherlastname").value =
+				paciente.motherlastname;
+			document.getElementById("birthdate").value =
+				paciente.birthdate.split("T")[0];
+			document.getElementById("phone").value = paciente.phone;
+			document.getElementById("email").value = paciente.email;
+		};
+
+		window.confirmarEliminacion = (id, nombre) => {
+			pacienteIdEliminar = id;
+			document.getElementById("nombrePacienteEliminar").textContent =
+				nombre;
+			document.getElementById("modalEliminar").classList.remove("hidden");
+		};
+
+		// --- API Calls ---
+
 		async function cargarEmpleados() {
+			const select = document.getElementById("employeeSelect");
+			if (select.children.length > 1) return; // Ya cargados
+
 			try {
-				console.log('Intentando cargar empleados...');
-				const response = await fetch('http://localhost:3001/api/v1/Employed');
-				
+				const response = await fetch("/api/v1/Empleados"); // Corregido endpoint
 				if (response.ok) {
-					empleadosList = await response.json();
-					console.log('Empleados cargados:', empleadosList);
-					const select = document.getElementById('agregarIdEmployed');
-					
-					// Limpiar y cargar opciones
-					select.innerHTML = '<option value="">Seleccione un empleado</option>';
-					empleadosList.forEach(empleado => {
-						const option = document.createElement('option');
-						option.value = empleado.id;
-						// Usar los nombres de campos correctos según tu BD
-						const nombre = empleado.firstname || empleado.firstName || empleado.nombre || 'Empleado';
-						const apellido = empleado.lastname || empleado.lastName || empleado.apellido || '';
-						option.textContent = `${nombre} ${apellido}`;
+					const data = await response.json();
+					const empleados = Array.isArray(data)
+						? data
+						: data.body || [];
+
+					empleados.forEach((emp) => {
+						const option = document.createElement("option");
+						option.value = emp.id;
+						option.textContent = `${emp.firstname} ${emp.lastname}`;
 						select.appendChild(option);
 					});
-				} else {
-					console.warn('Endpoint de empleados no disponible, usando datos de prueba');
-					usarEmpleadosDePrueba();
 				}
 			} catch (error) {
-				console.error('Error cargando empleados:', error);
-				usarEmpleadosDePrueba();
+				console.error("Error cargando empleados:", error);
 			}
 		}
 
-		// Función de respaldo con empleados de prueba
-		function usarEmpleadosDePrueba() {
-			empleadosList = [
-				{ id: 1, firstname: 'Juan', lastname: 'Pérez' },
-				{ id: 2, firstname: 'María', lastname: 'García' },
-				{ id: 3, firstname: 'Carlos', lastname: 'López' }
-			];
-			
-			const select = document.getElementById('agregarIdEmployed');
-			select.innerHTML = '<option value="">Seleccione un empleado</option>';
-			empleadosList.forEach(empleado => {
-				const option = document.createElement('option');
-				option.value = empleado.id;
-				option.textContent = `${empleado.firstname} ${empleado.lastname}`;
-				select.appendChild(option);
-			});
-		}
+		// Manejar envío del formulario
+		document
+			.getElementById("pacienteForm")
+			?.addEventListener("submit", async (e) => {
+				e.preventDefault();
+				const form = e.target;
+				const formData = new FormData(form);
+				const id = formData.get("id");
+				const isEdit = !!id;
 
-		// Función mejorada para verificar si hay checkbox seleccionado
-		function verificarCheckboxSeleccionado(pacienteId) {
-			try {
-				// Buscar todos los checkboxes con el mismo valor (pueden estar en diferentes vistas)
-				const checkboxes = document.querySelectorAll(`.paciente-checkbox[value="${pacienteId}"]`);
-				let algunoSeleccionado = false;
-				
-				checkboxes.forEach(checkbox => {
-					if (checkbox.checked) {
-						algunoSeleccionado = true;
+				const data = {
+					firstname: formData.get("firstname"),
+					lastname: formData.get("lastname"),
+					motherlastname: formData.get("motherlastname"),
+					birthdate: formData.get("birthdate"),
+					phone: formData.get("phone"),
+					email: formData.get("email"),
+					photo: "default.png", // Placeholder
+					idEmpleado:
+						document.getElementById("employeeSelect").value || 1, // Default o seleccionado
+				};
+
+				const url = isEdit
+					? `/api/v1/Pacientes/${id}`
+					: "/api/v1/Pacientes";
+
+				const method = isEdit ? "PUT" : "POST";
+
+				try {
+					const response = await fetch(url, {
+						method: method,
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(data),
+					});
+
+					if (response.ok) {
+						alert(
+							isEdit ? "Paciente actualizado" : "Paciente creado",
+						);
+						window.location.reload();
+					} else {
+						alert("Error al guardar");
 					}
-				});
-				
-				if (!algunoSeleccionado) {
-					mostrarError('Por favor, seleccione un dato marcando el checkbox para gestionar.');
-					return false;
+				} catch (error) {
+					console.error("Error:", error);
+					alert("Error de conexión");
 				}
-				return true;
-			} catch (error) {
-				console.error('Error verificando checkbox:', error);
-				mostrarError('Error al verificar la selección del paciente');
-				return false;
-			}
-		}
-
-		// Abrir modal de acciones
-		window.abrirModalAcciones = function(id, firstname, lastname, motherlastname, phone, email, birthdate, photo, assistappointment, noassistappointment, canceledappointment, sanction, havepackage, nombreCompleto) {
-			// Verificar si el checkbox está seleccionado - CORREGIDO
-			if (!verificarCheckboxSeleccionado(id)) {
-				return;
-			}
-			
-			pacienteSeleccionado = id;
-			pacienteData = {
-				firstname,
-				lastname,
-				motherlastname,
-				phone,
-				email,
-				birthdate,
-				photo,
-				assistappointment,
-				noassistappointment,
-				canceledappointment,
-				sanction,
-				havepackage,
-				nombreCompleto
-			};
-			
-			// Mostrar nombre del paciente en el modal
-			document.getElementById('nombrePacienteAcciones').textContent = nombreCompleto;
-			
-			// Mostrar modal de acciones
-			document.getElementById('modalAcciones').classList.remove('hidden');
-		};
-
-		// Abrir modal agregar
-		window.abrirModalAgregar = function() {
-			// Limpiar formulario
-			const form = document.getElementById('formAgregarPaciente');
-			if (form) {
-				form.reset();
-			}
-			
-			// Asegurarse de que los empleados estén cargados
-			if (empleadosList.length === 0) {
-				cargarEmpleados();
-			}
-			
-			const modal = document.getElementById('modalAgregarPaciente');
-			if (modal) {
-				modal.classList.remove('hidden');
-			}
-		};
-
-		// Función global para cerrar modales
-		window.cerrarModal = function(modalId) {
-			const modal = document.getElementById(modalId);
-			if (modal) {
-				modal.classList.add('hidden');
-			}
-		};
-
-		// Función para mostrar mensajes de éxito
-		function mostrarExito(mensaje) {
-			document.getElementById('mensajeExito').textContent = mensaje;
-			document.getElementById('modalExito').classList.remove('hidden');
-		}
-
-		// Función para mostrar mensajes de error
-		function mostrarError(mensaje) {
-			document.getElementById('mensajeError').textContent = mensaje;
-			document.getElementById('modalError').classList.remove('hidden');
-		}
-
-		// Configurar eventos cuando el DOM esté listo
-		document.addEventListener('DOMContentLoaded', function() {
-			// Cargar empleados al iniciar
-			cargarEmpleados();
-
-			// Botón Editar en modal de acciones
-			document.getElementById('btnEditarAccion').addEventListener('click', function() {
-				cerrarModal('modalAcciones');
-				abrirModalEditar();
 			});
 
-			// Botón Eliminar en modal de acciones
-			document.getElementById('btnEliminarAccion').addEventListener('click', function() {
-				cerrarModal('modalAcciones');
-				abrirModalConfirmarEliminar();
-			});
-
-			// Botón Confirmar Eliminar
-			document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
-				eliminarPaciente(pacienteSeleccionado);
-			});
-		});
-
-		// Abrir modal de edición
-		function abrirModalEditar() {
-			// Llenar formulario con datos actuales
-			document.getElementById('editarId').value = pacienteSeleccionado || '';
-			document.getElementById('editarNombre').value = pacienteData.firstname || '';
-			document.getElementById('editarApellidoPaterno').value = pacienteData.lastname || '';
-			document.getElementById('editarApellidoMaterno').value = pacienteData.motherlastname || '';
-			document.getElementById('editarPhone').value = pacienteData.phone || '';
-			document.getElementById('editarEmail').value = pacienteData.email || '';
-			document.getElementById('editarBirthday').value = pacienteData.birthdate || '';
-			document.getElementById('editarPhoto').value = pacienteData.photo || '';
-			document.getElementById('editarAssistAppointment').value = pacienteData.assistappointment || 0;
-			document.getElementById('editarNoAssistAppointment').value = pacienteData.noassistappointment || 0;
-			document.getElementById('editarCanceledAppointment').value = pacienteData.canceledappointment || 0;
-			document.getElementById('editarSanction').value = pacienteData.sanction || 'false';
-			document.getElementById('editarHavePackage').value = pacienteData.havepackage || 'false';
-			
-			const modal = document.getElementById('modalEditarPaciente');
-			if (modal) {
-				modal.classList.remove('hidden');
-			}
-		}
-
-		// Abrir modal de confirmación de eliminación
-		function abrirModalConfirmarEliminar() {
-			document.getElementById('nombrePacienteEliminar').textContent = pacienteData.nombreCompleto;
-			document.getElementById('modalConfirmarEliminar').classList.remove('hidden');
-		}
-
-		// Función para eliminar paciente
-		async function eliminarPaciente(id) {
-			try {
-				const response = await fetch(`http://localhost:3001/api/v1/Pacientes/${id}`, {
-					method: 'DELETE',
-				});
-				
-				if (response.ok) {
-					cerrarModal('modalConfirmarEliminar');
-					mostrarExito('Paciente eliminado correctamente');
-					setTimeout(() => {
-						location.reload();
-					}, 1500);
-				} else {
-					const errorData = await response.json();
-					mostrarError('Error al eliminar el paciente: ' + (errorData.error || 'Error desconocido'));
-				}
-			} catch (error) {
-				console.error('Error:', error);
-				mostrarError('Error de conexión con el servidor');
-			}
-		}
-
-		// Manejar envío del formulario agregar - CORREGIDO para usar nombres de BD
-		document.getElementById('formAgregarPaciente')?.addEventListener('submit', async function(e) {
-			e.preventDefault();
-			
-			// Validar campos requeridos
-			const requiredFields = [
-				'agregarNombre', 'agregarApellidoPaterno', 'agregarApellidoMaterno',
-				'agregarBirthday', 'agregarPhone', 'agregarEmail', 'agregarIdEmployed'
-			];
-			
-			for (const fieldId of requiredFields) {
-				const field = document.getElementById(fieldId);
-				if (!field.value.trim()) {
-					mostrarError(`El campo ${field.previousElementSibling.textContent} es obligatorio`);
-					field.focus();
-					return;
-				}
-			}
-
-			// CORRECCIÓN: Usar los nombres exactos de tu BASE DE DATOS (minúsculas)
-			const pacienteData = {
-				firstname: document.getElementById('agregarNombre').value,
-				lastname: document.getElementById('agregarApellidoPaterno').value,
-				motherlastname: document.getElementById('agregarApellidoMaterno').value,
-				birthday: document.getElementById('agregarBirthday').value,
-				phone: document.getElementById('agregarPhone').value,
-				email: document.getElementById('agregarEmail').value,
-				photo: document.getElementById('agregarPhoto').value || null,
-				assistappointment: parseInt(document.getElementById('agregarAssistAppointment').value) || 0,
-				noassistappointment: parseInt(document.getElementById('agregarNoAssistAppointment').value) || 0,
-				canceledappointment: parseInt(document.getElementById('agregarCanceledAppointment').value) || 0,
-				sanction: document.getElementById('agregarSanction').value === 'true',
-				havepackage: document.getElementById('agregarHavePackage').value === 'true',
-				idemployed: parseInt(document.getElementById('agregarIdEmployed').value)
-			};
-
-			console.log('Datos a enviar (BD minúsculas):', pacienteData);
+		window.ejecutarEliminacion = async () => {
+			if (!pacienteIdEliminar) return;
 
 			try {
-				const response = await fetch('http://localhost:3001/api/v1/Pacientes', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
+				const response = await fetch(
+					`/api/v1/Pacientes/${pacienteIdEliminar}`,
+					{
+						method: "DELETE",
 					},
-					body: JSON.stringify(pacienteData)
-				});
+				);
 
 				if (response.ok) {
-					cerrarModal('modalAgregarPaciente');
-					mostrarExito('Paciente agregado correctamente');
-					setTimeout(() => {
-						location.reload();
-					}, 1500);
+					alert("Paciente eliminado");
+					window.location.reload();
 				} else {
-					const errorData = await response.json();
-					console.error('Error del servidor:', errorData);
-					mostrarError('Error al agregar el paciente: ' + (errorData.error || 'Error desconocido'));
+					alert("Error al eliminar");
 				}
 			} catch (error) {
-				console.error('Error:', error);
-				mostrarError('Error de conexión con el servidor');
+				console.error("Error:", error);
+				alert("Error de conexión");
 			}
-		});
-
-		// Manejar envío del formulario editar - CORREGIDO para usar nombres de BD
-		document.getElementById('formEditarPaciente')?.addEventListener('submit', async function(e) {
-			e.preventDefault();
-			
-			// Validar campos requeridos
-			const requiredFields = [
-				'editarNombre', 'editarApellidoPaterno', 'editarApellidoMaterno',
-				'editarBirthday', 'editarPhone', 'editarEmail'
-			];
-			
-			for (const fieldId of requiredFields) {
-				const field = document.getElementById(fieldId);
-				if (!field.value.trim()) {
-					mostrarError(`El campo ${field.previousElementSibling.textContent} es obligatorio`);
-					field.focus();
-					return;
-				}
-			}
-
-			// CORRECCIÓN: Usar los nombres exactos de tu BASE DE DATOS (minúsculas)
-			const pacienteData = {
-				firstname: document.getElementById('editarNombre').value,
-				lastname: document.getElementById('editarApellidoPaterno').value,
-				motherlastname: document.getElementById('editarApellidoMaterno').value,
-				birthday: document.getElementById('editarBirthday').value,
-				phone: document.getElementById('editarPhone').value,
-				email: document.getElementById('editarEmail').value,
-				photo: document.getElementById('editarPhoto').value || null,
-				assistappointment: parseInt(document.getElementById('editarAssistAppointment').value) || 0,
-				noassistappointment: parseInt(document.getElementById('editarNoAssistAppointment').value) || 0,
-				canceledappointment: parseInt(document.getElementById('editarCanceledAppointment').value) || 0,
-				sanction: document.getElementById('editarSanction').value === 'true',
-				havepackage: document.getElementById('editarHavePackage').value === 'true'
-			};
-
-			console.log('Datos a enviar para editar (BD minúsculas):', pacienteData);
-
-			try {
-				const response = await fetch(`http://localhost:3001/api/v1/Pacientes/${pacienteSeleccionado}`, {
-					method: 'PATCH',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify(pacienteData)
-				});
-
-				if (response.ok) {
-					cerrarModal('modalEditarPaciente');
-					mostrarExito('Paciente actualizado correctamente');
-					setTimeout(() => {
-						location.reload();
-					}, 1500);
-				} else {
-					const errorData = await response.json();
-					console.error('Error del servidor:', errorData);
-					mostrarError('Error al actualizar el paciente: ' + (errorData.error || 'Error desconocido'));
-				}
-			} catch (error) {
-				console.error('Error:', error);
-				mostrarError('Error de conexión con el servidor');
-			}
-		});
-
-		// Seleccionar todos los checkboxes
-		document.getElementById('selectAll')?.addEventListener('change', function(e) {
-			const checkboxes = document.querySelectorAll('.paciente-checkbox');
-			checkboxes.forEach(checkbox => {
-				checkbox.checked = e.target.checked;
-			});
-		});
+		};
 	</script>
-
-	<style>
-		/* === ESTILOS PARA TABLA COMPLETAMENTE RESPONSIVA === */
-		
-		
-		/* === SISTEMA RESPONSIVE MEJORADO === */
-
-		/* Desktop grande (1200px+) - Tabla normal */
-		@media (min-width: 1200px) {
-			.responsive-table {
-				display: table;
-			}
-		}
-
-		/* Desktop pequeño (1024px - 1199px) - Scroll horizontal suave */
-		@media (max-width: 1199px) and (min-width: 1024px) {
-			.pagos-table-wrapper {
-				overflow-x: auto;
-			}
-			.responsive-table {
-				min-width: 1000px;
-			}
-		}
-
-		/* Tablet landscape (768px - 1023px) */
-		@media (max-width: 1023px) and (min-width: 768px) {
-			.pagos-table-wrapper {
-				overflow-x: auto;
-			}
-			.responsive-table {
-				min-width: 900px;
-			}
-			
-			/* Ocultar columnas menos importantes */
-			.responsive-table th:nth-child(4), /* Apellido materno */
-			.responsive-table td:nth-child(4) {
-				display: none;
-			}
-		}
-
-		/* Tablet portrait (640px - 767px) */
-		@media (max-width: 767px) and (min-width: 640px) {
-			.pagos-table-wrapper {
-				overflow-x: auto;
-				border-radius: 0.5rem;
-			}
-			.responsive-table {
-				min-width: 800px;
-				font-size: 0.8rem;
-			}
-			
-			/* Ocultar más columnas */
-			.responsive-table th:nth-child(4), /* Apellido materno */
-			.responsive-table td:nth-child(4),
-			.responsive-table th:nth-child(7), /* Asistidas */
-			.responsive-table td:nth-child(7),
-			.responsive-table th:nth-child(8), /* No asistidas */
-			.responsive-table td:nth-child(8) {
-				display: none;
-			}
-		}
-
-		/* Móvil grande (480px - 639px) - Convertir a tarjetas */
-		@media (max-width: 639px) and (min-width: 480px) {
-			.pagos-table-wrapper {
-				background: transparent;
-				box-shadow: none;
-				overflow-x: visible;
-			}
-			
-			.responsive-table {
-				display: block;
-				min-width: 100%;
-			}
-			
-			.responsive-table thead {
-				display: none;
-			}
-			
-			.responsive-table tbody {
-				display: grid;
-				grid-template-columns: 1fr;
-				gap: 1rem;
-			}
-			
-			.table-row {
-				display: block;
-				background: white;
-				border-radius: 0.75rem;
-				box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-				padding: 1rem;
-				margin-bottom: 0;
-			}
-			
-			.table-row td {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				padding: 0.75rem 0;
-				border-bottom: 1px solid #f3f4f6;
-				white-space: normal;
-				text-align: left;
-			}
-			
-			.table-row td:last-child {
-				border-bottom: none;
-			}
-			
-			.table-row td::before {
-				content: attr(data-label);
-				font-weight: 600;
-				color: #2F5D50;
-				margin-right: 1rem;
-				min-width: 120px;
-			}
-			
-			/* Columnas específicas en vista móvil */
-			.checkbox-col,
-			.acciones-col {
-				justify-content: center;
-				text-align: center;
-			}
-			
-			.checkbox-col::before,
-			.acciones-col::before {
-				display: none;
-			}
-			
-			/* Ajustar botones en móvil */
-			.btn-action {
-				width: 100%;
-				justify-content: center;
-			}
-		}
-
-		/* Móvil pequeño (hasta 479px) - Vista compacta */
-		@media (max-width: 479px) {
-			.pagos-table-wrapper {
-				background: transparent;
-				box-shadow: none;
-				overflow-x: visible;
-			}
-			
-			.responsive-table {
-				display: block;
-				min-width: 100%;
-			}
-			
-			.responsive-table thead {
-				display: none;
-			}
-			
-			.responsive-table tbody {
-				display: grid;
-				grid-template-columns: 1fr;
-				gap: 0.75rem;
-			}
-			
-			.table-row {
-				display: block;
-				background: white;
-				border-radius: 0.5rem;
-				box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-				padding: 0.75rem;
-				margin-bottom: 0;
-			}
-			
-			.table-row td {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				padding: 0.5rem 0;
-				border-bottom: 1px solid #f3f4f6;
-				white-space: normal;
-				text-align: left;
-				font-size: 0.8rem;
-			}
-			
-			.table-row td:last-child {
-				border-bottom: none;
-			}
-			
-			.table-row td::before {
-				content: attr(data-label);
-				font-weight: 600;
-				color: #2F5D50;
-				margin-right: 0.5rem;
-				min-width: 100px;
-				font-size: 0.75rem;
-			}
-			
-			/* Ocultar columnas menos críticas en móvil muy pequeño */
-			.table-row td:nth-child(4), /* Apellido materno */
-			.table-row td:nth-child(7), /* Asistidas */
-			.table-row td:nth-child(8), /* No asistidas */
-			.table-row td:nth-child(9) { /* Canceladas */
-				display: none;
-			}
-			
-			.checkbox-col,
-			.acciones-col {
-				justify-content: center;
-				text-align: center;
-			}
-			
-			.checkbox-col::before,
-			.acciones-col::before {
-				display: none;
-			}
-			
-			.btn-action {
-				width: 100%;
-				justify-content: center;
-				font-size: 0.75rem;
-				padding: 0.5rem 1rem;
-			}
-			
-			.status-badge {
-				font-size: 0.7rem;
-				padding: 0.2rem 0.4rem;
-			}
-		}
-
-		/* Estilos para el header y controles responsive */
-		@media (max-width: 768px) {
-			.pagos-header {
-				flex-direction: column;
-				gap: 1rem;
-			}
-			
-			.pagos-controls {
-				justify-content: flex-start;
-			}
-			
-			.pagos-buttons {
-				width: 100%;
-			}
-			
-			.pagos-buttons .btn-action {
-				width: 100%;
-				justify-content: center;
-			}
-			
-			.historial-pagination {
-				flex-direction: column;
-				gap: 1rem;
-				align-items: flex-start;
-			}
-		}
-
-		/* Estilos para modales (se mantienen igual) */
-		.modal-overlay {
-			position: fixed;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background: rgba(0, 0, 0, 0.5);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			z-index: 1001;
-			padding: 1rem;
-		}
-
-		.modal-content {
-			background: white;
-			border-radius: 1rem;
-			width: 100%;
-			max-width: 500px;
-			max-height: 90vh;
-			overflow-y: auto;
-			box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-		}
-
-		.modal-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			padding: 1.5rem;
-			border-bottom: 1px solid #e5e7eb;
-		}
-
-		.modal-title {
-			color: #2F5D50;
-			font-size: 1.25rem;
-			font-weight: 600;
-			margin: 0;
-		}
-
-		.modal-body {
-			padding: 1.5rem;
-		}
-
-		.modal-footer {
-			padding: 1.5rem;
-			border-top: 1px solid #e5e7eb;
-			display: flex;
-			justify-content: flex-end;
-		}
-
-		.close-button {
-			background: none;
-			border: none;
-			color: #6b7280;
-			cursor: pointer;
-			padding: 0.5rem;
-			border-radius: 0.375rem;
-			transition: background 0.3s;
-		}
-
-		.close-button:hover {
-			background: #f3f4f6;
-			color: #374151;
-		}
-
-		.btn-editar-accion {
-			background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-			color: white;
-			border: none;
-			border-radius: 0.75rem;
-			padding: 0.75rem 1.5rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-			box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-			min-width: 160px;
-		}
-
-		.btn-editar-accion:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
-		}
-
-		.btn-eliminar-accion {
-			background: linear-gradient(135deg, #ef4444, #dc2626);
-			color: white;
-			border: none;
-			border-radius: 0.75rem;
-			padding: 0.75rem 1.5rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-			box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
-			min-width: 160px;
-		}
-
-		.btn-eliminar-accion:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
-		}
-
-		.btn-eliminar-confirmar {
-			background: linear-gradient(135deg, #ef4444, #dc2626);
-			color: white;
-			border: none;
-			border-radius: 0.5rem;
-			padding: 0.75rem 1.5rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-		}
-
-		.btn-eliminar-confirmar:hover {
-			background: linear-gradient(135deg, #dc2626, #b91c1c);
-		}
-
-		.btn-secondary {
-			background: #6b7280;
-			color: white;
-			border: none;
-			border-radius: 0.5rem;
-			padding: 0.75rem 1.5rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-		}
-
-		.btn-secondary:hover {
-			background: #4b5563;
-		}
-
-		.btn-action {
-			cursor: pointer;
-		}
-
-		.paciente-checkbox {
-			cursor: pointer;
-		}
-
-		/* === SISTEMA DE TABLA RESPONSIVA CON CSS GRID === */
-		
-		.table-responsive-container {
-			width: 100%;
-			background: white;
-			border-radius: 0.75rem;
-			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-			overflow: hidden;
-			margin-top: 1rem;
-		}
-
-		/* Cada vista de tabla se muestra según el breakpoint */
-		.table-view {
-			width: 100%;
-		}
-
-		/* Vista Desktop Completa (1400px+) - 12 columnas */
-		.table-desktop-full {
-			display: none;
-		}
-
-		/* Vista Desktop Compacta (1200px - 1399px) - 9 columnas */
-		.table-desktop-compact {
-			display: none;
-		}
-
-		/* Vista Tablet (768px - 1199px) - 6 columnas */
-		.table-tablet {
-			display: none;
-		}
-
-		/* Vista Móvil (hasta 767px) - Cards */
-		.table-mobile {
-			display: none;
-		}
-
-		/* Header y filas comunes */
-		.table-header {
-			display: grid;
-			gap: 0.5rem;
-			padding: 1rem 1.5rem;
-			background-color: #234d20;
-			color: white;
-			font-weight: 600;
-			font-size: 0.875rem;
-			align-items: center;
-		}
-
-		.table-body {
-			width: 100%;
-		}
-
-		.table-row {
-			display: grid;
-			gap: 0.5rem;
-			padding: 1rem 1.5rem;
-			border-bottom: 1px solid #e5e7eb;
-			align-items: center;
-			transition: background-color 0.2s;
-		}
-
-		.table-row:hover {
-			background-color: #f8fafc;
-		}
-
-		/* Grid columns para diferentes vistas */
-		.grid-cols-12 {
-			grid-template-columns: 50px 1fr 1fr 1fr 1fr 1.5fr 80px 80px 80px 100px 100px 120px;
-		}
-
-		.grid-cols-9 {
-			grid-template-columns: 40px 1fr 1fr 1fr 1.5fr 60px 60px 80px 120px;
-		}
-
-		.grid-cols-6 {
-			grid-template-columns: 40px 1.5fr 1fr 1.2fr 1.2fr 120px;
-		}
-
-		/* Estilos de columnas específicas */
-		.col-checkbox {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-		}
-
-		.col-nombre,
-		.col-apellido,
-		.col-telefono,
-		.col-email {
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-		}
-
-		.col-nombre-tablet {
-			display: flex;
-			flex-direction: column;
-			gap: 0.25rem;
-		}
-
-		.col-telefono-tablet,
-		.col-email-tablet {
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			font-size: 0.875rem;
-		}
-
-		.col-asistencia,
-		.col-asistencia-compact {
-			text-align: center;
-			font-weight: 600;
-		}
-
-		.col-estado,
-		.col-estado-compact,
-		.col-estado-tablet {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-		}
-
-		.col-acciones {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-		}
-
-		/* Tarjetas móviles */
-		.mobile-card {
-			border-bottom: 1px solid #e5e7eb;
-			padding: 1rem;
-			background: white;
-		}
-
-		.mobile-card:last-child {
-			border-bottom: none;
-		}
-
-		.mobile-card-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: flex-start;
-			margin-bottom: 1rem;
-		}
-
-		.mobile-card-content {
-			width: 100%;
-		}
-
-		.mobile-field {
-			display: flex;
-			flex-direction: column;
-			gap: 0.25rem;
-		}
-
-		.mobile-label {
-			font-size: 0.75rem;
-			font-weight: 600;
-			color: #2F5D50;
-		}
-
-		.mobile-value {
-			font-size: 0.875rem;
-			color: #374151;
-		}
-
-		/* Badges de estado */
-		.status-badge {
-			display: inline-block;
-			padding: 0.25rem 0.75rem;
-			border-radius: 0.375rem;
-			font-size: 0.75rem;
-			font-weight: 500;
-			text-align: center;
-			min-width: 50px;
-		}
-
-		.status-badge-sm {
-			padding: 0.2rem 0.5rem;
-			font-size: 0.7rem;
-			min-width: 40px;
-		}
-
-		.status-badge.sanctioned {
-			background-color: #fee2e2;
-			color: #991b1b;
-			border: 1px solid #fecaca;
-		}
-
-		.status-badge.not-sanctioned {
-			background-color: #d1fae5;
-			color: #065f46;
-			border: 1px solid #a7f3d0;
-		}
-
-		.status-badge.has-package {
-			background-color: #dbeafe;
-			color: #1e40af;
-			border: 1px solid #bfdbfe;
-		}
-
-		.status-badge.no-package {
-			background-color: #f3f4f6;
-			color: #4b5563;
-			border: 1px solid #e5e7eb;
-		}
-
-		/* Botones */
-		.btn-action {
-			background: linear-gradient(135deg, #234d20, #2d5a28);
-			color: white;
-			border: none;
-			border-radius: 0.5rem;
-			padding: 0.5rem 1rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-			font-size: 0.875rem;
-			white-space: nowrap;
-		}
-
-		.btn-action:hover {
-			background: linear-gradient(135deg, #2d5a28, #366032);
-			transform: translateY(-1px);
-			box-shadow: 0 2px 4px rgba(35, 77, 32, 0.2);
-		}
-
-		.btn-action-mobile {
-			background: linear-gradient(135deg, #234d20, #2d5a28);
-			color: white;
-			border: none;
-			border-radius: 0.375rem;
-			padding: 0.375rem 0.75rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-			font-size: 0.75rem;
-			white-space: nowrap;
-		}
-
-		/* Checkboxes */
-		.paciente-checkbox {
-			cursor: pointer;
-			width: 18px;
-			height: 18px;
-		}
-
-		/* === BREAKPOINTS RESPONSIVE === */
-
-		/* Desktop Completo (1400px+) */
-		@media (min-width: 1400px) {
-			.table-desktop-full {
-				display: block;
-			}
-		}
-
-		/* Desktop Compacto (1200px - 1399px) */
-		@media (min-width: 1200px) and (max-width: 1399px) {
-			.table-desktop-compact {
-				display: block;
-			}
-		}
-
-		/* Tablet (768px - 1199px) */
-		@media (min-width: 768px) and (max-width: 1199px) {
-			.table-tablet {
-				display: block;
-			}
-		}
-
-		/* Móvil (hasta 767px) */
-		@media (max-width: 767px) {
-			.table-mobile {
-				display: block;
-			}
-			
-			.table-responsive-container {
-				border-radius: 0.5rem;
-			}
-		}
-
-		/* Ajustes para pantallas muy pequeñas */
-		@media (max-width: 480px) {
-			.mobile-card {
-				padding: 0.75rem;
-			}
-			
-			.mobile-card-header {
-				flex-direction: column;
-				gap: 0.75rem;
-				align-items: flex-start;
-			}
-			
-			.mobile-card-content .grid-cols-2 {
-				grid-template-columns: 1fr;
-				gap: 0.75rem;
-			}
-			
-			.mobile-field {
-				flex-direction: row;
-				justify-content: space-between;
-				align-items: center;
-			}
-			
-			.mobile-label {
-				min-width: 120px;
-			}
-		}
-
-		/* Responsive para controles */
-		@media (max-width: 768px) {
-			.pagos-header {
-				flex-direction: column;
-				gap: 1rem;
-			}
-			
-			.pagos-controls {
-				justify-content: flex-start;
-			}
-			
-			.pagos-buttons {
-				width: 100%;
-			}
-			
-			.pagos-buttons .btn-action {
-				width: 100%;
-				justify-content: center;
-			}
-			
-			.historial-pagination {
-				flex-direction: column;
-				gap: 1rem;
-				align-items: flex-start;
-			}
-		}
-
-		/* === ESTILOS PARA MODALES (se mantienen igual) === */
-		.modal-overlay {
-			position: fixed;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background: rgba(0, 0, 0, 0.5);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			z-index: 1001;
-			padding: 1rem;
-		}
-
-		.modal-content {
-			background: white;
-			border-radius: 1rem;
-			width: 100%;
-			max-width: 500px;
-			max-height: 90vh;
-			overflow-y: auto;
-			box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-		}
-
-		.modal-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			padding: 1.5rem;
-			border-bottom: 1px solid #e5e7eb;
-		}
-
-		.modal-title {
-			color: #2F5D50;
-			font-size: 1.25rem;
-			font-weight: 600;
-			margin: 0;
-		}
-
-		.modal-body {
-			padding: 1.5rem;
-		}
-
-		.modal-footer {
-			padding: 1.5rem;
-			border-top: 1px solid #e5e7eb;
-			display: flex;
-			justify-content: flex-end;
-		}
-
-		.close-button {
-			background: none;
-			border: none;
-			color: #6b7280;
-			cursor: pointer;
-			padding: 0.5rem;
-			border-radius: 0.375rem;
-			transition: background 0.3s;
-		}
-
-		.close-button:hover {
-			background: #f3f4f6;
-			color: #374151;
-		}
-
-		.btn-editar-accion {
-			background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-			color: white;
-			border: none;
-			border-radius: 0.75rem;
-			padding: 0.75rem 1.5rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-			box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-			min-width: 160px;
-		}
-
-		.btn-editar-accion:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
-		}
-
-		.btn-eliminar-accion {
-			background: linear-gradient(135deg, #ef4444, #dc2626);
-			color: white;
-			border: none;
-			border-radius: 0.75rem;
-			padding: 0.75rem 1.5rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-			box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
-			min-width: 160px;
-		}
-
-		.btn-eliminar-accion:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
-		}
-
-		.btn-eliminar-confirmar {
-			background: linear-gradient(135deg, #ef4444, #dc2626);
-			color: white;
-			border: none;
-			border-radius: 0.5rem;
-			padding: 0.75rem 1.5rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-		}
-
-		.btn-eliminar-confirmar:hover {
-			background: linear-gradient(135deg, #dc2626, #b91c1c);
-		}
-
-		.btn-secondary {
-			background: #6b7280;
-			color: white;
-			border: none;
-			border-radius: 0.5rem;
-			padding: 0.75rem 1.5rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-		}
-
-		.btn-secondary:hover {
-			background: #4b5563;
-		}
-	
-	</style>
 </Layout>

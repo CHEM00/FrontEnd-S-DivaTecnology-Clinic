@@ -1,386 +1,384 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
-import HeaderEmpleado from '../components/HeaderEmpleado.astro';
+import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
 import axios from "axios";
 
-const table = await axios.get("http://localhost:3001/api/v1/Productos&Servicios").then((res) => res.data);
+let table = [];
+try {
+	const response = await axios.get(
+		"http://localhost:3001/api/v1/Productos&Servicios",
+	);
+	table = response.data;
+} catch (error) {
+	console.error("Error fetching data:", error);
+	table = [];
+}
 
 // Función para escapar caracteres problemáticos en JavaScript
 const escapeJS = (str) => {
-  if (!str) return '';
-  return String(str)
-    .replace(/'/g, "\\'")
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r');
+	if (!str) return "";
+	return String(str)
+		.replace(/'/g, "\\'")
+		.replace(/"/g, '\\"')
+		.replace(/\n/g, "\\n")
+		.replace(/\r/g, "\\r");
 };
 ---
 
 <Layout title="Productos y Servicios">
-	<div class="pagos-container">
+	<div
+		class="flex h-screen overflow-hidden bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8]"
+	>
 		<NavBar />
-		<div class="flex-1 flex flex-col overflow-hidden">
-			<HeaderEmpleado titulo="PRODUCTOS Y SERVICIOS" nombreUsuario="EMPLEADO" />
-            <main class="pagos-content">
-                <!-- Header con título y botón agregar -->
-                <div class="pagos-header">
-                    <h1 class="pagos-title">LISTA DE PRODUCTOS Y SERVICIOS</h1>
-                    <div class="pagos-controls">
-                        <div class="pagos-buttons">
-                            <button 
-                                class="btn-action flex items-center gap-2"
-                                onclick="abrirModalAgregar()"
-                            >
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                                </svg>
-                                Agregar Producto/Servicio
-                            </button>
-                        </div>
-                    </div>
-                </div>
+		<div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+			<!-- Background Elements for depth -->
+			<div
+				class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#2F5D50]/10 rounded-full blur-3xl pointer-events-none"
+			>
+			</div>
+			<div
+				class="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-[#2F5D50]/5 rounded-full blur-3xl pointer-events-none"
+			>
+			</div>
 
-                <!-- Tabla completamente responsiva -->
-                <div class="table-responsive-container">
-                    <!-- Vista Desktop Completa (1400px+) -->
-                    <div class="table-view table-desktop-full">
-                        <div class="table-header grid-cols-6">
-                            <div class="col-checkbox">Seleccionar</div>
-                            <div class="col-nombre">Nombre</div>
-                            <div class="col-precio">Precio</div>
-                            <div class="col-descripcion">Descripción</div>
-                            <div class="col-tipo">Tipo</div>
-                            <div class="col-acciones">Acciones</div>
-                        </div>
-                        
-                        <div class="table-body">
-                            {table.map((productoServicio) => {
-                                const nombreEscaped = escapeJS(productoServicio.name);
-                                const precioEscaped = escapeJS(productoServicio.value);
-                                const descripcionEscaped = escapeJS(productoServicio.description);
-                                const tipoEscaped = escapeJS(productoServicio.type);
-                                const nombreCompletoEscaped = escapeJS(productoServicio.name);
-                                
-                                return (
-                                    <div class="table-row grid-cols-6">
-                                        <div class="col-checkbox">
-                                            <input type="checkbox" class="producto-servicio-checkbox" value={productoServicio.id} />
-                                        </div>
-                                        <div class="col-nombre">{productoServicio.name}</div>
-                                        <div class="col-precio">${productoServicio.value}</div>
-                                        <div class="col-descripcion">{productoServicio.description}</div>
-                                        <div class="col-tipo">
-                                            <span class={`status-badge ${productoServicio.type === 'service' ? 'service' : 'additional'}`}>
-                                                {productoServicio.type === 'service' ? 'Servicio' : 'Adicional'}
-                                            </span>
-                                        </div>
-                                        <div class="col-acciones">
-                                            <button 
-                                                class="btn-action"
-                                                onclick={`abrirModalAcciones(${productoServicio.id}, '${nombreEscaped}', '${precioEscaped}', '${descripcionEscaped}', '${tipoEscaped}', '${nombreCompletoEscaped}')`}
-                                            >
-                                                Acciones
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+			<TopTag
+				titulo="Gestión de Productos y Servicios"
+				nombreUsuario="Administrador"
+			/>
 
-                    <!-- Vista Desktop Compacta (1200px - 1399px) -->
-                    <div class="table-view table-desktop-compact">
-                        <div class="table-header grid-cols-5">
-                            <div class="col-checkbox">Sel</div>
-                            <div class="col-nombre">Nombre</div>
-                            <div class="col-precio">Precio</div>
-                            <div class="col-tipo">Tipo</div>
-                            <div class="col-acciones">Acciones</div>
-                        </div>
-                        
-                        <div class="table-body">
-                            {table.map((productoServicio) => {
-                                const nombreEscaped = escapeJS(productoServicio.name);
-                                const precioEscaped = escapeJS(productoServicio.value);
-                                const descripcionEscaped = escapeJS(productoServicio.description);
-                                const tipoEscaped = escapeJS(productoServicio.type);
-                                const nombreCompletoEscaped = escapeJS(productoServicio.name);
-                                
-                                return (
-                                    <div class="table-row grid-cols-5">
-                                        <div class="col-checkbox">
-                                            <input type="checkbox" class="producto-servicio-checkbox" value={productoServicio.id} />
-                                        </div>
-                                        <div class="col-nombre">{productoServicio.name}</div>
-                                        <div class="col-precio">${productoServicio.value}</div>
-                                        <div class="col-tipo">
-                                            <span class={`status-badge ${productoServicio.type === 'service' ? 'service' : 'additional'}`}>
-                                                {productoServicio.type === 'service' ? 'Servicio' : 'Adicional'}
-                                            </span>
-                                        </div>
-                                        <div class="col-acciones">
-                                            <button 
-                                                class="btn-action"
-                                                onclick={`abrirModalAcciones(${productoServicio.id}, '${nombreEscaped}', '${precioEscaped}', '${descripcionEscaped}', '${tipoEscaped}', '${nombreCompletoEscaped}')`}
-                                            >
-                                                Acciones
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+			<main
+				class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-[#2F5D50]/20 scrollbar-track-transparent relative z-10"
+			>
+				<!-- Header con título y botón agregar -->
+				<div
+					class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 animate-fade-in-up stagger-1"
+				>
+					<div>
+						<h1
+							class="text-3xl font-bold text-[#2F5D50] tracking-tight"
+						>
+							Lista de Productos y Servicios
+						</h1>
+						<p class="text-gray-500 mt-1">
+							Administra el catálogo de servicios y productos
+						</p>
+					</div>
+					<button
+						class="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-[#2F5D50] hover:bg-[#234D20] transition-all shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-1"
+						onclick="abrirModalAgregar()"
+					>
+						<div
+							class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center"
+						>
+							<i class="fa-solid fa-plus text-sm"></i>
+						</div>
+						<span class="font-semibold">Agregar Nuevo</span>
+					</button>
+				</div>
 
-                    <!-- Vista Tablet (768px - 1199px) -->
-                    <div class="table-view table-tablet">
-                        <div class="table-header grid-cols-4">
-                            <div class="col-checkbox">Sel</div>
-                            <div class="col-nombre-tablet">Nombre</div>
-                            <div class="col-tipo-tablet">Tipo</div>
-                            <div class="col-acciones">Acciones</div>
-                        </div>
-                        
-                        <div class="table-body">
-                            {table.map((productoServicio) => {
-                                const nombreEscaped = escapeJS(productoServicio.name);
-                                const precioEscaped = escapeJS(productoServicio.value);
-                                const descripcionEscaped = escapeJS(productoServicio.description);
-                                const tipoEscaped = escapeJS(productoServicio.type);
-                                const nombreCompletoEscaped = escapeJS(productoServicio.name);
-                                
-                                return (
-                                    <div class="table-row grid-cols-4">
-                                        <div class="col-checkbox">
-                                            <input type="checkbox" class="producto-servicio-checkbox" value={productoServicio.id} />
-                                        </div>
-                                        <div class="col-nombre-tablet">
-                                            <div class="font-medium">{productoServicio.name}</div>
-                                            <div class="text-sm text-gray-500">${productoServicio.value}</div>
-                                            <div class="text-sm text-gray-500">{productoServicio.description}</div>
-                                        </div>
-                                        <div class="col-tipo-tablet">
-                                            <span class={`status-badge status-badge-sm ${productoServicio.type === 'service' ? 'service' : 'additional'}`}>
-                                                {productoServicio.type === 'service' ? 'Servicio' : 'Adicional'}
-                                            </span>
-                                        </div>
-                                        <div class="col-acciones">
-                                            <button 
-                                                class="btn-action"
-                                                onclick={`abrirModalAcciones(${productoServicio.id}, '${nombreEscaped}', '${precioEscaped}', '${descripcionEscaped}', '${tipoEscaped}', '${nombreCompletoEscaped}')`}
-                                            >
-                                                Acciones
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+				<!-- Tabla Container -->
+				<div
+					class="glass-panel rounded-3xl overflow-hidden animate-fade-in-up stagger-2 border border-white/40 shadow-xl"
+				>
+					<div class="overflow-x-auto custom-scrollbar">
+						<table class="w-full text-left border-collapse">
+							<thead>
+								<tr
+									class="bg-[#2F5D50]/5 text-[#2F5D50] border-b border-[#2F5D50]/10"
+								>
+									<th
+										class="p-5 font-bold text-center w-16 rounded-tl-2xl"
+										>Sel</th
+									>
+									<th class="p-5 font-bold">Nombre</th>
+									<th class="p-5 font-bold">Precio</th>
+									<th
+										class="p-5 font-bold hidden md:table-cell"
+										>Descripción</th
+									>
+									<th class="p-5 font-bold text-center"
+										>Tipo</th
+									>
+									<th
+										class="p-5 font-bold text-center w-32 rounded-tr-2xl"
+										>Acciones</th
+									>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-[#2F5D50]/5">
+								{
+									table.map((item) => {
+										const nombreEscaped = escapeJS(
+											item.name,
+										);
+										const precioEscaped = escapeJS(
+											item.value,
+										);
+										const descripcionEscaped = escapeJS(
+											item.description,
+										);
+										const tipoEscaped = escapeJS(item.type);
+										const nombreCompletoEscaped = escapeJS(
+											item.name,
+										);
 
-                    <!-- Vista Móvil (hasta 767px) -->
-                    <div class="table-view table-mobile">
-                        <div class="table-body">
-                            {table.map((productoServicio) => {
-                                const nombreEscaped = escapeJS(productoServicio.name);
-                                const precioEscaped = escapeJS(productoServicio.value);
-                                const descripcionEscaped = escapeJS(productoServicio.description);
-                                const tipoEscaped = escapeJS(productoServicio.type);
-                                const nombreCompletoEscaped = escapeJS(productoServicio.name);
-                                
-                                return (
-                                    <div class="mobile-card">
-                                        <div class="mobile-card-header">
-                                            <div class="flex items-center gap-3">
-                                                <input type="checkbox" class="producto-servicio-checkbox" value={productoServicio.id} />
-                                                <div>
-                                                    <h3 class="font-semibold text-gray-900">{productoServicio.name}</h3>
-                                                    <p class="text-sm text-gray-600">${productoServicio.value}</p>
-                                                </div>
-                                            </div>
-                                            <button 
-                                                class="btn-action-mobile"
-                                                onclick={`abrirModalAcciones(${productoServicio.id}, '${nombreEscaped}', '${precioEscaped}', '${descripcionEscaped}', '${tipoEscaped}', '${nombreCompletoEscaped}')`}
-                                            >
-                                                Acciones
-                                            </button>
-                                        </div>
-                                        
-                                        <div class="mobile-card-content">
-                                            <div class="grid grid-cols-2 gap-3">
-                                                <div class="mobile-field">
-                                                    <span class="mobile-label">Descripción:</span>
-                                                    <span class="mobile-value">{productoServicio.description}</span>
-                                                </div>
-                                                <div class="mobile-field">
-                                                    <span class="mobile-label">Tipo:</span>
-                                                    <span class={`status-badge status-badge-sm ${productoServicio.type === 'service' ? 'service' : 'additional'}`}>
-                                                        {productoServicio.type === 'service' ? 'Servicio' : 'Adicional'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
+										return (
+											<tr class="hover:bg-white/60 transition-colors group">
+												<td class="p-5 text-center">
+													<div class="flex items-center justify-center">
+														<input
+															type="checkbox"
+															class="producto-servicio-checkbox w-5 h-5 rounded-md border-gray-300 text-[#2F5D50] focus:ring-[#2F5D50] cursor-pointer"
+															value={item.id}
+														/>
+													</div>
+												</td>
+												<td class="p-5">
+													<div class="font-bold text-gray-800 text-lg">
+														{item.name}
+													</div>
+												</td>
+												<td class="p-5">
+													<span class="font-bold text-[#2F5D50] bg-[#2F5D50]/10 px-3 py-1 rounded-lg">
+														${item.value}
+													</span>
+												</td>
+												<td class="p-5 hidden md:table-cell">
+													<div class="text-gray-600 text-sm max-w-xs truncate bg-white/50 px-3 py-1 rounded-lg border border-white/40">
+														{item.description}
+													</div>
+												</td>
+												<td class="p-5 text-center">
+													<span
+														class={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm ${item.type === "service" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}
+													>
+														{item.type === "service"
+															? "Servicio"
+															: "Adicional"}
+													</span>
+												</td>
+												<td class="p-5 text-center">
+													<button
+														class="w-8 h-8 rounded-full bg-white/50 hover:bg-[#2F5D50] hover:text-white text-[#2F5D50] transition-all shadow-sm flex items-center justify-center mx-auto"
+														onclick={`abrirModalAcciones(${item.id}, '${nombreEscaped}', '${precioEscaped}', '${descripcionEscaped}', '${tipoEscaped}', '${nombreCompletoEscaped}')`}
+														title="Acciones"
+													>
+														<i class="fa-solid fa-ellipsis-vertical" />
+													</button>
+												</td>
+											</tr>
+										);
+									})
+								}
+							</tbody>
+						</table>
+					</div>
 
-				<!-- PAGINACIÓN -->
-				<div class="historial-pagination">
-					<div class="text-sm text-gray-600">1–10 de {table.length}</div>
-					<div class="flex items-center gap-3">
-						<span class="text-sm text-gray-600">Filas por página:</span>
-						<select class="historial-select" id="rowsPerPage">
-							<option>10</option>
-							<option>25</option>
-							<option>50</option>
-						</select>
-						<div class="flex items-center gap-2">
-							<button class="btn-action px-3 py-1 text-sm" onclick="cambiarPagina(-1)">⟨</button>
-							<span class="text-sm text-gray-600">1/{Math.ceil(table.length / 10)}</span>
-							<button class="btn-action px-3 py-1 text-sm" onclick="cambiarPagina(1)">⟩</button>
+					<!-- Pagination -->
+					<div
+						class="p-4 border-t border-[#2F5D50]/10 flex justify-between items-center bg-white/30 backdrop-blur-sm"
+					>
+						<div class="text-sm text-gray-600 font-medium">
+							Mostrando <span class="font-bold text-[#2F5D50]"
+								>{table.length}</span
+							> items
+						</div>
+						<div class="flex gap-2">
+							<button
+								class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/50 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-white/50 disabled:hover:text-[#2F5D50] shadow-sm"
+								disabled
+							>
+								<i class="fa-solid fa-chevron-left"></i>
+							</button>
+							<button
+								class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/50 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all shadow-sm"
+							>
+								<i class="fa-solid fa-chevron-right"></i>
+							</button>
 						</div>
 					</div>
 				</div>
-            </main>	
+			</main>
 		</div>
 	</div>
 
 	<!-- Modal de Acciones -->
-	<div id="modalAcciones" class="modal-overlay hidden">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h2 class="modal-title">¿Qué acción deseas realizar?</h2>
-				<button type="button" class="close-button" onclick="cerrarModal('modalAcciones')">
-					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-					</svg>
-				</button>
-			</div>
-			<div class="modal-body">
-				<div class="space-y-4">
-					<div class="text-center">
-						<p class="text-gray-600">Selecciona la acción que deseas realizar para el producto/servicio:</p>
-						<p id="nombreProductoServicioAcciones" class="font-semibold text-lg text-[#2F5D50] mt-2"></p>
-					</div>
-					<div class="flex flex-col sm:flex-row justify-center gap-4 mt-6">
-						<button 
-							id="btnEditarAccion"
-							class="btn-editar-accion flex items-center justify-center gap-2"
-						>
-							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-							</svg>
-							Editar Producto/Servicio
-						</button>
-						<button 
-							id="btnEliminarAccion"
-							class="btn-eliminar-accion flex items-center justify-center gap-2"
-						>
-							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-							</svg>
-							Eliminar Producto/Servicio
-						</button>
-					</div>
+	<div
+		id="modalAcciones"
+		class="fixed inset-0 z-50 hidden"
+		aria-labelledby="modal-title"
+		role="dialog"
+		aria-modal="true"
+	>
+		<div
+			class="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+			onclick="cerrarModal('modalAcciones')"
+		>
+		</div>
+		<div
+			class="flex min-h-full items-center justify-center p-4 text-center sm:p-0"
+		>
+			<div
+				class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg p-6"
+			>
+				<div class="absolute right-4 top-4">
+					<button
+						type="button"
+						class="text-gray-400 hover:text-gray-500"
+						onclick="cerrarModal('modalAcciones')"
+					>
+						<i class="fa-solid fa-xmark text-xl"></i>
+					</button>
 				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn-secondary" onclick="cerrarModal('modalAcciones')">
-					Cancelar
-				</button>
+
+				<div class="text-center mb-6">
+					<h3
+						class="text-xl font-bold text-[#2F5D50]"
+						id="modal-title"
+					>
+						Acciones
+					</h3>
+					<p class="text-sm text-gray-500 mt-2">
+						Gestionar: <span
+							id="nombreProductoServicioAcciones"
+							class="font-bold text-[#2F5D50]"></span>
+					</p>
+				</div>
+
+				<div class="grid grid-cols-2 gap-4">
+					<button
+						id="btnEditarAccion"
+						class="flex flex-col items-center justify-center p-4 rounded-xl border border-[#2F5D50]/20 hover:bg-[#2F5D50]/5 transition-all group"
+					>
+						<div
+							class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"
+						>
+							<i class="fa-solid fa-pen-to-square text-xl"></i>
+						</div>
+						<span class="font-medium text-gray-700">Editar</span>
+					</button>
+					<button
+						id="btnEliminarAccion"
+						class="flex flex-col items-center justify-center p-4 rounded-xl border border-red-200 hover:bg-red-50 transition-all group"
+					>
+						<div
+							class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"
+						>
+							<i class="fa-solid fa-trash text-xl"></i>
+						</div>
+						<span class="font-medium text-gray-700">Eliminar</span>
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
 
-	<!-- Modal de Confirmación Eliminar -->
-	<div id="modalConfirmarEliminar" class="modal-overlay hidden">
-		<div class="modal-content max-w-md">
-			<div class="modal-header">
-				<h2 class="modal-title text-red-600">Confirmar Eliminación</h2>
-				<button type="button" class="close-button" onclick="cerrarModal('modalConfirmarEliminar')">
-					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-					</svg>
-				</button>
-			</div>
-			<div class="modal-body">
+	<!-- Modal Confirmar Eliminar -->
+	<div id="modalConfirmarEliminar" class="fixed inset-0 z-50 hidden">
+		<div
+			class="fixed inset-0 bg-black/40 backdrop-blur-sm"
+			onclick="cerrarModal('modalConfirmarEliminar')"
+		>
+		</div>
+		<div class="flex min-h-full items-center justify-center p-4">
+			<div
+				class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:w-full sm:max-w-md p-6"
+			>
 				<div class="text-center">
-					<svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"/>
-					</svg>
-					<h3 class="text-lg font-semibold text-gray-900 mb-2">¿Estás seguro de eliminar este producto/servicio?</h3>
-					<p class="text-gray-600 mb-4">Esta acción no se puede deshacer. Se eliminarán todos los datos del producto/servicio:</p>
-					<p id="nombreProductoServicioEliminar" class="font-semibold text-red-600 text-lg"></p>
+					<div
+						class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-4"
+					>
+						<i
+							class="fa-solid fa-triangle-exclamation text-3xl text-red-600"
+						></i>
+					</div>
+					<h3 class="text-xl font-bold text-gray-900">
+						¿Eliminar item?
+					</h3>
+					<p class="text-sm text-gray-500 mt-2">
+						Estás a punto de eliminar <span
+							id="nombreProductoServicioEliminar"
+							class="font-bold text-gray-800"></span>. Esta acción
+						no se puede deshacer.
+					</p>
 				</div>
-			</div>
-			<div class="modal-footer">
-				<div class="flex flex-col sm:flex-row gap-3 w-full">
-					<button type="button" class="btn-secondary flex-1" onclick="cerrarModal('modalConfirmarEliminar')">
-						Cancelar
-					</button>
-					<button type="button" id="btnConfirmarEliminar" class="btn-eliminar-confirmar flex-1">
-						Sí, Eliminar
-					</button>
+				<div class="mt-6 flex gap-3">
+					<button
+						type="button"
+						class="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
+						onclick="cerrarModal('modalConfirmarEliminar')"
+						>Cancelar</button
+					>
+					<button
+						type="button"
+						id="btnConfirmarEliminar"
+						class="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium shadow-lg shadow-red-600/30"
+						>Sí, Eliminar</button
+					>
 				</div>
 			</div>
 		</div>
 	</div>
 
-	<!-- Modal Agregar Producto/Servicio -->
+	<!-- Modal Agregar -->
 	<FormModal
 		id="modalAgregarProductoServicio"
-		title="AGREGAR PRODUCTO/SERVICIO"
+		title="Nuevo Producto/Servicio"
 		formId="formAgregarProductoServicio"
-		submitText="GUARDAR"
-		cancelText="CANCELAR"
+		submitText="Guardar"
+		cancelText="Cancelar"
 		size="lg"
 	>
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">NOMBRE *</label>
-				<input 
-					type="text" 
-					id="agregarNombre"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
-					placeholder="Ingrese el nombre"
+				<label class="text-sm font-medium text-gray-700 mb-1"
+					>Nombre *</label
 				>
+				<input
+					type="text"
+					id="agregarNombre"
+					class="glass-input w-full rounded-lg px-4 py-2"
+					required
+					placeholder="Ej: Consulta General"
+				/>
 			</div>
 			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">PRECIO *</label>
-				<input 
-					type="number" 
+				<label class="text-sm font-medium text-gray-700 mb-1"
+					>Precio *</label
+				>
+				<input
+					type="number"
 					id="agregarPrecio"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					class="glass-input w-full rounded-lg px-4 py-2"
 					required
 					placeholder="0.00"
 					step="0.01"
 					min="0"
-				>
+				/>
 			</div>
 			<div class="flex flex-col md:col-span-2">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">DESCRIPCIÓN *</label>
-				<textarea 
+				<label class="text-sm font-medium text-gray-700 mb-1"
+					>Descripción *</label
+				>
+				<textarea
 					id="agregarDescripcion"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					class="glass-input w-full rounded-lg px-4 py-2"
 					required
-					placeholder="Ingrese la descripción"
 					rows="3"
-				></textarea>
+					placeholder="Detalles del servicio..."></textarea>
 			</div>
 			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">TIPO *</label>
-				<select 
+				<label class="text-sm font-medium text-gray-700 mb-1"
+					>Tipo *</label
+				>
+				<select
 					id="agregarTipo"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full"
+					class="glass-input w-full rounded-lg px-4 py-2"
 					required
 				>
-					<option value="">Seleccione un tipo</option>
+					<option value="">Seleccione...</option>
 					<option value="service">Servicio</option>
 					<option value="additional">Adicional</option>
 				</select>
@@ -388,51 +386,58 @@ const escapeJS = (str) => {
 		</div>
 	</FormModal>
 
-	<!-- Modal Editar Producto/Servicio -->
+	<!-- Modal Editar -->
 	<FormModal
 		id="modalEditarProductoServicio"
-		title="EDITAR PRODUCTO/SERVICIO"
+		title="Editar Producto/Servicio"
 		formId="formEditarProductoServicio"
-		submitText="ACTUALIZAR"
-		cancelText="CANCELAR"
+		submitText="Actualizar"
+		cancelText="Cancelar"
 		size="lg"
 	>
-		<input type="hidden" id="editarId">
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+		<input type="hidden" id="editarId" />
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">NOMBRE *</label>
-				<input 
-					type="text" 
-					id="editarNombre"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
-					required
+				<label class="text-sm font-medium text-gray-700 mb-1"
+					>Nombre *</label
 				>
+				<input
+					type="text"
+					id="editarNombre"
+					class="glass-input w-full rounded-lg px-4 py-2"
+					required
+				/>
 			</div>
 			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">PRECIO *</label>
-				<input 
-					type="number" 
+				<label class="text-sm font-medium text-gray-700 mb-1"
+					>Precio *</label
+				>
+				<input
+					type="number"
 					id="editarPrecio"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					class="glass-input w-full rounded-lg px-4 py-2"
 					required
 					step="0.01"
 					min="0"
-				>
+				/>
 			</div>
 			<div class="flex flex-col md:col-span-2">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">DESCRIPCIÓN *</label>
-				<textarea 
+				<label class="text-sm font-medium text-gray-700 mb-1"
+					>Descripción *</label
+				>
+				<textarea
 					id="editarDescripcion"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full" 
+					class="glass-input w-full rounded-lg px-4 py-2"
 					required
-					rows="3"
-				></textarea>
+					rows="3"></textarea>
 			</div>
 			<div class="flex flex-col">
-				<label class="text-[#2F5D50] font-medium mb-2 text-sm">TIPO *</label>
-				<select 
+				<label class="text-sm font-medium text-gray-700 mb-1"
+					>Tipo *</label
+				>
+				<select
 					id="editarTipo"
-					class="border border-gray-300 rounded-lg px-3 py-2 text-sm transition-all focus:outline-none focus:border-[#2F5D50] focus:ring-2 focus:ring-[#2F5D50] focus:ring-opacity-20 bg-white w-full"
+					class="glass-input w-full rounded-lg px-4 py-2"
 					required
 				>
 					<option value="service">Servicio</option>
@@ -442,866 +447,361 @@ const escapeJS = (str) => {
 		</div>
 	</FormModal>
 
-	<!-- Modal de éxito personalizado -->
-	<div id="modalExito" class="modal-overlay hidden">
-		<div class="modal-content max-w-md">
-			<div class="modal-header">
-				<h2 class="modal-title text-green-600">Éxito</h2>
-				<button type="button" class="close-button" onclick="cerrarModal('modalExito')">
-					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-					</svg>
-				</button>
-			</div>
-			<div class="modal-body">
-				<div class="text-center">
-					<svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-					</svg>
-					<h3 class="text-lg font-semibold text-gray-900 mb-2" id="mensajeExito"></h3>
+	<!-- Modal Exito/Error -->
+	<div id="modalExito" class="fixed inset-0 z-[60] hidden">
+		<div
+			class="fixed inset-0 bg-black/40 backdrop-blur-sm"
+			onclick="cerrarModal('modalExito')"
+		>
+		</div>
+		<div class="flex min-h-full items-center justify-center p-4">
+			<div
+				class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:w-full sm:max-w-sm p-6 text-center"
+			>
+				<div
+					class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4"
+				>
+					<i class="fa-solid fa-check text-green-600 text-xl"></i>
 				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn-secondary w-full" onclick="cerrarModal('modalExito')">
-					Aceptar
-				</button>
+				<h3 class="text-lg font-bold text-gray-900 mb-2">¡Éxito!</h3>
+				<p id="mensajeExito" class="text-sm text-gray-500 mb-4"></p>
+				<button
+					type="button"
+					class="w-full px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 font-medium"
+					onclick="cerrarModal('modalExito')">Aceptar</button
+				>
 			</div>
 		</div>
 	</div>
 
-	<!-- Modal de error personalizado -->
-	<div id="modalError" class="modal-overlay hidden">
-		<div class="modal-content max-w-md">
-			<div class="modal-header">
-				<h2 class="modal-title text-red-600">Error</h2>
-				<button type="button" class="close-button" onclick="cerrarModal('modalError')">
-					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-					</svg>
-				</button>
-			</div>
-			<div class="modal-body">
-				<div class="text-center">
-					<svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"/>
-					</svg>
-					<h3 class="text-lg font-semibold text-gray-900 mb-2" id="mensajeError"></h3>
+	<div id="modalError" class="fixed inset-0 z-[60] hidden">
+		<div
+			class="fixed inset-0 bg-black/40 backdrop-blur-sm"
+			onclick="cerrarModal('modalError')"
+		>
+		</div>
+		<div class="flex min-h-full items-center justify-center p-4">
+			<div
+				class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:w-full sm:max-w-sm p-6 text-center"
+			>
+				<div
+					class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4"
+				>
+					<i class="fa-solid fa-xmark text-red-600 text-xl"></i>
 				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn-secondary w-full" onclick="cerrarModal('modalError')">
-					Aceptar
-				</button>
+				<h3 class="text-lg font-bold text-gray-900 mb-2">Error</h3>
+				<p id="mensajeError" class="text-sm text-gray-500 mb-4"></p>
+				<button
+					type="button"
+					class="w-full px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium"
+					onclick="cerrarModal('modalError')">Aceptar</button
+				>
 			</div>
 		</div>
 	</div>
 
 	<script>
+		/**
+		 * @typedef {Object} ProductoServicioData
+		 * @property {string} [name]
+		 * @property {number} [value]
+		 * @property {string} [description]
+		 * @property {string} [type]
+		 * @property {string} [nombreCompleto]
+		 */
+
 		// Variables globales
+		/** @type {number | null} */
 		let productoServicioSeleccionado = null;
+		/** @type {ProductoServicioData} */
 		let productoServicioData = {};
 
-		// Función para verificar checkbox seleccionado - IDÉNTICA a la de Pacientes
-		function verificarCheckboxSeleccionado(productoServicioId) {
-			try {
-				// Buscar todos los checkboxes con el mismo valor (pueden estar en diferentes vistas)
-				const checkboxes = document.querySelectorAll(`.producto-servicio-checkbox[value="${productoServicioId}"]`);
-				let algunoSeleccionado = false;
-				
-				checkboxes.forEach(checkbox => {
-					if (checkbox.checked) {
-						algunoSeleccionado = true;
-					}
-				});
-				
-				if (!algunoSeleccionado) {
-					mostrarError('Por favor, seleccione un dato marcando el checkbox para gestionar.');
-					return false;
-				}
-				return true;
-			} catch (error) {
-				console.error('Error verificando checkbox:', error);
-				mostrarError('Error al verificar la selección del producto/servicio');
+		// Función para verificar checkbox seleccionado
+		/**
+		 * @param {string | number} id
+		 * @returns {boolean}
+		 */
+		function verificarCheckboxSeleccionado(id) {
+			const idNum = Number(id);
+			if (isNaN(idNum)) return false;
+
+			const checkbox = document.querySelector(
+				`.producto-servicio-checkbox[value="${id}"]`,
+			);
+			if (!checkbox || !checkbox.checked) {
+				mostrarError(
+					"Por favor, seleccione el item marcando la casilla.",
+				);
 				return false;
 			}
+			return true;
 		}
 
 		// Abrir modal de acciones
-		window.abrirModalAcciones = function(id, name, value, description, type, nombreCompleto) {
-			// Verificar si el checkbox está seleccionado
-			if (!verificarCheckboxSeleccionado(id)) {
-				return;
-			}
-			
-			productoServicioSeleccionado = id;
+		// Abrir modal de acciones
+		window.abrirModalAcciones = function (
+			id,
+			name,
+			value,
+			description,
+			type,
+			nombreCompleto,
+		) {
+			if (!verificarCheckboxSeleccionado(id)) return;
+
+			productoServicioSeleccionado = Number(id);
 			productoServicioData = {
 				name,
 				value,
 				description,
 				type,
-				nombreCompleto
+				nombreCompleto,
 			};
-			
-			// Mostrar nombre del producto/servicio en el modal
-			document.getElementById('nombreProductoServicioAcciones').textContent = nombreCompleto;
-			
-			// Mostrar modal de acciones
-			document.getElementById('modalAcciones').classList.remove('hidden');
+
+			const nombreEl = document.getElementById(
+				"nombreProductoServicioAcciones",
+			);
+			if (nombreEl) nombreEl.textContent = nombreCompleto;
+
+			const modal = document.getElementById("modalAcciones");
+			if (modal) modal.classList.remove("hidden");
 		};
 
 		// Abrir modal agregar
-		window.abrirModalAgregar = function() {
-			// Limpiar formulario
-			const form = document.getElementById('formAgregarProductoServicio');
-			if (form) {
-				form.reset();
-			}
-			
-			const modal = document.getElementById('modalAgregarProductoServicio');
-			if (modal) {
-				modal.classList.remove('hidden');
-			}
+		window.abrirModalAgregar = function () {
+			const form = document.getElementById("formAgregarProductoServicio");
+			if (form) form.reset();
+			const modal = document.getElementById(
+				"modalAgregarProductoServicio",
+			);
+			if (modal) modal.classList.remove("hidden");
 		};
 
-		// Función global para cerrar modales
-		window.cerrarModal = function(modalId) {
+		// Cerrar modales
+		/**
+		 * @param {string} modalId
+		 */
+		window.cerrarModal = function (modalId) {
 			const modal = document.getElementById(modalId);
-			if (modal) {
-				modal.classList.add('hidden');
-			}
+			if (modal) modal.classList.add("hidden");
 		};
 
-		// Función para mostrar mensajes de éxito
-		function mostrarExito(mensaje) {
-			document.getElementById('mensajeExito').textContent = mensaje;
-			document.getElementById('modalExito').classList.remove('hidden');
+		// Mostrar mensajes
+		function mostrarExito(mensaje: string) {
+			const msgEl = document.getElementById("mensajeExito");
+			if (msgEl) msgEl.textContent = mensaje;
+			const modal = document.getElementById("modalExito");
+			if (modal) modal.classList.remove("hidden");
 		}
 
-		// Función para mostrar mensajes de error
-		function mostrarError(mensaje) {
-			document.getElementById('mensajeError').textContent = mensaje;
-			document.getElementById('modalError').classList.remove('hidden');
+		function mostrarError(mensaje: string) {
+			const msgEl = document.getElementById("mensajeError");
+			if (msgEl) msgEl.textContent = mensaje;
+			const modal = document.getElementById("modalError");
+			if (modal) modal.classList.remove("hidden");
 		}
 
-		// Configurar eventos cuando el DOM esté listo
-		document.addEventListener('DOMContentLoaded', function() {
-			// Botón Editar en modal de acciones
-			document.getElementById('btnEditarAccion').addEventListener('click', function() {
-				cerrarModal('modalAcciones');
-				abrirModalEditar();
-			});
+		// Event Listeners
+		document.addEventListener("DOMContentLoaded", function () {
+			// Botones de acción
+			document
+				.getElementById("btnEditarAccion")
+				?.addEventListener("click", function () {
+					window.cerrarModal("modalAcciones");
+					abrirModalEditar();
+				});
 
-			// Botón Eliminar en modal de acciones
-			document.getElementById('btnEliminarAccion').addEventListener('click', function() {
-				cerrarModal('modalAcciones');
-				abrirModalConfirmarEliminar();
-			});
+			document
+				.getElementById("btnEliminarAccion")
+				?.addEventListener("click", function () {
+					window.cerrarModal("modalAcciones");
+					abrirModalConfirmarEliminar();
+				});
 
-			// Botón Confirmar Eliminar
-			document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
-				eliminarProductoServicio(productoServicioSeleccionado);
-			});
+			document
+				.getElementById("btnConfirmarEliminar")
+				?.addEventListener("click", function () {
+					if (productoServicioSeleccionado !== null) {
+						eliminarProductoServicio(productoServicioSeleccionado);
+					}
+				});
 		});
 
 		// Abrir modal de edición
 		function abrirModalEditar() {
-			// Llenar formulario con datos actuales
-			document.getElementById('editarId').value = productoServicioSeleccionado || '';
-			document.getElementById('editarNombre').value = productoServicioData.name || '';
-			document.getElementById('editarPrecio').value = productoServicioData.value || '';
-			document.getElementById('editarDescripcion').value = productoServicioData.description || '';
-			document.getElementById('editarTipo').value = productoServicioData.type || '';
-			
-			const modal = document.getElementById('modalEditarProductoServicio');
-			if (modal) {
-				modal.classList.remove('hidden');
-			}
+			if (!productoServicioSeleccionado) return;
+
+			const editarId = document.getElementById("editarId");
+			const editarNombre = document.getElementById("editarNombre");
+			const editarPrecio = document.getElementById("editarPrecio");
+			const editarDescripcion =
+				document.getElementById("editarDescripcion");
+			const editarTipo = document.getElementById("editarTipo");
+
+			if (editarId) editarId.value = productoServicioSeleccionado;
+			if (editarNombre)
+				editarNombre.value = productoServicioData.name || "";
+			if (editarPrecio)
+				editarPrecio.value = productoServicioData.value || "";
+			if (editarDescripcion)
+				editarDescripcion.value =
+					productoServicioData.description || "";
+			if (editarTipo) editarTipo.value = productoServicioData.type || "";
+
+			const modal = document.getElementById(
+				"modalEditarProductoServicio",
+			);
+			if (modal) modal.classList.remove("hidden");
 		}
 
 		// Abrir modal de confirmación de eliminación
 		function abrirModalConfirmarEliminar() {
-			document.getElementById('nombreProductoServicioEliminar').textContent = productoServicioData.nombreCompleto;
-			document.getElementById('modalConfirmarEliminar').classList.remove('hidden');
+			const nombreEl = document.getElementById(
+				"nombreProductoServicioEliminar",
+			);
+			if (nombreEl)
+				nombreEl.textContent =
+					productoServicioData.nombreCompleto || "";
+
+			const modal = document.getElementById("modalConfirmarEliminar");
+			if (modal) modal.classList.remove("hidden");
 		}
 
-		// Función para eliminar producto/servicio - CORREGIDA
+		// Función para eliminar
+		/**
+		 * @param {number} id
+		 */
 		async function eliminarProductoServicio(id) {
 			try {
-				console.log('Eliminando producto/servicio con ID:', id);
-				
-				const response = await fetch(`http://localhost:3001/api/v1/Productos&Servicios/${id}`, {
-					method: 'DELETE',
-					headers: {
-						'Content-Type': 'application/json',
+				const response = await fetch(
+					`/api/v1/Productos&Servicios/${id}`,
+					{
+						method: "DELETE",
+						headers: { "Content-Type": "application/json" },
 					},
-				});
-				
+				);
+
 				if (response.ok) {
-					cerrarModal('modalConfirmarEliminar');
-					mostrarExito('Producto/Servicio eliminado correctamente');
-					setTimeout(() => {
-						location.reload();
-					}, 1500);
+					window.cerrarModal("modalConfirmarEliminar");
+					mostrarExito("Eliminado correctamente");
+					setTimeout(() => location.reload(), 1500);
 				} else {
 					const errorData = await response.json();
-					console.error('Error del servidor:', errorData);
-					mostrarError('Error al eliminar el producto/servicio: ' + (errorData.message || errorData.error || 'Error desconocido'));
+					mostrarError(
+						"Error al eliminar: " +
+							(errorData.message ||
+								errorData.error ||
+								"Desconocido"),
+					);
 				}
 			} catch (error) {
-				console.error('Error:', error);
-				mostrarError('Error de conexión con el servidor: ' + error.message);
+				mostrarError("Error de conexión: " + error.message);
 			}
 		}
 
-		// Manejar envío del formulario agregar - CORREGIDO
-		document.getElementById('formAgregarProductoServicio')?.addEventListener('submit', async function(e) {
-			e.preventDefault();
-			
-			// Validar campos requeridos
-			const requiredFields = [
-				'agregarNombre', 'agregarPrecio', 'agregarDescripcion', 'agregarTipo'
-			];
-			
-			for (const fieldId of requiredFields) {
-				const field = document.getElementById(fieldId);
-				if (!field.value.trim()) {
-					mostrarError(`El campo ${field.previousElementSibling.textContent} es obligatorio`);
-					field.focus();
-					return;
+		// Manejar envío Agregar
+		document
+			.getElementById("formAgregarProductoServicio")
+			?.addEventListener("submit", async function (e) {
+				e.preventDefault();
+
+				const nombreEl = document.getElementById("agregarNombre");
+				const precioEl = document.getElementById("agregarPrecio");
+				const descEl = document.getElementById("agregarDescripcion");
+				const tipoEl = document.getElementById("agregarTipo");
+
+				const data = {
+					name: nombreEl?.value,
+					value: parseFloat(precioEl?.value || "0"),
+					description: descEl?.value,
+					type: tipoEl?.value,
+				};
+
+				try {
+					const response = await fetch(
+						"/api/v1/Productos&Servicios",
+						{
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify(data),
+						},
+					);
+
+					if (response.ok) {
+						window.cerrarModal("modalAgregarProductoServicio");
+						mostrarExito("Agregado correctamente");
+						setTimeout(() => location.reload(), 1500);
+					} else {
+						const errorData = await response.json();
+						mostrarError(
+							"Error al agregar: " +
+								(errorData.message ||
+									errorData.error ||
+									"Desconocido"),
+						);
+					}
+				} catch (error: any) {
+					mostrarError("Error de conexión: " + error.message);
 				}
-			}
+			});
 
-			const productoServicioData = {
-				name: document.getElementById('agregarNombre').value,
-				value: parseFloat(document.getElementById('agregarPrecio').value),
-				description: document.getElementById('agregarDescripcion').value,
-				type: document.getElementById('agregarTipo').value
-			};
+		// Manejar envío Editar
+		document
+			.getElementById("formEditarProductoServicio")
+			?.addEventListener("submit", async function (e) {
+				e.preventDefault();
 
-			console.log('Datos a enviar:', productoServicioData);
+				const nombreEl = document.getElementById("editarNombre");
+				const precioEl = document.getElementById("editarPrecio");
+				const descEl = document.getElementById("editarDescripcion");
+				const tipoEl = document.getElementById("editarTipo");
 
-			try {
-				const response = await fetch('http://localhost:3001/api/v1/Productos&Servicios', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify(productoServicioData)
-				});
+				const data = {
+					name: nombreEl?.value,
+					value: parseFloat(precioEl?.value || "0"),
+					description: descEl?.value,
+					type: tipoEl?.value,
+				};
 
-				if (response.ok) {
-					cerrarModal('modalAgregarProductoServicio');
-					mostrarExito('Producto/Servicio agregado correctamente');
-					setTimeout(() => {
-						location.reload();
-					}, 1500);
-				} else {
-					const errorData = await response.json();
-					console.error('Error del servidor:', errorData);
-					mostrarError('Error al agregar el producto/servicio: ' + (errorData.message || errorData.error || 'Error desconocido'));
+				try {
+					const response = await fetch(
+						`/api/v1/Productos&Servicios/${productoServicioSeleccionado}`,
+						{
+							method: "PATCH",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify(data),
+						},
+					);
+
+					if (response.ok) {
+						window.cerrarModal("modalEditarProductoServicio");
+						mostrarExito("Actualizado correctamente");
+						setTimeout(() => location.reload(), 1500);
+					} else {
+						const errorData = await response.json();
+						mostrarError(
+							"Error al actualizar: " +
+								(errorData.message ||
+									errorData.error ||
+									"Desconocido"),
+						);
+					}
+				} catch (error: any) {
+					mostrarError("Error de conexión: " + error.message);
 				}
-			} catch (error) {
-				console.error('Error:', error);
-				mostrarError('Error de conexión con el servidor: ' + error.message);
-			}
-		});
-
-		// Manejar envío del formulario editar - CORREGIDO
-		document.getElementById('formEditarProductoServicio')?.addEventListener('submit', async function(e) {
-			e.preventDefault();
-			
-			// Validar campos requeridos
-			const requiredFields = [
-				'editarNombre', 'editarPrecio', 'editarDescripcion', 'editarTipo'
-			];
-			
-			for (const fieldId of requiredFields) {
-				const field = document.getElementById(fieldId);
-				if (!field.value.trim()) {
-					mostrarError(`El campo ${field.previousElementSibling.textContent} es obligatorio`);
-					field.focus();
-					return;
-				}
-			}
-
-			const productoServicioData = {
-				name: document.getElementById('editarNombre').value,
-				value: parseFloat(document.getElementById('editarPrecio').value),
-				description: document.getElementById('editarDescripcion').value,
-				type: document.getElementById('editarTipo').value
-			};
-
-			console.log('Datos a enviar para editar:', productoServicioData);
-
-			try {
-				const response = await fetch(`http://localhost:3001/api/v1/Productos&Servicios/${productoServicioSeleccionado}`, {
-					method: 'PATCH',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify(productoServicioData)
-				});
-
-				if (response.ok) {
-					cerrarModal('modalEditarProductoServicio');
-					mostrarExito('Producto/Servicio actualizado correctamente');
-					setTimeout(() => {
-						location.reload();
-					}, 1500);
-				} else {
-					const errorData = await response.json();
-					console.error('Error del servidor:', errorData);
-					mostrarError('Error al actualizar el producto/servicio: ' + (errorData.message || errorData.error || 'Error desconocido'));
-				}
-			} catch (error) {
-				console.error('Error:', error);
-				mostrarError('Error de conexión con el servidor: ' + error.message);
-			}
-		});
+			});
 
 		// Seleccionar todos los checkboxes
-		document.getElementById('selectAll')?.addEventListener('change', function(e) {
-			const checkboxes = document.querySelectorAll('.producto-servicio-checkbox');
-			checkboxes.forEach(checkbox => {
-				checkbox.checked = e.target.checked;
+		document
+			.getElementById("selectAll")
+			?.addEventListener("change", function (e) {
+				const target = e.target as HTMLInputElement;
+				const checkboxes = document.querySelectorAll(
+					".producto-servicio-checkbox",
+				);
+				checkboxes.forEach((checkbox) => {
+					(checkbox as HTMLInputElement).checked = target.checked;
+				});
 			});
-		});
 	</script>
-
-	<style>
-		/* === ESTILOS PARA TABLA COMPLETAMENTE RESPONSIVA === */
-		
-		/* Contenedor de tabla mejorado */
-		.pagos-table-wrapper {
-			width: 100%;
-			border-radius: 0.75rem;
-			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-			margin-top: 1rem;
-		}
-
-		/* Tabla responsiva */
-		.responsive-table {
-			width: 100%;
-			border-collapse: collapse;
-			font-size: 0.875rem;
-		}
-
-		.responsive-table th,
-		.responsive-table td {
-			padding: 0.8rem;
-			text-align: left;
-			border-bottom: 1px solid #e5e7eb;
-		}
-
-		.responsive-table thead {
-			background-color: #234d20;
-			color: white;
-		}
-
-		.responsive-table th {
-			font-weight: 600;
-			font-size: 0.875rem;
-		}
-
-		/* Columnas específicas con anchos optimizados */
-		.checkbox-col {
-			width: 50px;
-			text-align: center;
-			padding-left: 1rem;
-		}
-
-		.nombre-col {
-			min-width: 120px;
-			max-width: 150px;
-		}
-
-		.precio-col {
-			min-width: 100px;
-			max-width: 120px;
-		}
-
-		.descripcion-col {
-			min-width: 180px;
-			max-width: 220px;
-		}
-
-		.tipo-col {
-			width: 100px;
-			text-align: center;
-		}
-
-		.acciones-col {
-			width: 100px;
-			text-align: center;
-		}
-
-		/* Badges de estado */
-		.status-badge {
-			display: inline-block;
-			padding: 0.25rem 0.5rem;
-			border-radius: 0.375rem;
-			font-size: 0.75rem;
-			font-weight: 500;
-		}
-
-		.status-badge.service {
-			background-color: #dbeafe;
-			color: #1e40af;
-		}
-
-		.status-badge.additional {
-			background-color: #d1fae5;
-			color: #065f46;
-		}
-
-		/* === SISTEMA DE TABLA RESPONSIVA CON CSS GRID === */
-		
-		.table-responsive-container {
-			width: 100%;
-			background: white;
-			border-radius: 0.75rem;
-			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-			overflow: hidden;
-			margin-top: 1rem;
-		}
-
-		/* Cada vista de tabla se muestra según el breakpoint */
-		.table-view {
-			width: 100%;
-		}
-
-		/* Vista Desktop Completa (1400px+) - 6 columnas */
-		.table-desktop-full {
-			display: none;
-		}
-
-		/* Vista Desktop Compacta (1200px - 1399px) - 5 columnas */
-		.table-desktop-compact {
-			display: none;
-		}
-
-		/* Vista Tablet (768px - 1199px) - 4 columnas */
-		.table-tablet {
-			display: none;
-		}
-
-		/* Vista Móvil (hasta 767px) - Cards */
-		.table-mobile {
-			display: none;
-		}
-
-		/* Header y filas comunes */
-		.table-header {
-			display: grid;
-			gap: 0.5rem;
-			padding: 1rem 1.5rem;
-			background-color: #234d20;
-			color: white;
-			font-weight: 600;
-			font-size: 0.875rem;
-			align-items: center;
-		}
-
-		.table-body {
-			width: 100%;
-		}
-
-		.table-row {
-			display: grid;
-			gap: 0.5rem;
-			padding: 1rem 1.5rem;
-			
-			align-items: center;
-			transition: background-color 0.2s;
-		}
-
-		.table-row:hover {
-			background-color: #f8fafc;
-		}
-
-		/* Grid columns para diferentes vistas */
-		.grid-cols-6 {
-			grid-template-columns: 50px 1fr 100px 1fr 100px 120px;
-		}
-
-		.grid-cols-5 {
-			grid-template-columns: 40px 1fr 100px 100px 120px;
-		}
-
-		.grid-cols-4 {
-			grid-template-columns: 40px 1.5fr 1fr 120px;
-		}
-
-		/* Estilos de columnas específicas */
-		.col-checkbox {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-		}
-
-		.col-nombre{
-			font-weight: bold;
-		},
-		.col-precio{
-			font-weight: bold;
-		},
-		.col-descripcion{
-			font-weight: bold;
-		},
-		.col-tipo {
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			font-weight: bold;
-		}
-
-		.col-nombre-tablet {
-			display: flex;
-			flex-direction: column;
-			gap: 0.25rem;
-			font-weight: bold;
-			
-		}
-
-		.col-tipo-tablet {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-		}
-
-		.col-acciones {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-		}
-
-		/* Tarjetas móviles */
-		.mobile-card {
-			border-bottom: 1px solid #e5e7eb;
-			padding: 1rem;
-			background: white;
-		}
-
-		.mobile-card:last-child {
-			border-bottom: none;
-		}
-
-		.mobile-card-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: flex-start;
-			margin-bottom: 1rem;
-		}
-
-		.mobile-card-content {
-			width: 100%;
-		}
-
-		.mobile-field {
-			display: flex;
-			flex-direction: column;
-			gap: 0.25rem;
-		}
-
-		.mobile-label {
-			font-size: 0.75rem;
-			font-weight: 600;
-			color: #2F5D50;
-		}
-
-		.mobile-value {
-			font-size: 0.875rem;
-			color: #374151;
-		}
-
-		/* Badges de estado */
-		.status-badge {
-			display: inline-block;
-			padding: 0.25rem 0.75rem;
-			border-radius: 0.375rem;
-			font-size: 0.75rem;
-			font-weight: 500;
-			text-align: center;
-			min-width: 50px;
-		}
-
-		.status-badge-sm {
-			padding: 0.2rem 0.5rem;
-			font-size: 0.7rem;
-			min-width: 40px;
-		}
-
-		.status-badge.service {
-			background-color: #dbeafe;
-			color: #1e40af;
-			border: 1px solid #bfdbfe;
-		}
-
-		.status-badge.additional {
-			background-color: #d1fae5;
-			color: #065f46;
-			border: 1px solid #a7f3d0;
-		}
-
-		/* Botones */
-		.btn-action {
-			background: linear-gradient(135deg, #234d20, #2d5a28);
-			color: white;
-			border: none;
-			border-radius: 0.5rem;
-			padding: 0.5rem 1rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-			font-size: 0.875rem;
-			white-space: nowrap;
-		}
-
-		.btn-action:hover {
-			background: linear-gradient(135deg, #2d5a28, #366032);
-			transform: translateY(-1px);
-			box-shadow: 0 2px 4px rgba(35, 77, 32, 0.2);
-		}
-
-		.btn-action-mobile {
-			background: linear-gradient(135deg, #234d20, #2d5a28);
-			color: white;
-			border: none;
-			border-radius: 0.375rem;
-			padding: 0.375rem 0.75rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-			font-size: 0.75rem;
-			white-space: nowrap;
-		}
-
-		/* Checkboxes */
-		.producto-servicio-checkbox {
-			cursor: pointer;
-			width: 18px;
-			height: 18px;
-		}
-
-		/* === BREAKPOINTS RESPONSIVE === */
-
-		/* Desktop Completo (1400px+) */
-		@media (min-width: 1400px) {
-			.table-desktop-full {
-				display: block;
-			}
-		}
-
-		/* Desktop Compacto (1200px - 1399px) */
-		@media (min-width: 1200px) and (max-width: 1399px) {
-			.table-desktop-compact {
-				display: block;
-			}
-		}
-
-		/* Tablet (768px - 1199px) */
-		@media (min-width: 768px) and (max-width: 1199px) {
-			.table-tablet {
-				display: block;
-			}
-		}
-
-		/* Móvil (hasta 767px) */
-		@media (max-width: 767px) {
-			.table-mobile {
-				display: block;
-			}
-			
-			.table-responsive-container {
-				border-radius: 0.5rem;
-			}
-		}
-
-		/* Ajustes para pantallas muy pequeñas */
-		@media (max-width: 480px) {
-			.mobile-card {
-				padding: 0.75rem;
-			}
-			
-			.mobile-card-header {
-				flex-direction: column;
-				gap: 0.75rem;
-				align-items: flex-start;
-			}
-			
-			.mobile-card-content .grid-cols-2 {
-				grid-template-columns: 1fr;
-				gap: 0.75rem;
-			}
-			
-			.mobile-field {
-				flex-direction: row;
-				justify-content: space-between;
-				align-items: center;
-			}
-			
-			.mobile-label {
-				min-width: 120px;
-			}
-		}
-
-		/* Responsive para controles */
-		@media (max-width: 768px) {
-			.pagos-header {
-				flex-direction: column;
-				gap: 1rem;
-			}
-			
-			.pagos-controls {
-				justify-content: flex-start;
-			}
-			
-			.pagos-buttons {
-				width: 100%;
-			}
-			
-			.pagos-buttons .btn-action {
-				width: 100%;
-				justify-content: center;
-			}
-			
-			.historial-pagination {
-				flex-direction: column;
-				gap: 1rem;
-				align-items: flex-start;
-			}
-		}
-
-		/* === ESTILOS PARA MODALES (se mantienen igual) === */
-		.modal-overlay {
-			position: fixed;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background: rgba(0, 0, 0, 0.5);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			z-index: 1001;
-			padding: 1rem;
-		}
-
-		.modal-content {
-			background: white;
-			border-radius: 1rem;
-			width: 100%;
-			max-width: 500px;
-			max-height: 90vh;
-			overflow-y: auto;
-			box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-		}
-
-		.modal-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			padding: 1.5rem;
-			border-bottom: 1px solid #e5e7eb;
-		}
-
-		.modal-title {
-			color: #2F5D50;
-			font-size: 1.25rem;
-			font-weight: 600;
-			margin: 0;
-		}
-
-		.modal-body {
-			padding: 1.5rem;
-		}
-
-		.modal-footer {
-			padding: 1.5rem;
-			border-top: 1px solid #e5e7eb;
-			display: flex;
-			justify-content: flex-end;
-		}
-
-		.close-button {
-			background: none;
-			border: none;
-			color: #6b7280;
-			cursor: pointer;
-			padding: 0.5rem;
-			border-radius: 0.375rem;
-			transition: background 0.3s;
-		}
-
-		.close-button:hover {
-			background: #f3f4f6;
-			color: #374151;
-		}
-
-		.btn-editar-accion {
-			background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-			color: white;
-			border: none;
-			border-radius: 0.75rem;
-			padding: 0.75rem 1.5rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-			box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-			min-width: 160px;
-		}
-
-		.btn-editar-accion:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
-		}
-
-		.btn-eliminar-accion {
-			background: linear-gradient(135deg, #ef4444, #dc2626);
-			color: white;
-			border: none;
-			border-radius: 0.75rem;
-			padding: 0.75rem 1.5rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-			box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
-			min-width: 160px;
-		}
-
-		.btn-eliminar-accion:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
-		}
-
-		.btn-eliminar-confirmar {
-			background: linear-gradient(135deg, #ef4444, #dc2626);
-			color: white;
-			border: none;
-			border-radius: 0.5rem;
-			padding: 0.75rem 1.5rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-		}
-
-		.btn-eliminar-confirmar:hover {
-			background: linear-gradient(135deg, #dc2626, #b91c1c);
-		}
-
-		.btn-secondary {
-			background: #6b7280;
-			color: white;
-			border: none;
-			border-radius: 0.5rem;
-			padding: 0.75rem 1.5rem;
-			font-weight: 500;
-			cursor: pointer;
-			transition: all 0.3s ease-in-out;
-		}
-
-		.btn-secondary:hover {
-			background: #4b5563;
-		}
-	</style>
 </Layout>
