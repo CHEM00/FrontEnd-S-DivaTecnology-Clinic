@@ -2,7 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 ---
 
-<Layout>
+<Layout title="Inicio de Sesión">
   <div
     class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#eafaf1] via-[#d0ecd7] to-[#b2d8c5] relative overflow-hidden"
   >
@@ -94,37 +94,45 @@ import Layout from "../layouts/Layout.astro";
       try {
         const response = await fetch("/api/v1/auth/login", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: username, password: password }),
         });
 
         const data = await response.json();
 
         if (data.token) {
-          localStorage.setItem("token", data.token);
+          // 1. Guardar Token en Cookie (CRÍTICO para el Middleware)
+          // Usamos path=/ para que esté disponible en toda la app
+          // Max-age 86400 = 1 día
+          document.cookie = `auth_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
 
+          // 2. Guardar datos en localStorage (Opcional, para uso cliente)
+          localStorage.setItem("token", data.token);
           if (data.user) {
             localStorage.setItem("user", JSON.stringify(data.user));
-
-            const roleId = data.user.idrol;
-
-            if (roleId === 3) {
-              window.location.href = "/DashBoardEmpleado";
-            } else if (roleId === 2) {
-              window.location.href = "/DashboardAdmin";
-            } else {
-              window.location.href = "/DashboardAdmin";
-            }
-          } else {
-            window.location.href = "/DashboardAdmin";
           }
+
+          // 3. Redirección basada en Rol
+          const roleId = Number(data.user?.idrol);
+
+          // Pequeño delay para asegurar que el navegador procese la cookie
+          setTimeout(() => {
+            if (roleId === 3) {
+              window.location.href = "/dashboardEmpleado";
+            } else if (roleId === 2) {
+              window.location.href = "/dashboardAdmin";
+            } else {
+              // Si no coincide, mandamos al admin por defecto o mostramos error
+              console.warn("Rol desconocido, redirigiendo a Admin");
+              window.location.href = "/dashboardAdmin";
+            }
+          }, 100);
         } else {
-          alert(data.message || "Error al iniciar sesión");
+          alert(data.message || "Credenciales incorrectas");
         }
       } catch (error) {
-        console.error("Error al iniciar sesión:", error);
+        console.error("Error de red:", error);
+        alert("Error al conectar con el servidor");
       }
     });
   }

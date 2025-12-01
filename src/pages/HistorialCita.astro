@@ -1,50 +1,22 @@
 ---
+export const prerender = false;
 import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
-import FormModal from "../components/modals/FormModal.astro";
 
-let table = [];
+let historial = [];
 try {
 	const response = await fetch(
-		"http://localhost:3001/api/v1/HistorialClinico",
+		"http://localhost:3000/api/v1/HistorialClinico",
 	);
 	if (response.ok) {
-		table = await response.json();
+		historial = await response.json();
 	} else {
-		console.error("Error en la respuesta:", response.status);
-		table = [];
+		console.error("Error fetching historial:", response.status);
 	}
 } catch (error) {
-	console.error("Error fetching data:", error);
-	table = [];
+	console.error("Error fetching historial:", error);
 }
-
-// Función para formatear fecha
-const formatDate = (dateString) => {
-	if (!dateString) return "";
-	const date = new Date(dateString);
-	return date.toISOString().split("T")[0];
-};
-
-// Función para formatear hora
-const formatTime = (timeString) => {
-	if (!timeString) return "";
-	if (timeString.includes(":")) {
-		return timeString.substring(0, 5);
-	}
-	return timeString;
-};
-
-// Función para escapar caracteres problemáticos en JavaScript
-const escapeJS = (str) => {
-	if (!str) return "";
-	return String(str)
-		.replace(/'/g, "\\'")
-		.replace(/"/g, '\\"')
-		.replace(/\n/g, "\\n")
-		.replace(/\r/g, "\\r");
-};
 ---
 
 <Layout title="Historial de Citas">
@@ -52,8 +24,9 @@ const escapeJS = (str) => {
 		class="flex h-screen overflow-hidden bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8]"
 	>
 		<NavBar />
+
 		<div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-			<!-- Background Elements for depth -->
+			<!-- Background Elements -->
 			<div
 				class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#2F5D50]/10 rounded-full blur-3xl pointer-events-none"
 			>
@@ -63,204 +36,152 @@ const escapeJS = (str) => {
 			>
 			</div>
 
-			<TopTag titulo="Historial de Citas" nombreUsuario="Administrador" />
+			<TopTag titulo="Historial Clínico" nombreUsuario="Administrador" />
 
 			<main
 				class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-[#2F5D50]/20 scrollbar-track-transparent relative z-10"
 			>
-				<!-- Header con título y botón agregar -->
-				<div
-					class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 animate-fade-in-up stagger-1"
-				>
-					<div>
-						<h1
-							class="text-3xl font-bold text-[#2F5D50] tracking-tight"
-						>
-							Historial Clínico
-						</h1>
-						<p class="text-gray-500 mt-1">
-							Gestiona los registros médicos de los pacientes
-						</p>
-					</div>
-					<button
-						class="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-[#2F5D50] hover:bg-[#234D20] transition-all shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-1"
-						onclick="abrirModalAgregar()"
-					>
-						<div
-							class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center"
-						>
-							<i class="fa-solid fa-plus text-sm"></i>
-						</div>
-						<span class="font-semibold">Nuevo Historial</span>
-					</button>
-				</div>
-
 				<!-- Tabla Container -->
 				<div
-					class="glass-panel rounded-3xl overflow-hidden animate-fade-in-up stagger-2 border border-white/40 shadow-xl"
+					class="glass-panel rounded-3xl overflow-hidden animate-fade-in-up stagger-2 border border-white/40 shadow-xl flex flex-col h-full max-h-[calc(100vh-140px)]"
 				>
-					<div class="overflow-x-auto custom-scrollbar">
-						<table class="w-full text-left border-collapse">
-							<thead>
-								<tr
-									class="bg-[#2F5D50]/5 text-[#2F5D50] border-b border-[#2F5D50]/10"
+					<!-- Header de la tabla con Filtros -->
+					<div
+						class="p-6 border-b border-[#2F5D50]/10 bg-white/40 flex flex-col sm:flex-row justify-between items-center gap-4"
+					>
+						<h2
+							class="text-xl font-bold text-[#2F5D50] flex items-center gap-2"
+						>
+							<i class="fa-solid fa-file-medical"></i>
+							Registros
+						</h2>
+
+						<div
+							class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
+						>
+							<!-- Buscador -->
+							<div class="relative group w-full sm:w-64">
+								<input
+									type="text"
+									id="searchInput"
+									placeholder="Buscar paciente, fisio..."
+									class="glass-input w-full rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+								/>
+								<i
+									class="fa-solid fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2F5D50] transition-colors"
+								></i>
+							</div>
+
+							<!-- Selector de Registros por página -->
+							<div
+								class="flex items-center gap-2 bg-white/50 px-3 py-2 rounded-xl border border-white/60"
+							>
+								<span
+									class="text-xs font-bold text-gray-500 whitespace-nowrap"
+									>Mostrar:</span
 								>
-									<th
-										class="p-5 font-bold text-center w-16 rounded-tl-2xl"
-										>Sel</th
+								<select
+									id="rowsPerPage"
+									class="bg-transparent text-sm font-bold text-[#2F5D50] outline-none cursor-pointer"
+								>
+									<option value="5">5</option>
+									<option value="10" selected>10</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<!-- Tabla -->
+					<div class="overflow-auto custom-scrollbar flex-1 relative">
+						<table class="w-full text-left border-collapse">
+							<thead
+								class="sticky top-0 z-10 bg-white/95 backdrop-blur-md shadow-sm"
+							>
+								<tr
+									class="text-[#2F5D50] border-b border-[#2F5D50]/10"
+								>
+									<th class="p-4 font-bold whitespace-nowrap"
+										>Paciente</th
 									>
-									<th class="p-5 font-bold">Paciente</th>
-									<th class="p-5 font-bold text-center"
-										>Cita #</th
-									>
-									<th class="p-5 font-bold">Fecha/Hora</th>
 									<th
-										class="p-5 font-bold hidden md:table-cell"
-										>Diagnóstico</th
+										class="p-4 font-bold whitespace-nowrap text-center"
+										>Fecha</th
 									>
 									<th
-										class="p-5 font-bold hidden lg:table-cell"
-										>Atendido por</th
+										class="p-4 font-bold whitespace-nowrap text-center"
+										>Hora</th
 									>
 									<th
-										class="p-5 font-bold text-center w-32 rounded-tr-2xl"
-										>Acciones</th
+										class="p-4 font-bold whitespace-nowrap text-center"
+										>Sesión</th
+									>
+									<th class="p-4 font-bold whitespace-nowrap"
+										>Servicios</th
+									>
+									<th class="p-4 font-bold whitespace-nowrap"
+										>Fisioterapeuta</th
+									>
+									<th
+										class="p-4 font-bold whitespace-nowrap text-right"
+										>Total</th
 									>
 								</tr>
 							</thead>
-							<tbody class="divide-y divide-[#2F5D50]/5">
-								{
-									table.map((historial) => {
-										const pacienteEscaped = escapeJS(
-											historial.patientName,
-										);
-										const numeroCitaEscaped = escapeJS(
-											historial.numberAppointment,
-										);
-										const fechaEscaped = escapeJS(
-											formatDate(historial.currentDay),
-										);
-										const horaEscaped = escapeJS(
-											formatTime(
-												historial.appointmentHour,
-											),
-										);
-										const diagnosticoEscaped = escapeJS(
-											historial.diagnostic,
-										);
-										const empleadoEscaped = escapeJS(
-											historial.employedName,
-										);
-										const notaTerapeuticaEscaped = escapeJS(
-											historial.therapeuticNote,
-										);
-										const firmaEscaped = escapeJS(
-											historial.signature,
-										);
-										const idDetalleEscaped = escapeJS(
-											historial.idDetailAppointment,
-										);
-										const nombreCompletoEscaped = escapeJS(
-											`${historial.patientName} - Cita ${historial.numberAppointment}`,
-										);
-
-										return (
-											<tr class="hover:bg-white/60 transition-colors group">
-												<td class="p-5 text-center">
-													<div class="flex items-center justify-center">
-														<input
-															type="checkbox"
-															class="historial-checkbox w-5 h-5 rounded-md border-gray-300 text-[#2F5D50] focus:ring-[#2F5D50] cursor-pointer"
-															value={historial.id}
-														/>
-													</div>
-												</td>
-												<td class="p-5">
-													<div class="flex items-center gap-3">
-														<div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#2F5D50] to-[#1a3c33] flex items-center justify-center text-white font-bold shadow-md">
-															{historial.patientName.charAt(
-																0,
-															)}
-														</div>
-														<div class="font-bold text-gray-800">
-															{
-																historial.patientName
-															}
-														</div>
-													</div>
-												</td>
-												<td class="p-5 text-center">
-													<span class="bg-[#2F5D50]/10 text-[#2F5D50] font-bold px-3 py-1 rounded-full text-sm border border-[#2F5D50]/20">
-														#
-														{
-															historial.numberAppointment
-														}
-													</span>
-												</td>
-												<td class="p-5">
-													<div class="flex flex-col">
-														<span class="text-sm font-bold text-gray-700 flex items-center gap-2">
-															<i class="fa-regular fa-calendar text-[#2F5D50]" />
-															{formatDate(
-																historial.currentDay,
-															)}
-														</span>
-														<span class="text-xs text-gray-500 mt-1 flex items-center gap-2">
-															<i class="fa-regular fa-clock text-[#2F5D50]" />
-															{formatTime(
-																historial.appointmentHour,
-															)}
-														</span>
-													</div>
-												</td>
-												<td class="p-5 hidden md:table-cell">
-													<div class="text-sm text-gray-600 max-w-xs truncate bg-white/50 px-3 py-1 rounded-lg border border-white/40">
-														{historial.diagnostic}
-													</div>
-												</td>
-												<td class="p-5 hidden lg:table-cell">
-													<div class="text-sm font-medium text-[#2F5D50] flex items-center gap-2">
-														<i class="fa-solid fa-user-nurse" />
-														{historial.employedName}
-													</div>
-												</td>
-												<td class="p-5 text-center">
-													<button
-														class="w-8 h-8 rounded-full bg-white/50 hover:bg-[#2F5D50] hover:text-white text-[#2F5D50] transition-all shadow-sm flex items-center justify-center mx-auto"
-														onclick={`abrirModalAcciones(${historial.id}, '${pacienteEscaped}', '${numeroCitaEscaped}', '${fechaEscaped}', '${horaEscaped}', '${diagnosticoEscaped}', '${empleadoEscaped}', '${notaTerapeuticaEscaped}', '${firmaEscaped}', '${idDetalleEscaped}', '${nombreCompletoEscaped}')`}
-														title="Acciones"
-													>
-														<i class="fa-solid fa-ellipsis-vertical" />
-													</button>
-												</td>
-											</tr>
-										);
-									})
-								}
+							<tbody
+								id="tableBody"
+								class="divide-y divide-[#2F5D50]/5"
+							>
+								<!-- Contenido inyectado por JS -->
 							</tbody>
 						</table>
+
+						<!-- Estado Vacío (oculto por defecto) -->
+						<div
+							id="emptyState"
+							class="hidden absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-white/50 backdrop-blur-sm"
+						>
+							<i
+								class="fa-regular fa-folder-open text-4xl mb-2 opacity-50"
+							></i>
+							<p>No se encontraron registros</p>
+						</div>
 					</div>
 
-					<!-- Pagination -->
+					<!-- Paginación -->
 					<div
-						class="p-4 border-t border-[#2F5D50]/10 flex justify-between items-center bg-white/30 backdrop-blur-sm"
+						class="p-4 border-t border-[#2F5D50]/10 bg-white/40 flex justify-between items-center"
 					>
-						<div class="text-sm text-gray-600 font-medium">
-							Mostrando <span class="font-bold text-[#2F5D50]"
-								>{table.length}</span
-							> registros
-						</div>
+						<span
+							class="text-xs sm:text-sm text-gray-600 font-medium"
+						>
+							Mostrando <span
+								id="showingStart"
+								class="font-bold text-[#2F5D50]">0</span
+							> - <span
+								id="showingEnd"
+								class="font-bold text-[#2F5D50]">0</span
+							> de <span
+								id="totalRecords"
+								class="font-bold text-[#2F5D50]">0</span
+							>
+						</span>
+
 						<div class="flex gap-2">
 							<button
-								class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/50 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-white/50 disabled:hover:text-[#2F5D50] shadow-sm"
-								disabled
+								id="prevBtn"
+								class="w-9 h-9 rounded-lg flex items-center justify-center bg-white/60 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm border border-white/50"
 							>
-								<i class="fa-solid fa-chevron-left"></i>
+								<i class="fa-solid fa-chevron-left text-xs"></i>
 							</button>
+							<div id="pageNumbers" class="flex gap-1">
+								<!-- Números de página generados dinámicamente -->
+							</div>
 							<button
-								class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/50 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all shadow-sm"
+								id="nextBtn"
+								class="w-9 h-9 rounded-lg flex items-center justify-center bg-white/60 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm border border-white/50"
 							>
-								<i class="fa-solid fa-chevron-right"></i>
+								<i class="fa-solid fa-chevron-right text-xs"
+								></i>
 							</button>
 						</div>
 					</div>
@@ -269,967 +190,184 @@ const escapeJS = (str) => {
 		</div>
 	</div>
 
-	<!-- Modal de Acciones -->
-	<div
-		id="modalAcciones"
-		class="fixed inset-0 z-50 hidden"
-		aria-labelledby="modal-title"
-		role="dialog"
-		aria-modal="true"
-	>
-		<div
-			class="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
-			onclick="cerrarModal('modalAcciones')"
-		>
-		</div>
-		<div
-			class="flex min-h-full items-center justify-center p-4 text-center sm:p-0"
-		>
-			<div
-				class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg p-6"
-			>
-				<div class="absolute right-4 top-4">
-					<button
-						type="button"
-						class="text-gray-400 hover:text-gray-500"
-						onclick="cerrarModal('modalAcciones')"
-					>
-						<i class="fa-solid fa-xmark text-xl"></i>
-					</button>
-				</div>
+	<!-- Script Cliente para Paginación y Filtro -->
+	<script define:vars={{ historial }}>
+		// Datos iniciales desde el servidor
+		let allData = historial || [];
+		let filteredData = [...allData];
 
-				<div class="text-center mb-6">
-					<h3
-						class="text-xl font-bold text-[#2F5D50]"
-						id="modal-title"
-					>
-						Acciones
-					</h3>
-					<p class="text-sm text-gray-500 mt-2">
-						Gestionar: <span
-							id="nombreHistorialAcciones"
-							class="font-bold text-[#2F5D50]"></span>
-					</p>
-				</div>
+		// Estado de la paginación
+		let currentPage = 1;
+		let rowsPerPage = 10;
 
-				<div class="grid grid-cols-2 gap-4">
-					<button
-						id="btnEditarAccion"
-						class="flex flex-col items-center justify-center p-4 rounded-xl border border-[#2F5D50]/20 hover:bg-[#2F5D50]/5 transition-all group"
-					>
-						<div
-							class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"
-						>
-							<i class="fa-solid fa-pen-to-square text-xl"></i>
-						</div>
-						<span class="font-medium text-gray-700">Editar</span>
-					</button>
-					<button
-						id="btnEliminarAccion"
-						class="flex flex-col items-center justify-center p-4 rounded-xl border border-red-200 hover:bg-red-50 transition-all group"
-					>
-						<div
-							class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"
-						>
-							<i class="fa-solid fa-trash text-xl"></i>
-						</div>
-						<span class="font-medium text-gray-700">Eliminar</span>
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
+		// Elementos DOM
+		const tableBody = document.getElementById("tableBody");
+		const emptyState = document.getElementById("emptyState");
+		const searchInput = document.getElementById("searchInput");
+		const rowsPerPageSelect = document.getElementById("rowsPerPage");
+		const prevBtn = document.getElementById("prevBtn");
+		const nextBtn = document.getElementById("nextBtn");
+		const showingStart = document.getElementById("showingStart");
+		const showingEnd = document.getElementById("showingEnd");
+		const totalRecords = document.getElementById("totalRecords");
 
-	<!-- Modal Confirmar Eliminar -->
-	<div id="modalConfirmarEliminar" class="fixed inset-0 z-50 hidden">
-		<div
-			class="fixed inset-0 bg-black/40 backdrop-blur-sm"
-			onclick="cerrarModal('modalConfirmarEliminar')"
-		>
-		</div>
-		<div class="flex min-h-full items-center justify-center p-4">
-			<div
-				class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:w-full sm:max-w-md p-6"
-			>
-				<div class="text-center">
-					<div
-						class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-4"
-					>
-						<i
-							class="fa-solid fa-triangle-exclamation text-3xl text-red-600"
-						></i>
-					</div>
-					<h3 class="text-xl font-bold text-gray-900">
-						¿Eliminar historial?
-					</h3>
-					<p class="text-sm text-gray-500 mt-2">
-						Estás a punto de eliminar <span
-							id="nombreHistorialEliminar"
-							class="font-bold text-gray-800"></span>. Esta acción
-						no se puede deshacer.
-					</p>
-				</div>
-				<div class="mt-6 flex gap-3">
-					<button
-						type="button"
-						class="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
-						onclick="cerrarModal('modalConfirmarEliminar')"
-						>Cancelar</button
-					>
-					<button
-						type="button"
-						id="btnConfirmarEliminar"
-						class="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium shadow-lg shadow-red-600/30"
-						>Sí, Eliminar</button
-					>
-				</div>
-			</div>
-		</div>
-	</div>
+		// Helpers de formato
+		const formatCurrency = (value) => {
+			if (!value) return "$0.00";
+			return new Intl.NumberFormat("es-MX", {
+				style: "currency",
+				currency: "MXN",
+			}).format(parseFloat(value));
+		};
 
-	<!-- Modal Agregar -->
-	<FormModal
-		id="modalAgregarHistorial"
-		title="Nuevo Historial"
-		formId="formAgregarHistorial"
-		submitText="Guardar"
-		cancelText="Cancelar"
-		size="lg"
-	>
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Paciente *</label
-				>
-				<select
-					id="agregarPatientName"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				>
-					<option value="">Cargando...</option>
-				</select>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Empleado *</label
-				>
-				<select
-					id="agregarEmployedName"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				>
-					<option value="">Cargando...</option>
-				</select>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>N° Cita *</label
-				>
-				<input
-					type="number"
-					id="agregarNumberAppointment"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-					min="1"
-				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Fecha *</label
-				>
-				<input
-					type="date"
-					id="agregarCurrentDay"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Hora *</label
-				>
-				<input
-					type="time"
-					id="agregarAppointmentHour"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>ID Detalle *</label
-				>
-				<input
-					type="number"
-					id="agregarIdDetailAppointment"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-					min="1"
-				/>
-			</div>
-			<div class="flex flex-col md:col-span-2">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Diagnóstico *</label
-				>
-				<textarea
-					id="agregarDiagnostic"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-					rows="3"></textarea>
-			</div>
-			<div class="flex flex-col md:col-span-2">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Nota Terapéutica *</label
-				>
-				<textarea
-					id="agregarTherapeuticNote"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-					rows="3"></textarea>
-			</div>
-			<div class="flex flex-col md:col-span-2">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Firma *</label
-				>
-				<input
-					type="text"
-					id="agregarSignature"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				/>
-			</div>
-		</div>
-	</FormModal>
+		const formatDate = (dateString) => {
+			if (!dateString) return "";
+			// Ajustar zona horaria si es necesario, o usar UTC como string simple
+			return new Date(dateString).toLocaleDateString("es-MX", {
+				year: "numeric",
+				month: "2-digit",
+				day: "2-digit",
+			});
+		};
 
-	<!-- Modal Editar -->
-	<FormModal
-		id="modalEditarHistorial"
-		title="Editar Historial"
-		formId="formEditarHistorial"
-		submitText="Actualizar"
-		cancelText="Cancelar"
-		size="lg"
-	>
-		<input type="hidden" id="editarId" />
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Paciente *</label
-				>
-				<input
-					type="text"
-					id="editarPatientName"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Empleado *</label
-				>
-				<input
-					type="text"
-					id="editarEmployedName"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>N° Cita *</label
-				>
-				<input
-					type="number"
-					id="editarNumberAppointment"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-					min="1"
-				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Fecha *</label
-				>
-				<input
-					type="date"
-					id="editarCurrentDay"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Hora *</label
-				>
-				<input
-					type="time"
-					id="editarAppointmentHour"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>ID Detalle *</label
-				>
-				<input
-					type="number"
-					id="editarIdDetailAppointment"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-					min="1"
-				/>
-			</div>
-			<div class="flex flex-col md:col-span-2">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Diagnóstico *</label
-				>
-				<textarea
-					id="editarDiagnostic"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-					rows="3"></textarea>
-			</div>
-			<div class="flex flex-col md:col-span-2">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Nota Terapéutica *</label
-				>
-				<textarea
-					id="editarTherapeuticNote"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-					rows="3"></textarea>
-			</div>
-			<div class="flex flex-col md:col-span-2">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Firma *</label
-				>
-				<input
-					type="text"
-					id="editarSignature"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				/>
-			</div>
-		</div>
-	</FormModal>
-
-	<!-- Modal Exito/Error -->
-	<div id="modalExito" class="fixed inset-0 z-[60] hidden">
-		<div
-			class="fixed inset-0 bg-black/40 backdrop-blur-sm"
-			onclick="cerrarModal('modalExito')"
-		>
-		</div>
-		<div class="flex min-h-full items-center justify-center p-4">
-			<div
-				class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:w-full sm:max-w-sm p-6 text-center"
-			>
-				<div
-					class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4"
-				>
-					<i class="fa-solid fa-check text-green-600 text-xl"></i>
-				</div>
-				<h3 class="text-lg font-bold text-gray-900 mb-2">¡Éxito!</h3>
-				<p id="mensajeExito" class="text-sm text-gray-500 mb-4"></p>
-				<button
-					type="button"
-					class="w-full px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 font-medium"
-					onclick="cerrarModal('modalExito')">Aceptar</button
-				>
-			</div>
-		</div>
-	</div>
-
-	<div id="modalError" class="fixed inset-0 z-[60] hidden">
-		<div
-			class="fixed inset-0 bg-black/40 backdrop-blur-sm"
-			onclick="cerrarModal('modalError')"
-		>
-		</div>
-		<div class="flex min-h-full items-center justify-center p-4">
-			<div
-				class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:w-full sm:max-w-sm p-6 text-center"
-			>
-				<div
-					class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4"
-				>
-					<i class="fa-solid fa-xmark text-red-600 text-xl"></i>
-				</div>
-				<h3 class="text-lg font-bold text-gray-900 mb-2">Error</h3>
-				<p id="mensajeError" class="text-sm text-gray-500 mb-4"></p>
-				<button
-					type="button"
-					class="w-full px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium"
-					onclick="cerrarModal('modalError')">Aceptar</button
-				>
-			</div>
-		</div>
-	</div>
-
-	<script>
-		// Variables globales
-		let historialSeleccionado = null;
-		let historialData = {};
-		let pacientesList = [];
-		let empleadosList = [];
-
-		// Función para verificar checkbox seleccionado
-		function verificarCheckboxSeleccionado(id) {
-			const idNum = Number(id);
-			if (isNaN(idNum)) return false;
-
-			const checkbox = document.querySelector(
-				`.historial-checkbox[value="${id}"]`,
+		// Función Principal de Renderizado
+		function renderTable() {
+			// Calcular índices
+			const startIndex = (currentPage - 1) * rowsPerPage;
+			const endIndex = Math.min(
+				startIndex + rowsPerPage,
+				filteredData.length,
 			);
-			if (!checkbox || !checkbox.checked) {
-				mostrarError(
-					"Por favor, seleccione el item marcando la casilla.",
-				);
-				return false;
+			const pageData = filteredData.slice(startIndex, endIndex);
+
+			// Limpiar tabla
+			tableBody.innerHTML = "";
+
+			if (pageData.length === 0) {
+				emptyState.classList.remove("hidden");
+				showingStart.textContent = 0;
+				showingEnd.textContent = 0;
+				totalRecords.textContent = 0;
+				updatePaginationControls();
+				return;
 			}
-			return true;
-		}
-					required
-				/>
-			</div>
-		</div>
-	</FormModal>
 
-	<!-- Modal Editar -->
-	<FormModal
-		id="modalEditarHistorial"
-		title="Editar Historial"
-		formId="formEditarHistorial"
-		submitText="Actualizar"
-		cancelText="Cancelar"
-		size="lg"
-	>
-		<input type="hidden" id="editarId" />
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Paciente *</label
-				>
-				<input
-					type="text"
-					id="editarPatientName"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Empleado *</label
-				>
-				<input
-					type="text"
-					id="editarEmployedName"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>N° Cita *</label
-				>
-				<input
-					type="number"
-					id="editarNumberAppointment"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-					min="1"
-				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Fecha *</label
-				>
-				<input
-					type="date"
-					id="editarCurrentDay"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Hora *</label
-				>
-				<input
-					type="time"
-					id="editarAppointmentHour"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				/>
-			</div>
-			<div class="flex flex-col">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>ID Detalle *</label
-				>
-				<input
-					type="number"
-					id="editarIdDetailAppointment"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-					min="1"
-				/>
-			</div>
-			<div class="flex flex-col md:col-span-2">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Diagnóstico *</label
-				>
-				<textarea
-					id="editarDiagnostic"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-					rows="3"></textarea>
-			</div>
-			<div class="flex flex-col md:col-span-2">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Nota Terapéutica *</label
-				>
-				<textarea
-					id="editarTherapeuticNote"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-					rows="3"></textarea>
-			</div>
-			<div class="flex flex-col md:col-span-2">
-				<label class="text-sm font-bold text-gray-700 mb-1"
-					>Firma *</label
-				>
-				<input
-					type="text"
-					id="editarSignature"
-					class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					required
-				/>
-			</div>
-		</div>
-	</FormModal>
+			emptyState.classList.add("hidden");
 
-	<!-- Modal Exito/Error -->
-	<div id="modalExito" class="fixed inset-0 z-[60] hidden">
-		<div
-			class="fixed inset-0 bg-black/40 backdrop-blur-sm"
-			onclick="cerrarModal('modalExito')"
-		>
-		</div>
-		<div class="flex min-h-full items-center justify-center p-4">
-			<div
-				class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:w-full sm:max-w-sm p-6 text-center"
-			>
-				<div
-					class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4"
-				>
-					<i class="fa-solid fa-check text-green-600 text-xl"></i>
-				</div>
-				<h3 class="text-lg font-bold text-gray-900 mb-2">¡Éxito!</h3>
-				<p id="mensajeExito" class="text-sm text-gray-500 mb-4"></p>
-				<button
-					type="button"
-					class="w-full px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 font-medium"
-					onclick="cerrarModal('modalExito')">Aceptar</button
-				>
-			</div>
-		</div>
-	</div>
+			// Generar filas
+			pageData.forEach((item) => {
+				const row = document.createElement("tr");
+				row.className =
+					"hover:bg-white/60 transition-colors group border-b border-transparent hover:border-[#2F5D50]/5";
 
-	<div id="modalError" class="fixed inset-0 z-[60] hidden">
-		<div
-			class="fixed inset-0 bg-black/40 backdrop-blur-sm"
-			onclick="cerrarModal('modalError')"
-		>
-		</div>
-		<div class="flex min-h-full items-center justify-center p-4">
-			<div
-				class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:w-full sm:max-w-sm p-6 text-center"
-			>
-				<div
-					class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4"
-				>
-					<i class="fa-solid fa-xmark text-red-600 text-xl"></i>
-				</div>
-				<h3 class="text-lg font-bold text-gray-900 mb-2">Error</h3>
-				<p id="mensajeError" class="text-sm text-gray-500 mb-4"></p>
-				<button
-					type="button"
-					class="w-full px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium"
-					onclick="cerrarModal('modalError')">Aceptar</button
-				>
-			</div>
-		</div>
-	</div>
+				const initial = item.paciente
+					? item.paciente.charAt(0).toUpperCase()
+					: "?";
+				const hora = item.hora_inicio
+					? item.hora_inicio.substring(0, 5)
+					: "--:--";
+				const serviciosTags = item.servicios
+					? item.servicios
+							.split(",")
+							.map(
+								(s) =>
+									`<span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full border border-gray-200 truncate max-w-full inline-block m-0.5">${s.trim()}</span>`,
+							)
+							.join("")
+					: '<span class="text-xs text-gray-400 italic">Sin servicios</span>';
 
-	<script>
-		/**
-		 * @typedef {Object} HistorialData
-		 * @property {string} [patientName]
-		 * @property {string} [employedName]
-		 * @property {number} [numberAppointment]
-		 * @property {string} [currentDay]
-		 * @property {string} [appointmentHour]
-		 * @property {string} [diagnostic]
-		 * @property {string} [therapeuticNote]
-		 * @property {string} [signature]
-		 * @property {number} [idDetailAppointment]
-		 * @property {string} [nombreCompleto]
-		 */
+				row.innerHTML = `
+                    <td class="p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-[#2F5D50]/10 flex items-center justify-center text-[#2F5D50] font-bold text-xs shadow-sm">
+                                ${initial}
+                            </div>
+                            <span class="font-bold text-gray-800 text-sm">${item.paciente || "Desconocido"}</span>
+                        </div>
+                    </td>
+                    <td class="p-4 text-center whitespace-nowrap text-sm text-gray-600">
+                        ${formatDate(item.fecha)}
+                    </td>
+                    <td class="p-4 text-center whitespace-nowrap text-sm text-gray-600 font-mono">
+                        ${hora}
+                    </td>
+                    <td class="p-4 text-center">
+                        <span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg text-xs font-bold border border-blue-100 shadow-sm">
+                            #${item.numero_sesion || "1"}
+                        </span>
+                    </td>
+                    <td class="p-4">
+                        <div class="flex flex-wrap gap-1 max-w-[200px] sm:max-w-xs">
+                            ${serviciosTags}
+                        </div>
+                    </td>
+                    <td class="p-4 text-sm text-gray-700">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-user-doctor text-[#2F5D50]/50 text-xs"></i>
+                            ${item.fisioterapeuta || "N/A"}
+                        </div>
+                    </td>
+                    <td class="p-4 text-right font-bold text-[#2F5D50] whitespace-nowrap">
+                        ${formatCurrency(item.total)}
+                    </td>
+                `;
+				tableBody.appendChild(row);
+			});
 
-		// Variables globales
-		/** @type {number | null} */
-		let historialSeleccionado = null;
-		/** @type {HistorialData} */
-		let historialData = {};
-		/** @type {any[]} */
-		let pacientesList = [];
-		/** @type {any[]} */
-		let empleadosList = [];
+			// Actualizar info de paginación
+			showingStart.textContent = startIndex + 1;
+			showingEnd.textContent = endIndex;
+			totalRecords.textContent = filteredData.length;
 
-		// Función para verificar checkbox seleccionado
-		/**
-		 * @param {string | number} id
-		 * @returns {boolean}
-		 */
-		function verificarCheckboxSeleccionado(id) {
-			const idNum = Number(id);
-			if (isNaN(idNum)) return false;
-
-			const checkbox = document.querySelector(
-				`.historial-checkbox[value="${id}"]`,
-			);
-			if (!checkbox || !checkbox.checked) {
-				mostrarError(
-					"Por favor, seleccione el item marcando la casilla.",
-				);
-				return false;
-			}
-			return true;
+			updatePaginationControls();
 		}
 
-		// Cargar Pacientes
-		async function cargarPacientes() {
-			try {
-				const response = await fetch(
-					"/api/v1/Pacientes",
-				);
-				if (response.ok) {
-					pacientesList = await response.json();
-					const select =
-						document.getElementById("agregarPatientName");
-					select.innerHTML =
-						'<option value="">Seleccione un paciente</option>';
-					pacientesList.forEach((p) => {
-						const option = document.createElement("option");
-						option.value = `${p.firstname} ${p.lastname} ${p.motherlastname}`;
-						option.textContent = `${p.firstname} ${p.lastname} ${p.motherlastname}`;
-						select.appendChild(option);
-					});
-				}
-			} catch (error) {
-				console.error("Error cargando pacientes:", error);
-			}
-		}
+		function updatePaginationControls() {
+			const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
-		// Cargar Empleados
-		async function cargarEmpleados() {
-			try {
-				const response = await fetch(
-					"/api/v1/Employed",
-				);
-				if (response.ok) {
-					empleadosList = await response.json();
-					const select = document.getElementById(
-						"agregarEmployedName",
-					);
-					select.innerHTML =
-						'<option value="">Seleccione un empleado</option>';
-					empleadosList.forEach((e) => {
-						const option = document.createElement("option");
-						option.value = `${e.firstname} ${e.lastname}`;
-						option.textContent = `${e.firstname} ${e.lastname}`;
-						select.appendChild(option);
-					});
-				}
-			} catch (error) {
-				console.error("Error cargando empleados:", error);
-			}
-		}
-
-		// Abrir modal de acciones
-		window.abrirModalAcciones = function (
-			id,
-			patientName,
-			numberAppointment,
-			currentDay,
-			appointmentHour,
-			diagnostic,
-			employedName,
-			therapeuticNote,
-			signature,
-			idDetailAppointment,
-			nombreCompleto,
-		) {
-			if (!verificarCheckboxSeleccionado(id)) return;
-
-			historialSeleccionado = Number(id);
-			historialData = {
-				patientName,
-				numberAppointment,
-				currentDay,
-				appointmentHour,
-				diagnostic,
-				employedName,
-				therapeuticNote,
-				signature,
-				idDetailAppointment,
-				nombreCompleto,
-			};
-
-			document.getElementById("nombreHistorialAcciones").textContent =
-				nombreCompleto;
-			document.getElementById("modalAcciones").classList.remove("hidden");
-		};
-
-		// Abrir modal agregar
-		window.abrirModalAgregar = function () {
-			const form = document.getElementById("formAgregarHistorial");
-			if (form) form.reset();
-			cargarPacientes();
-			cargarEmpleados();
-			document
-				.getElementById("modalAgregarHistorial")
-				.classList.remove("hidden");
-		};
-
-		// Cerrar modales
-		window.cerrarModal = function (modalId) {
-			const modal = document.getElementById(modalId);
-			if (modal) modal.classList.add("hidden");
-		};
-
-		// Mostrar mensajes
-		function mostrarExito(mensaje) {
-			document.getElementById("mensajeExito").textContent = mensaje;
-			document.getElementById("modalExito").classList.remove("hidden");
-		}
-
-		function mostrarError(mensaje) {
-			document.getElementById("mensajeError").textContent = mensaje;
-			document.getElementById("modalError").classList.remove("hidden");
+			prevBtn.disabled = currentPage === 1;
+			nextBtn.disabled = currentPage === totalPages || totalPages === 0;
 		}
 
 		// Event Listeners
-		document.addEventListener("DOMContentLoaded", function () {
-			// Botones de acción
-			document
-				.getElementById("btnEditarAccion")
-				?.addEventListener("click", function () {
-					cerrarModal("modalAcciones");
-					abrirModalEditar();
-				});
-
-			document
-				.getElementById("btnEliminarAccion")
-				?.addEventListener("click", function () {
-					cerrarModal("modalAcciones");
-					abrirModalConfirmarEliminar();
-				});
-
-			document
-				.getElementById("btnConfirmarEliminar")
-				?.addEventListener("click", function () {
-					eliminarHistorial(historialSeleccionado);
-				});
+		searchInput.addEventListener("input", (e) => {
+			const term = e.target.value.toLowerCase();
+			filteredData = allData.filter((item) => {
+				return (
+					(item.paciente &&
+						item.paciente.toLowerCase().includes(term)) ||
+					(item.fisioterapeuta &&
+						item.fisioterapeuta.toLowerCase().includes(term)) ||
+					(item.servicios &&
+						item.servicios.toLowerCase().includes(term))
+				);
+			});
+			currentPage = 1; // Resetear a primera página
+			renderTable();
 		});
 
-		// Abrir modal de edición
-		function abrirModalEditar() {
-			if (!historialSeleccionado) return;
+		rowsPerPageSelect.addEventListener("change", (e) => {
+			rowsPerPage = parseInt(e.target.value);
+			currentPage = 1;
+			renderTable();
+		});
 
-			document.getElementById("editarId").value = historialSeleccionado;
-			document.getElementById("editarPatientName").value =
-				historialData.patientName || "";
-			document.getElementById("editarEmployedName").value =
-				historialData.employedName || "";
-			document.getElementById("editarNumberAppointment").value =
-				historialData.numberAppointment || "";
-			document.getElementById("editarCurrentDay").value =
-				historialData.currentDay
-					? new Date(historialData.currentDay)
-							.toISOString()
-							.split("T")[0]
-					: "";
-			document.getElementById("editarAppointmentHour").value =
-				historialData.appointmentHour || "";
-			document.getElementById("editarIdDetailAppointment").value =
-				historialData.idDetailAppointment || "";
-			document.getElementById("editarDiagnostic").value =
-				historialData.diagnostic || "";
-			document.getElementById("editarTherapeuticNote").value =
-				historialData.therapeuticNote || "";
-			document.getElementById("editarSignature").value =
-				historialData.signature || "";
-
-			document
-				.getElementById("modalEditarHistorial")
-				.classList.remove("hidden");
-		}
-
-		// Abrir modal de confirmación de eliminación
-		function abrirModalConfirmarEliminar() {
-			document.getElementById("nombreHistorialEliminar").textContent =
-				historialData.nombreCompleto;
-			document
-				.getElementById("modalConfirmarEliminar")
-				.classList.remove("hidden");
-		}
-
-		// Función para eliminar historial
-		async function eliminarHistorial(id) {
-			try {
-				const response = await fetch(
-					`/api/v1/HistorialClinico/${id}`,
-					{ method: "DELETE" },
-				);
-				if (response.ok) {
-					cerrarModal("modalConfirmarEliminar");
-					mostrarExito("Historial eliminado correctamente");
-					setTimeout(() => location.reload(), 1500);
-				} else {
-					const errorData = await response.json();
-					mostrarError(
-						"Error al eliminar: " +
-							(errorData.message ||
-								errorData.error ||
-								"Desconocido"),
-					);
-				}
-			} catch (error) {
-				mostrarError("Error de conexión: " + error.message);
+		prevBtn.addEventListener("click", () => {
+			if (currentPage > 1) {
+				currentPage--;
+				renderTable();
 			}
-		}
+		});
 
-		// Manejar envío Agregar
-		document
-			.getElementById("formAgregarHistorial")
-			?.addEventListener("submit", async function (e) {
-				e.preventDefault();
+		nextBtn.addEventListener("click", () => {
+			const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+			if (currentPage < totalPages) {
+				currentPage++;
+				renderTable();
+			}
+		});
 
-				const historialData = {
-					patientName:
-						document.getElementById("agregarPatientName").value,
-					employedName: document.getElementById("agregarEmployedName")
-						.value,
-					numberAppointment: parseInt(
-						document.getElementById("agregarNumberAppointment")
-							.value,
-					),
-					currentDay:
-						document.getElementById("agregarCurrentDay").value,
-					appointmentHour: document.getElementById(
-						"agregarAppointmentHour",
-					).value,
-					idDetailAppointment: parseInt(
-						document.getElementById("agregarIdDetailAppointment")
-							.value,
-					),
-					diagnostic:
-						document.getElementById("agregarDiagnostic").value,
-					therapeuticNote: document.getElementById(
-						"agregarTherapeuticNote",
-					).value,
-					signature:
-						document.getElementById("agregarSignature").value,
-				};
-
-				try {
-					const response = await fetch(
-						"/api/v1/HistorialClinico",
-						{
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify(historialData),
-						},
-					);
-
-					if (response.ok) {
-						cerrarModal("modalAgregarHistorial");
-						mostrarExito("Historial agregado correctamente");
-						setTimeout(() => location.reload(), 1500);
-					} else {
-						const errorData = await response.json();
-						mostrarError(
-							"Error al agregar: " +
-								(errorData.message ||
-									errorData.error ||
-									"Desconocido"),
-						);
-					}
-				} catch (error) {
-					mostrarError("Error de conexión: " + error.message);
-				}
-			});
-
-		// Manejar envío Editar
-		document
-			.getElementById("formEditarHistorial")
-			?.addEventListener("submit", async function (e) {
-				e.preventDefault();
-
-				const historialData = {
-					patientName:
-						document.getElementById("editarPatientName").value,
-					employedName:
-						document.getElementById("editarEmployedName").value,
-					numberAppointment: parseInt(
-						document.getElementById("editarNumberAppointment")
-							.value,
-					),
-					currentDay:
-						document.getElementById("editarCurrentDay").value,
-					appointmentHour: document.getElementById(
-						"editarAppointmentHour",
-					).value,
-					idDetailAppointment: parseInt(
-						document.getElementById("editarIdDetailAppointment")
-							.value,
-					),
-					diagnostic:
-						document.getElementById("editarDiagnostic").value,
-					therapeuticNote: document.getElementById(
-						"editarTherapeuticNote",
-					).value,
-					signature: document.getElementById("editarSignature").value,
-				};
-
-				try {
-					const response = await fetch(
-						`/api/v1/HistorialClinico/${historialSeleccionado}`,
-						{
-							method: "PATCH",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify(historialData),
-						},
-					);
-
-					if (response.ok) {
-						cerrarModal("modalEditarHistorial");
-						mostrarExito("Historial actualizado correctamente");
-						setTimeout(() => location.reload(), 1500);
-					} else {
-						const errorData = await response.json();
-						mostrarError(
-							"Error al actualizar: " +
-								(errorData.message ||
-									errorData.error ||
-									"Desconocido"),
-						);
-					}
-				} catch (error) {
-					mostrarError("Error de conexión: " + error.message);
-				}
-			});
+		// Inicializar
+		renderTable();
 	</script>
 </Layout>

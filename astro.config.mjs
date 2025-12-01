@@ -13,7 +13,7 @@ export default defineConfig({
       allowedHosts: ['printless-patentably-india.ngrok-free.dev'],
       proxy: {
         '/api': {
-          target: 'http://localhost:3001',
+          target: 'http://localhost:3000',
           changeOrigin: true,
           secure: false,
         }

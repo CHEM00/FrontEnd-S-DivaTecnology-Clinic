@@ -1,4 +1,5 @@
 ---
+export const prerender = false;
 import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
@@ -6,7 +7,7 @@ import FormModal from "../components/modals/FormModal.astro";
 
 let table = [];
 try {
-    const response = await fetch("http://localhost:3001/api/v1/Roles");
+    const response = await fetch("http://localhost:3000/api/v1/Roles");
     if (response.ok) {
         table = await response.json();
     } else {

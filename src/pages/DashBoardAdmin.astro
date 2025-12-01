@@ -1,12 +1,13 @@
 ---
+export const prerender = false;
 import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
 const today = new Date().toISOString().split("T")[0];
-const res = await fetch(`http://localhost:3001/api/v1/Benefit?date=${today}`);
+const res = await fetch(`http://localhost:3000/api/v1/Benefit?date=${today}`);
 const appointmentStatus = await fetch(
-	`http://localhost:3001/api/v1/AppointmentStatus?date=${today}`,
+	`http://localhost:3000/api/v1/AppointmentStatus?date=${today}`,
 ).then((res) => res.json());
 const benefit = await res.json();
 ---
@@ -27,7 +28,10 @@ const benefit = await res.json();
 			>
 			</div>
 
-			<TopTag titulo="Dashboard General" nombreUsuario="Administrador" />
+			<TopTag
+				titulo="Dashboard Administrador"
+				nombreUsuario="Administrador"
+			/>
 
 			<main
 				class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-[#2F5D50]/20 scrollbar-track-transparent relative z-10"

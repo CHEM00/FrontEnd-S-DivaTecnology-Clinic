@@ -1,4 +1,5 @@
 ---
+export const prerender = false;
 import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
@@ -6,7 +7,7 @@ import FormModal from "../components/modals/FormModal.astro";
 
 let table = [];
 try {
-	const response = await fetch("http://localhost:3001/api/v1/Trabajadores");
+	const response = await fetch("http://localhost:3000/api/v1/Trabajadores");
 	if (response.ok) {
 		table = await response.json();
 	} else {
@@ -17,32 +18,15 @@ try {
 	console.error("Error fetching data:", error);
 	table = [];
 }
-
-// Función para formatear fecha
-const formatDate = (dateString) => {
-	if (!dateString) return "";
-	const date = new Date(dateString);
-	return date.toISOString().split("T")[0];
-};
-
-// Función para escapar caracteres problemáticos en JavaScript
-const escapeJS = (str) => {
-	if (!str) return "";
-	return String(str)
-		.replace(/'/g, "\\'")
-		.replace(/"/g, '\\"')
-		.replace(/\n/g, "\\n")
-		.replace(/\r/g, "\\r");
-};
 ---
 
 <Layout title="Empleados">
 	<div
-		class="flex h-[100dvh] overflow-hidden bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8]"
+		class="flex h-screen overflow-hidden bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8]"
 	>
 		<NavBar />
 		<div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-			<!-- Background Elements for depth -->
+			<!-- Background Elements -->
 			<div
 				class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#2F5D50]/10 rounded-full blur-3xl pointer-events-none"
 			>
@@ -52,203 +36,157 @@ const escapeJS = (str) => {
 			>
 			</div>
 
-			<TopTag
-				titulo="Gestión de Empleados"
-				nombreUsuario="Administrador"
-			/>
+			<TopTag titulo="Gestión de Empleados" nombreUsuario="Administrador">
+				<button
+					class="glass-button px-4 py-2 rounded-xl flex items-center gap-2 text-white bg-[#2F5D50] hover:bg-[#234D20] transition-all shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-1"
+					onclick="abrirModal('modalFormulario', 'crear')"
+				>
+					<div
+						class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center"
+					>
+						<i class="fa-solid fa-user-plus text-xs"></i>
+					</div>
+					<span class="font-semibold text-sm hidden sm:inline"
+						>Nuevo Empleado</span
+					>
+				</button>
+			</TopTag>
 
 			<main
 				class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-[#2F5D50]/20 scrollbar-track-transparent relative z-10"
 			>
-				<!-- Header con título y botón agregar -->
-				<div
-					class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 animate-fade-in-up stagger-1"
-				>
-					<div>
-						<h1
-							class="text-3xl font-bold text-[#2F5D50] tracking-tight"
-						>
-							Lista de Empleados
-						</h1>
-						<p class="text-gray-500 mt-1">
-							Administra el personal de la clínica
-						</p>
-					</div>
-					<button
-						class="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-[#2F5D50] hover:bg-[#234D20] transition-all shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-1"
-						onclick="abrirModalAgregar()"
-					>
-						<div
-							class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center"
-						>
-							<i class="fa-solid fa-user-plus text-sm"></i>
-						</div>
-						<span class="font-semibold">Agregar Empleado</span>
-					</button>
-				</div>
-
 				<!-- Tabla Container -->
 				<div
-					class="glass-panel rounded-3xl overflow-hidden animate-fade-in-up stagger-2 border border-white/40 shadow-xl"
+					class="glass-panel rounded-3xl overflow-hidden animate-fade-in-up stagger-2 border border-white/40 shadow-xl flex flex-col h-full max-h-[calc(100vh-140px)]"
 				>
-					<div class="overflow-x-auto custom-scrollbar">
-						<table class="w-full text-left border-collapse">
-							<thead>
-								<tr
-									class="bg-[#2F5D50]/5 text-[#2F5D50] border-b border-[#2F5D50]/10"
+					<!-- Header de la tabla con Filtros -->
+					<div
+						class="p-6 border-b border-[#2F5D50]/10 bg-white/40 flex flex-col sm:flex-row justify-between items-center gap-4"
+					>
+						<h2
+							class="text-xl font-bold text-[#2F5D50] flex items-center gap-2"
+						>
+							<i class="fa-solid fa-users"></i>
+							Personal
+						</h2>
+
+						<div
+							class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
+						>
+							<!-- Buscador -->
+							<div class="relative group w-full sm:w-64">
+								<input
+									type="text"
+									id="searchInput"
+									placeholder="Buscar por nombre, correo..."
+									class="glass-input w-full rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+								/>
+								<i
+									class="fa-solid fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2F5D50] transition-colors"
+								></i>
+							</div>
+
+							<!-- Selector de Registros por página -->
+							<div
+								class="flex items-center gap-2 bg-white/50 px-3 py-2 rounded-xl border border-white/60"
+							>
+								<span
+									class="text-xs font-bold text-gray-500 whitespace-nowrap"
+									>Mostrar:</span
 								>
-									<th
-										class="p-5 font-bold text-center w-16 rounded-tl-2xl"
-										>Sel</th
+								<select
+									id="rowsPerPage"
+									class="bg-transparent text-sm font-bold text-[#2F5D50] outline-none cursor-pointer"
+								>
+									<option value="5">5</option>
+									<option value="10" selected>10</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<div class="overflow-auto custom-scrollbar flex-1 relative">
+						<table class="w-full text-left border-collapse">
+							<thead
+								class="sticky top-0 z-10 bg-white/95 backdrop-blur-md shadow-sm"
+							>
+								<tr
+									class="text-[#2F5D50] border-b border-[#2F5D50]/10"
+								>
+									<th class="p-4 font-bold whitespace-nowrap"
+										>Nombre</th
 									>
-									<th class="p-5 font-bold">Nombre</th>
 									<th
-										class="p-5 font-bold hidden md:table-cell"
+										class="p-4 font-bold whitespace-nowrap hidden md:table-cell"
 										>Apellidos</th
 									>
 									<th
-										class="p-5 font-bold hidden lg:table-cell"
+										class="p-4 font-bold whitespace-nowrap hidden lg:table-cell"
 										>Contacto</th
 									>
 									<th
-										class="p-5 font-bold hidden xl:table-cell"
+										class="p-4 font-bold whitespace-nowrap hidden xl:table-cell"
 										>Fecha Nac.</th
 									>
 									<th
-										class="p-5 font-bold text-center rounded-tr-2xl"
+										class="p-4 font-bold whitespace-nowrap text-center w-20"
 										>Acciones</th
 									>
 								</tr>
 							</thead>
-							<tbody class="divide-y divide-[#2F5D50]/5">
-								{
-									table.map((empleado) => {
-										const firstnameEscaped = escapeJS(
-											empleado.firstname,
-										);
-										const lastnameEscaped = escapeJS(
-											empleado.lastname,
-										);
-										const motherlastnameEscaped = escapeJS(
-											empleado.motherlastname,
-										);
-										const phoneEscaped = escapeJS(
-											empleado.phone,
-										);
-										const emailEscaped = escapeJS(
-											empleado.email,
-										);
-										const birthdateEscaped = escapeJS(
-											formatDate(empleado.birthday),
-										);
-										const photoEscaped = escapeJS(
-											empleado.photo,
-										);
-										const nombreCompletoEscaped = escapeJS(
-											`${empleado.firstname} ${empleado.lastname}`,
-										);
-
-										return (
-											<tr class="hover:bg-white/60 transition-colors group">
-												<td class="p-5 text-center">
-													<div class="flex items-center justify-center">
-														<input
-															type="checkbox"
-															class="empleado-checkbox w-5 h-5 rounded-md border-gray-300 text-[#2F5D50] focus:ring-[#2F5D50] cursor-pointer"
-															value={empleado.id}
-														/>
-													</div>
-												</td>
-												<td class="p-5">
-													<div class="flex items-center gap-4">
-														{empleado.photo ? (
-															<img
-																src={
-																	empleado.photo
-																}
-																alt="Foto"
-																class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md group-hover:scale-110 transition-transform duration-300"
-															/>
-														) : (
-															<div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#2F5D50] to-[#1a3c33] flex items-center justify-center text-white text-xl shadow-md group-hover:scale-110 transition-transform duration-300">
-																<i class="fa-solid fa-user" />
-															</div>
-														)}
-														<div>
-															<div class="font-bold text-gray-800 text-lg">
-																{
-																	empleado.firstname
-																}
-															</div>
-															<div class="text-sm text-gray-500 md:hidden flex items-center gap-1 mt-1">
-																{
-																	empleado.lastname
-																}
-															</div>
-														</div>
-													</div>
-												</td>
-												<td class="p-5 hidden md:table-cell text-gray-700 font-medium">
-													{empleado.lastname}{" "}
-													{empleado.motherlastname}
-												</td>
-												<td class="p-5 hidden lg:table-cell">
-													<div class="flex flex-col gap-1">
-														<span class="text-sm text-gray-700 font-medium flex items-center gap-2">
-															<i class="fa-solid fa-phone text-[#2F5D50]/60" />
-															{empleado.phone}
-														</span>
-														<span class="text-xs text-gray-500 flex items-center gap-2">
-															<i class="fa-solid fa-envelope text-[#2F5D50]/60" />
-															{empleado.email}
-														</span>
-													</div>
-												</td>
-												<td class="p-5 hidden xl:table-cell">
-													<div class="text-gray-600 font-medium bg-white/50 px-3 py-1 rounded-lg border border-white/40 inline-flex items-center gap-2">
-														<i class="fa-solid fa-cake-candles text-[#2F5D50]/60" />
-														{formatDate(
-															empleado.birthday,
-														)}
-													</div>
-												</td>
-												<td class="p-5 text-center">
-													<button
-														class="w-8 h-8 rounded-full bg-white/50 hover:bg-[#2F5D50] hover:text-white text-[#2F5D50] transition-all shadow-sm flex items-center justify-center mx-auto"
-														onclick={`abrirModalAcciones(${empleado.id}, '${firstnameEscaped}', '${lastnameEscaped}', '${motherlastnameEscaped}', '${phoneEscaped}', '${emailEscaped}', '${birthdateEscaped}', '${photoEscaped}', '${nombreCompletoEscaped}')`}
-														title="Acciones"
-													>
-														<i class="fa-solid fa-ellipsis-vertical" />
-													</button>
-												</td>
-											</tr>
-										);
-									})
-								}
+							<tbody
+								id="tableBody"
+								class="divide-y divide-[#2F5D50]/5"
+							>
+								<!-- Contenido inyectado por JS -->
 							</tbody>
 						</table>
+
+						<!-- Estado Vacío -->
+						<div
+							id="emptyState"
+							class="hidden absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-white/50 backdrop-blur-sm"
+						>
+							<i
+								class="fa-regular fa-folder-open text-4xl mb-2 opacity-50"
+							></i>
+							<p>No se encontraron empleados</p>
+						</div>
 					</div>
 
-					<!-- Pagination -->
+					<!-- Paginación -->
 					<div
-						class="p-4 border-t border-[#2F5D50]/10 flex justify-between items-center bg-white/30 backdrop-blur-sm"
+						class="p-4 border-t border-[#2F5D50]/10 bg-white/40 flex justify-between items-center"
 					>
-						<div class="text-sm text-gray-600 font-medium">
-							Mostrando <span class="font-bold text-[#2F5D50]"
-								>{table.length}</span
-							> empleados
-						</div>
+						<span
+							class="text-xs sm:text-sm text-gray-600 font-medium"
+						>
+							Mostrando <span
+								id="showingStart"
+								class="font-bold text-[#2F5D50]">0</span
+							> - <span
+								id="showingEnd"
+								class="font-bold text-[#2F5D50]">0</span
+							> de <span
+								id="totalRecords"
+								class="font-bold text-[#2F5D50]">0</span
+							>
+						</span>
+
 						<div class="flex gap-2">
 							<button
-								class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/50 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-white/50 disabled:hover:text-[#2F5D50] shadow-sm"
-								disabled
+								id="prevBtn"
+								class="w-9 h-9 rounded-lg flex items-center justify-center bg-white/60 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm border border-white/50"
 							>
-								<i class="fa-solid fa-chevron-left"></i>
+								<i class="fa-solid fa-chevron-left text-xs"></i>
 							</button>
+							<div id="pageNumbers" class="flex gap-1"></div>
 							<button
-								class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/50 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all shadow-sm"
+								id="nextBtn"
+								class="w-9 h-9 rounded-lg flex items-center justify-center bg-white/60 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm border border-white/50"
 							>
-								<i class="fa-solid fa-chevron-right"></i>
+								<i class="fa-solid fa-chevron-right text-xs"
+								></i>
 							</button>
 						</div>
 					</div>
@@ -257,82 +195,11 @@ const escapeJS = (str) => {
 		</div>
 	</div>
 
-	<!-- Modal de Acciones -->
-	<div
-		id="modalAcciones"
-		class="fixed inset-0 z-50 hidden"
-		aria-labelledby="modal-title"
-		role="dialog"
-		aria-modal="true"
-	>
-		<div
-			class="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
-			onclick="cerrarModal('modalAcciones')"
-		>
-		</div>
-		<div
-			class="flex min-h-full items-center justify-center p-4 text-center sm:p-0"
-		>
-			<div
-				class="relative transform overflow-hidden rounded-2xl glass-panel text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg p-6"
-			>
-				<div class="absolute right-4 top-4">
-					<button
-						type="button"
-						class="text-gray-400 hover:text-gray-500"
-						onclick="cerrarModal('modalAcciones')"
-					>
-						<i class="fa-solid fa-xmark text-xl"></i>
-					</button>
-				</div>
-
-				<div class="text-center mb-6">
-					<h3
-						class="text-xl font-bold text-[#2F5D50]"
-						id="modal-title"
-					>
-						Acciones de Empleado
-					</h3>
-					<p class="text-sm text-gray-500 mt-2">
-						Gestionar a <span
-							id="nombreEmpleadoAcciones"
-							class="font-bold text-[#2F5D50]"></span>
-					</p>
-				</div>
-
-				<div class="grid grid-cols-2 gap-4">
-					<button
-						id="btnEditarAccion"
-						class="flex flex-col items-center justify-center p-4 rounded-xl border border-[#2F5D50]/20 hover:bg-[#2F5D50]/5 transition-all group"
-					>
-						<div
-							class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"
-						>
-							<i class="fa-solid fa-pen-to-square text-xl"></i>
-						</div>
-						<span class="font-medium text-gray-700">Editar</span>
-					</button>
-					<button
-						id="btnEliminarAccion"
-						class="flex flex-col items-center justify-center p-4 rounded-xl border border-red-200 hover:bg-red-50 transition-all group"
-					>
-						<div
-							class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"
-						>
-							<i class="fa-solid fa-trash text-xl"></i>
-						</div>
-						<span class="font-medium text-gray-700">Eliminar</span>
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
 	<!-- Modal Confirmar Eliminar -->
-	<div id="modalConfirmarEliminar" class="fixed inset-0 z-50 hidden">
+	<div id="modalEliminar" class="fixed inset-0 z-50 hidden">
 		<div
 			class="fixed inset-0 bg-black/40 backdrop-blur-sm"
-			onclick="cerrarModal('modalConfirmarEliminar')"
+			onclick="cerrarModal('modalEliminar')"
 		>
 		</div>
 		<div class="flex min-h-full items-center justify-center p-4">
@@ -361,8 +228,7 @@ const escapeJS = (str) => {
 					<button
 						type="button"
 						class="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
-						onclick="cerrarModal('modalConfirmarEliminar')"
-						>Cancelar</button
+						onclick="cerrarModal('modalEliminar')">Cancelar</button
 					>
 					<button
 						type="button"
@@ -375,15 +241,17 @@ const escapeJS = (str) => {
 		</div>
 	</div>
 
-	<!-- Modal Agregar/Editar Empleado (Reutilizando FormModal pero con estilo glass) -->
+	<!-- Modal Formulario (Crear/Editar) -->
 	<FormModal
-		id="modalAgregarEmpleado"
+		id="modalFormulario"
 		title="Nuevo Empleado"
-		formId="formAgregarEmpleado"
-		submitText="Guardar Empleado"
+		formId="empleadoForm"
+		submitText="Guardar"
 		cancelText="Cancelar"
 		size="lg"
 	>
+		<input type="hidden" id="empleadoId" name="Id" />
+
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 			<div class="space-y-4">
 				<h4
@@ -397,7 +265,8 @@ const escapeJS = (str) => {
 					>
 					<input
 						type="text"
-						id="agregarNombre"
+						name="FirstName"
+						id="FirstName"
 						class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
 						required
 						placeholder="Ej: Juan"
@@ -411,7 +280,8 @@ const escapeJS = (str) => {
 						>
 						<input
 							type="text"
-							id="agregarApellidoPaterno"
+							name="LastName"
+							id="LastName"
 							class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
 							required
 							placeholder="Ej: Pérez"
@@ -424,7 +294,8 @@ const escapeJS = (str) => {
 						>
 						<input
 							type="text"
-							id="agregarApellidoMaterno"
+							name="MotherLastName"
+							id="MotherLastName"
 							class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
 							required
 							placeholder="Ej: López"
@@ -437,7 +308,8 @@ const escapeJS = (str) => {
 					>
 					<input
 						type="date"
-						id="agregarBirthday"
+						name="BirthDate"
+						id="BirthDate"
 						class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
 					/>
 				</div>
@@ -455,7 +327,8 @@ const escapeJS = (str) => {
 					>
 					<input
 						type="tel"
-						id="agregarPhone"
+						name="Phone"
+						id="Phone"
 						class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
 						required
 						placeholder="10 dígitos"
@@ -469,132 +342,11 @@ const escapeJS = (str) => {
 					>
 					<input
 						type="email"
-						id="agregarEmail"
+						name="Email"
+						id="Email"
 						class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
 						required
 						placeholder="correo@ejemplo.com"
-					/>
-				</div>
-				<div>
-					<label class="block text-sm font-bold text-gray-700 mb-1"
-						>Contraseña *</label
-					>
-					<input
-						type="password"
-						id="agregarPassword"
-						class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-						required
-						placeholder="••••••••"
-					/>
-				</div>
-				<div>
-					<label class="block text-sm font-bold text-gray-700 mb-1"
-						>Foto (URL)</label
-					>
-					<input
-						type="url"
-						id="agregarPhoto"
-						class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-						placeholder="https://..."
-					/>
-				</div>
-			</div>
-		</div>
-	</FormModal>
-
-	<FormModal
-		id="modalEditarEmpleado"
-		title="Editar Empleado"
-		formId="formEditarEmpleado"
-		submitText="Actualizar"
-		cancelText="Cancelar"
-		size="lg"
-	>
-		<input type="hidden" id="editarId" />
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-			<div class="space-y-4">
-				<h4
-					class="font-semibold text-[#2F5D50] border-b border-[#2F5D50]/20 pb-2"
-				>
-					Información Personal
-				</h4>
-				<div>
-					<label class="block text-sm font-bold text-gray-700 mb-1"
-						>Nombre *</label
-					>
-					<input
-						type="text"
-						id="editarNombre"
-						class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-						required
-					/>
-				</div>
-				<div class="grid grid-cols-2 gap-4">
-					<div>
-						<label
-							class="block text-sm font-bold text-gray-700 mb-1"
-							>Apellido Paterno *</label
-						>
-						<input
-							type="text"
-							id="editarApellidoPaterno"
-							class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-							required
-						/>
-					</div>
-					<div>
-						<label
-							class="block text-sm font-bold text-gray-700 mb-1"
-							>Apellido Materno *</label
-						>
-						<input
-							type="text"
-							id="editarApellidoMaterno"
-							class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-							required
-						/>
-					</div>
-				</div>
-				<div>
-					<label class="block text-sm font-bold text-gray-700 mb-1"
-						>Fecha de Nacimiento</label
-					>
-					<input
-						type="date"
-						id="editarBirthday"
-						class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-					/>
-				</div>
-			</div>
-
-			<div class="space-y-4">
-				<h4
-					class="font-semibold text-[#2F5D50] border-b border-[#2F5D50]/20 pb-2"
-				>
-					Contacto y Cuenta
-				</h4>
-				<div>
-					<label class="block text-sm font-bold text-gray-700 mb-1"
-						>Teléfono *</label
-					>
-					<input
-						type="tel"
-						id="editarPhone"
-						class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-						required
-						maxlength="10"
-						pattern="[0-9]{10}"
-					/>
-				</div>
-				<div>
-					<label class="block text-sm font-bold text-gray-700 mb-1"
-						>Correo Electrónico *</label
-					>
-					<input
-						type="email"
-						id="editarEmail"
-						class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-						required
 					/>
 				</div>
 				<div>
@@ -603,10 +355,17 @@ const escapeJS = (str) => {
 					>
 					<input
 						type="password"
-						id="editarPassword"
+						name="Password"
+						id="Password"
 						class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-						placeholder="Dejar en blanco para mantener"
+						placeholder="••••••••"
 					/>
+					<p
+						class="text-xs text-gray-500 mt-1 hidden"
+						id="passwordHint"
+					>
+						Dejar en blanco para mantener la actual
+					</p>
 				</div>
 				<div>
 					<label class="block text-sm font-bold text-gray-700 mb-1"
@@ -614,15 +373,17 @@ const escapeJS = (str) => {
 					>
 					<input
 						type="url"
-						id="editarPhoto"
+						name="Photo"
+						id="Photo"
 						class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+						placeholder="https://..."
 					/>
 				</div>
 			</div>
 		</div>
 	</FormModal>
 
-	<!-- Modal Exito/Error (Simplificado) -->
+	<!-- Modal Exito -->
 	<div id="modalExito" class="fixed inset-0 z-[60] hidden">
 		<div
 			class="fixed inset-0 bg-black/40 backdrop-blur-sm"
@@ -649,6 +410,7 @@ const escapeJS = (str) => {
 		</div>
 	</div>
 
+	<!-- Modal Error -->
 	<div id="modalError" class="fixed inset-0 z-[60] hidden">
 		<div
 			class="fixed inset-0 bg-black/40 backdrop-blur-sm"
@@ -675,289 +437,392 @@ const escapeJS = (str) => {
 		</div>
 	</div>
 
-	<script>
-		// Variables globales
-		let empleadoSeleccionado = null;
-		let empleadoData = {};
+	<script define:vars={{ table }}>
+		// Datos y Estado
+		let allData = table || [];
+		let filteredData = [...allData];
+		let currentPage = 1;
+		let rowsPerPage = 10;
+		let selectedEmpleadoId = null;
 
-		// Función para verificar checkbox seleccionado
-		function verificarCheckboxSeleccionado(empleadoId) {
-			const idNum = Number(empleadoId);
-			if (isNaN(idNum)) return false;
+		// Elementos DOM
+		const tableBody = document.getElementById("tableBody");
+		const emptyState = document.getElementById("emptyState");
+		const searchInput = document.getElementById("searchInput");
+		const rowsPerPageSelect = document.getElementById("rowsPerPage");
+		const prevBtn = document.getElementById("prevBtn");
+		const nextBtn = document.getElementById("nextBtn");
+		const showingStart = document.getElementById("showingStart");
+		const showingEnd = document.getElementById("showingEnd");
+		const totalRecords = document.getElementById("totalRecords");
 
-			const checkbox = document.querySelector(
-				`.empleado-checkbox[value="${empleadoId}"]`,
+		// Helpers
+		const formatDate = (dateString) => {
+			if (!dateString) return "";
+			return new Date(dateString).toLocaleDateString("es-MX", {
+				year: "numeric",
+				month: "2-digit",
+				day: "2-digit",
+			});
+		};
+
+		// Renderizado de Tabla
+		function renderTable() {
+			const startIndex = (currentPage - 1) * rowsPerPage;
+			const endIndex = Math.min(
+				startIndex + rowsPerPage,
+				filteredData.length,
 			);
-			if (!checkbox || !checkbox.checked) {
-				mostrarError(
-					"Por favor, seleccione el empleado marcando la casilla.",
-				);
-				return false;
+			const pageData = filteredData.slice(startIndex, endIndex);
+
+			tableBody.innerHTML = "";
+
+			if (pageData.length === 0) {
+				emptyState.classList.remove("hidden");
+				showingStart.textContent = 0;
+				showingEnd.textContent = 0;
+				totalRecords.textContent = 0;
+				updatePaginationControls();
+				return;
 			}
-			return true;
+
+			emptyState.classList.add("hidden");
+
+			pageData.forEach((empleado) => {
+				const row = document.createElement("tr");
+				row.className =
+					"hover:bg-white/60 transition-colors group border-b border-transparent hover:border-[#2F5D50]/5";
+
+				const photoHtml = empleado.Photo
+					? `<img src="${empleado.Photo}" alt="Foto" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />`
+					: `<div class="w-10 h-10 rounded-full bg-[#2F5D50]/10 flex items-center justify-center text-[#2F5D50] shadow-sm"><i class="fa-solid fa-user"></i></div>`;
+
+				row.innerHTML = `
+                    <td class="p-4">
+                        <div class="flex items-center gap-3">
+                            ${photoHtml}
+                            <div>
+                                <div class="font-bold text-gray-800 text-sm">${empleado.FirstName}</div>
+                                <div class="text-xs text-gray-500 md:hidden">${empleado.LastName}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-4 hidden md:table-cell text-sm text-gray-700 font-medium">
+                        ${empleado.LastName} ${empleado.MotherLastName}
+                    </td>
+                    <td class="p-4 hidden lg:table-cell">
+                        <div class="flex flex-col gap-0.5">
+                            <span class="text-xs text-gray-700 font-medium flex items-center gap-1.5">
+                                <i class="fa-solid fa-phone text-[#2F5D50]/60 text-[10px]"></i>
+                                ${empleado.Phone}
+                            </span>
+                            <span class="text-[10px] text-gray-500 flex items-center gap-1.5">
+                                <i class="fa-solid fa-envelope text-[#2F5D50]/60 text-[10px]"></i>
+                                ${empleado.Email}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="p-4 hidden xl:table-cell">
+                        <div class="text-gray-600 text-xs font-medium bg-white/50 px-2 py-1 rounded-lg border border-white/40 inline-flex items-center gap-1.5">
+                            <i class="fa-solid fa-cake-candles text-[#2F5D50]/60"></i>
+                            ${formatDate(empleado.BirthDate)}
+                        </div>
+                    </td>
+                    <td class="p-4 text-center relative">
+                        <div class="dropdown relative inline-block text-left">
+                            <button 
+                                type="button" 
+                                class="w-8 h-8 rounded-lg hover:bg-[#2F5D50]/10 text-gray-500 hover:text-[#2F5D50] transition-colors flex items-center justify-center"
+                                onclick="event.stopPropagation(); toggleDropdown('dropdown-${empleado.Id}')"
+                            >
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <div 
+                                id="dropdown-${empleado.Id}" 
+                                class="dropdown-menu hidden absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl border border-gray-100 z-50 animate-fade-in-up origin-top-right"
+                                onclick="event.stopPropagation()"
+                            >
+                                <div class="py-1">
+                                    <button 
+                                        class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#2F5D50] flex items-center gap-2 transition-colors"
+                                        onclick="verDetallesEmpleado('${empleado.Id}'); toggleDropdown('dropdown-${empleado.Id}')"
+                                    >
+                                        <i class="fa-regular fa-pen-to-square"></i> Editar
+                                    </button>
+                                    <button 
+                                        class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                                        onclick="confirmarEliminacion('${empleado.Id}', '${empleado.FirstName} ${empleado.LastName}'); toggleDropdown('dropdown-${empleado.Id}')"
+                                    >
+                                        <i class="fa-regular fa-trash-can"></i> Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                `;
+				tableBody.appendChild(row);
+			});
+
+			showingStart.textContent = startIndex + 1;
+			showingEnd.textContent = endIndex;
+			totalRecords.textContent = filteredData.length;
+			updatePaginationControls();
 		}
 
-		// Abrir modal de acciones
-		window.abrirModalAcciones = function (
-			id,
-			firstname,
-			lastname,
-			motherlastname,
-			phone,
-			email,
-			birthdate,
-			photo,
-			nombreCompleto,
-		) {
-			if (!verificarCheckboxSeleccionado(id)) return;
+		function updatePaginationControls() {
+			const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+			prevBtn.disabled = currentPage === 1;
+			nextBtn.disabled = currentPage === totalPages || totalPages === 0;
 
-			empleadoSeleccionado = Number(id);
-			empleadoData = {
-				firstname,
-				lastname,
-				motherlastname,
-				phone,
-				email,
-				birthdate,
-				photo,
-				nombreCompleto,
-			};
-
-			document.getElementById("nombreEmpleadoAcciones").textContent =
-				nombreCompleto;
-			document.getElementById("modalAcciones").classList.remove("hidden");
-		};
-
-		// Abrir modal agregar
-		window.abrirModalAgregar = function () {
-			const form = document.getElementById("formAgregarEmpleado");
-			if (form) form.reset();
-			document
-				.getElementById("modalAgregarEmpleado")
-				.classList.remove("hidden");
-		};
-
-		// Cerrar modales
-		window.cerrarModal = function (modalId) {
-			const modal = document.getElementById(modalId);
-			if (modal) modal.classList.add("hidden");
-		};
-
-		// Mostrar mensajes
-		function mostrarExito(mensaje) {
-			document.getElementById("mensajeExito").textContent = mensaje;
-			document.getElementById("modalExito").classList.remove("hidden");
+			const pageNumbers = document.getElementById("pageNumbers");
+			pageNumbers.innerHTML = "";
+			if (totalPages > 1) {
+				const span = document.createElement("span");
+				span.className =
+					"text-xs font-medium text-gray-500 self-center px-2";
+				span.textContent = `Página ${currentPage} de ${totalPages}`;
+				pageNumbers.appendChild(span);
+			}
 		}
 
-		function mostrarError(mensaje) {
-			document.getElementById("mensajeError").textContent = mensaje;
-			document.getElementById("modalError").classList.remove("hidden");
-		}
+		// --- Modales y Acciones ---
 
-		// Event Listeners
-		document.addEventListener("DOMContentLoaded", function () {
-			// GSAP Animations
-			// GSAP Animations
-			// if (typeof gsap !== "undefined") {
-			// 	gsap.from(".glass-panel", {
-			// 		duration: 0.8,
-			// 		y: 30,
-			// 		opacity: 0,
-			// 		stagger: 0.1,
-			// 		ease: "power3.out",
-			// 	});
-			// 	gsap.from("tr", {
-			// 		duration: 0.5,
-			// 		opacity: 0,
-			// 		y: 10,
-			// 		stagger: 0.05,
-			// 		delay: 0.2,
-			// 		ease: "power2.out",
-			// 	});
-			// }
+		// Función unificada para abrir modal (estilo Paciente.astro)
+		window.abrirModal = function (id, modo) {
+			const modal = document.getElementById(id);
+			if (!modal) return;
 
-			// Botones de acción
-			document
-				.getElementById("btnEditarAccion")
-				?.addEventListener("click", function () {
-					cerrarModal("modalAcciones");
-					abrirModalEditar();
+			modal.classList.remove("hidden");
+
+			// Animación
+			const content = modal.querySelector(".modal-content-wrapper");
+			if (content) {
+				setTimeout(() => {
+					content.classList.remove("scale-95", "opacity-0");
+					content.classList.add("scale-100", "opacity-100");
+				}, 10);
+			}
+
+			if (id === "modalFormulario") {
+				const form = document.getElementById("empleadoForm");
+				const title = document.getElementById(
+					"modal-title-modalFormulario",
+				);
+				const passwordHint = document.getElementById("passwordHint");
+
+				if (modo === "crear") {
+					if (title) title.textContent = "Nuevo Empleado";
+					form.reset();
+					document.getElementById("empleadoId").value = "";
+					if (passwordHint) passwordHint.classList.add("hidden");
+					document.getElementById("Password").required = true;
+				} else if (modo === "editar") {
+					if (title) title.textContent = "Editar Empleado";
+					if (passwordHint) passwordHint.classList.remove("hidden");
+					document.getElementById("Password").required = false;
+				}
+			}
+		};
+
+		window.cerrarModal = function (id) {
+			const modal = document.getElementById(id);
+			if (!modal) return;
+
+			const content = modal.querySelector(".modal-content-wrapper");
+			if (content) {
+				content.classList.remove("scale-100", "opacity-100");
+				content.classList.add("scale-95", "opacity-0");
+				setTimeout(() => {
+					modal.classList.add("hidden");
+				}, 300);
+			} else {
+				modal.classList.add("hidden");
+			}
+		};
+
+		window.verDetallesEmpleado = function (id) {
+			const empleado = allData.find((e) => e.Id == id);
+			if (!empleado) {
+				console.error("Empleado no encontrado:", id);
+				return;
+			}
+
+			abrirModal("modalFormulario", "editar");
+
+			// Llenar formulario
+			document.getElementById("empleadoId").value = empleado.Id;
+			document.getElementById("FirstName").value =
+				empleado.FirstName || "";
+			document.getElementById("LastName").value = empleado.LastName || "";
+			document.getElementById("MotherLastName").value =
+				empleado.MotherLastName || "";
+			document.getElementById("Phone").value = empleado.Phone || "";
+			document.getElementById("Email").value = empleado.Email || "";
+			document.getElementById("BirthDate").value = empleado.BirthDate
+				? empleado.BirthDate.split("T")[0]
+				: "";
+			document.getElementById("Photo").value = empleado.Photo || "";
+			document.getElementById("Password").value = "";
+		};
+
+		window.confirmarEliminacion = function (id, nombre) {
+			selectedEmpleadoId = id;
+			document.getElementById("nombreEmpleadoEliminar").textContent =
+				nombre;
+			document.getElementById("modalEliminar").classList.remove("hidden");
+		};
+
+		// Dropdown logic
+		window.toggleDropdown = function (id) {
+			document.querySelectorAll(".dropdown-menu").forEach((menu) => {
+				if (menu.id !== id) menu.classList.add("hidden");
+			});
+			const dropdown = document.getElementById(id);
+			if (dropdown) dropdown.classList.toggle("hidden");
+		};
+
+		window.addEventListener("click", (e) => {
+			if (!e.target.closest(".dropdown")) {
+				document.querySelectorAll(".dropdown-menu").forEach((menu) => {
+					menu.classList.add("hidden");
 				});
-
-			document
-				.getElementById("btnEliminarAccion")
-				?.addEventListener("click", function () {
-					cerrarModal("modalAcciones");
-					abrirModalConfirmarEliminar();
-				});
-
-			document
-				.getElementById("btnConfirmarEliminar")
-				?.addEventListener("click", function () {
-					eliminarEmpleado(empleadoSeleccionado);
-				});
+			}
 		});
 
-		// Abrir modal editar
-		function abrirModalEditar() {
-			if (!empleadoSeleccionado) return;
+		// --- API Calls ---
 
-			document.getElementById("editarId").value = empleadoSeleccionado;
-			document.getElementById("editarNombre").value =
-				empleadoData.firstname || "";
-			document.getElementById("editarApellidoPaterno").value =
-				empleadoData.lastname || "";
-			document.getElementById("editarApellidoMaterno").value =
-				empleadoData.motherlastname || "";
-			document.getElementById("editarPhone").value =
-				empleadoData.phone || "";
-			document.getElementById("editarEmail").value =
-				empleadoData.email || "";
-			document.getElementById("editarBirthday").value =
-				empleadoData.birthdate || "";
-			document.getElementById("editarPhoto").value =
-				empleadoData.photo || "";
-			document.getElementById("editarPassword").value = "";
-
-			document
-				.getElementById("modalEditarEmpleado")
-				.classList.remove("hidden");
-		}
-
-		// Eliminar empleado
-		async function eliminarEmpleado(id) {
-			try {
-				const response = await fetch(`/api/v1/Trabajadores/${id}`, {
-					method: "DELETE",
-					headers: { "Content-Type": "application/json" },
-				});
-
-				if (response.ok) {
-					cerrarModal("modalConfirmarEliminar");
-					mostrarExito("Empleado eliminado correctamente");
-					setTimeout(() => location.reload(), 1500);
-				} else {
-					const errorData = await response.json();
-					mostrarError(
-						"Error al eliminar: " +
-							(errorData.message ||
-								errorData.error ||
-								"Desconocido"),
-					);
-				}
-			} catch (error) {
-				mostrarError("Error de conexión: " + error.message);
-			}
-		}
-
-		// Manejar envío Agregar
+		// Guardar (Crear/Editar)
 		document
-			.getElementById("formAgregarEmpleado")
-			?.addEventListener("submit", async function (e) {
+			.getElementById("empleadoForm")
+			.addEventListener("submit", async (e) => {
 				e.preventDefault();
+				const form = e.target;
+				const formData = new FormData(form);
+				const id = formData.get("Id");
+				const isEdit = !!id;
 
 				const data = {
-					firstname: document.getElementById("agregarNombre").value,
-					lastname: document.getElementById("agregarApellidoPaterno")
-						.value,
-					motherlastname: document.getElementById(
-						"agregarApellidoMaterno",
-					).value,
-					phone: document.getElementById("agregarPhone").value,
-					email: document.getElementById("agregarEmail").value,
-					password: document.getElementById("agregarPassword").value,
-					birthday: document.getElementById("agregarBirthday").value,
-					photo: document.getElementById("agregarPhoto").value,
-					idRol: 2, // Default role
+					FirstName: formData.get("FirstName"),
+					LastName: formData.get("LastName"),
+					MotherLastName: formData.get("MotherLastName"),
+					Phone: formData.get("Phone"),
+					Email: formData.get("Email"),
+					BirthDate: formData.get("BirthDate"),
+					Photo: formData.get("Photo"),
+					idrol: 2, // Default role
 				};
 
+				const password = formData.get("Password");
+				if (password) {
+					data.Password = password;
+				}
+
+				const url = isEdit
+					? `/api/v1/Trabajadores/${id}`
+					: "/api/v1/Trabajadores";
+				const method = isEdit ? "PATCH" : "POST";
+
 				try {
-					const response = await fetch("/api/v1/Trabajadores", {
-						method: "POST",
+					const res = await fetch(url, {
+						method: method,
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify(data),
 					});
 
-					if (response.ok) {
-						cerrarModal("modalAgregarEmpleado");
-						mostrarExito("Empleado agregado correctamente");
+					if (res.ok) {
+						cerrarModal("modalFormulario");
+						mostrarExito(
+							isEdit
+								? "Empleado actualizado correctamente"
+								: "Empleado creado correctamente",
+						);
 						setTimeout(() => location.reload(), 1500);
 					} else {
-						const errorData = await response.json();
+						const err = await res.json();
 						mostrarError(
-							"Error al agregar: " +
-								(errorData.message ||
-									errorData.error ||
-									"Desconocido"),
+							err.message || "Error al guardar empleado",
 						);
 					}
 				} catch (error) {
-					mostrarError("Error de conexión: " + error.message);
+					mostrarError("Error de conexión");
 				}
 			});
 
-		// Manejar envío Editar
+		// Eliminar
 		document
-			.getElementById("formEditarEmpleado")
-			?.addEventListener("submit", async function (e) {
-				e.preventDefault();
-
-				const data = {
-					firstname: document.getElementById("editarNombre").value,
-					lastname: document.getElementById("editarApellidoPaterno")
-						.value,
-					motherlastname: document.getElementById(
-						"editarApellidoMaterno",
-					).value,
-					phone: document.getElementById("editarPhone").value,
-					email: document.getElementById("editarEmail").value,
-					birthday: document.getElementById("editarBirthday").value,
-					photo: document.getElementById("editarPhoto").value,
-				};
-
-				const password =
-					document.getElementById("editarPassword").value;
-				if (password) {
-					data.password = password;
-				}
-
+			.getElementById("btnConfirmarEliminar")
+			.addEventListener("click", async () => {
+				if (!selectedEmpleadoId) return;
 				try {
-					const response = await fetch(
-						`/api/v1/Trabajadores/${empleadoSeleccionado}`,
+					const res = await fetch(
+						`/api/v1/Trabajadores/${selectedEmpleadoId}`,
 						{
-							method: "PATCH",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify(data),
+							method: "DELETE",
 						},
 					);
-
-					if (response.ok) {
-						cerrarModal("modalEditarEmpleado");
-						mostrarExito("Empleado actualizado correctamente");
+					if (res.ok) {
+						cerrarModal("modalEliminar");
+						mostrarExito("Empleado eliminado correctamente");
 						setTimeout(() => location.reload(), 1500);
 					} else {
-						const errorData = await response.json();
+						const err = await res.json();
 						mostrarError(
-							"Error al actualizar: " +
-								(errorData.message ||
-									errorData.error ||
-									"Desconocido"),
+							err.message || "Error al eliminar empleado",
 						);
 					}
 				} catch (error) {
-					mostrarError("Error de conexión: " + error.message);
+					mostrarError("Error de conexión");
 				}
 			});
 
-		// Seleccionar todos los checkboxes
-		document
-			.getElementById("selectAll")
-			?.addEventListener("change", function (e) {
-				const checkboxes =
-					document.querySelectorAll(".empleado-checkbox");
-				checkboxes.forEach((checkbox) => {
-					checkbox.checked = e.target.checked;
-				});
-			});
+		// --- UI Helpers ---
+		function mostrarExito(msg) {
+			document.getElementById("mensajeExito").textContent = msg;
+			document.getElementById("modalExito").classList.remove("hidden");
+		}
+
+		function mostrarError(msg) {
+			document.getElementById("mensajeError").textContent = msg;
+			document.getElementById("modalError").classList.remove("hidden");
+		}
+
+		// --- Event Listeners Globales ---
+		searchInput.addEventListener("input", (e) => {
+			const term = e.target.value.toLowerCase();
+			filteredData = allData.filter(
+				(item) =>
+					(item.FirstName &&
+						item.FirstName.toLowerCase().includes(term)) ||
+					(item.LastName &&
+						item.LastName.toLowerCase().includes(term)) ||
+					(item.Email && item.Email.toLowerCase().includes(term)),
+			);
+			currentPage = 1;
+			renderTable();
+		});
+
+		rowsPerPageSelect.addEventListener("change", (e) => {
+			rowsPerPage = parseInt(e.target.value);
+			currentPage = 1;
+			renderTable();
+		});
+
+		prevBtn.addEventListener("click", () => {
+			if (currentPage > 1) {
+				currentPage--;
+				renderTable();
+			}
+		});
+
+		nextBtn.addEventListener("click", () => {
+			const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+			if (currentPage < totalPages) {
+				currentPage++;
+				renderTable();
+			}
+		});
+
+		// Inicializar
+		renderTable();
 	</script>
 </Layout>

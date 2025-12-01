@@ -1,136 +1,34 @@
 ---
+export const prerender = false;
 import NavBar from "../components/NavBar.astro";
 import Layout from "../layouts/Layout.astro";
-import HeaderEmpleado from "../components/HeaderEmpleado.astro";
+import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
 
-let citas = [];
+// Carga inicial de datos para los selectores del modal
 let pacientes = [];
 let empleados = [];
 let servicios = [];
 
 try {
-    const [citasRes, pacientesRes, empleadosRes, serviciosRes] =
-        await Promise.all([
-            fetch("http://localhost:3001/api/v1/Citas").then((res) =>
-                res.ok ? res.json() : [],
-            ),
-            fetch("http://localhost:3001/api/v1/Pacientes").then((res) =>
-                res.ok ? res.json() : [],
-            ),
-            fetch("http://localhost:3001/api/v1/Trabajadores").then((res) =>
-                res.ok ? res.json() : [],
-            ),
-            fetch("http://localhost:3001/api/v1/Productos&Servicios").then(
-                (res) => (res.ok ? res.json() : []),
-            ),
-        ]);
+    const [pacientesRes, empleadosRes, serviciosRes] = await Promise.all([
+        fetch("http://localhost:3000/api/v1/Pacientes").then((res) =>
+            res.ok ? res.json() : [],
+        ),
+        fetch("http://localhost:3000/api/v1/Trabajadores").then((res) =>
+            res.ok ? res.json() : [],
+        ),
+        fetch("http://localhost:3000/api/v1/Productos&Servicios").then((res) =>
+            res.ok ? res.json() : [],
+        ),
+    ]);
 
-    citas = citasRes || [];
     pacientes = pacientesRes || [];
     empleados = empleadosRes || [];
     servicios = serviciosRes || [];
 } catch (error) {
-    console.error("Error cargando datos:", error);
+    console.error("Error cargando datos iniciales:", error);
 }
-
-// Función para formatear fecha (para mostrar en tablas)
-const formatDate = (dateString) => {
-    if (!dateString) return "";
-    try {
-        const date = new Date(dateString);
-        const adjustedDate = new Date(
-            date.getTime() + date.getTimezoneOffset() * 60000,
-        );
-        return adjustedDate.toISOString().split("T")[0];
-    } catch (e) {
-        return "";
-    }
-};
-
-// Función para formatear fecha a YYYY-MM-DD
-const formatDateToYYYYMMDD = (dateString) => {
-    if (!dateString) return "";
-    try {
-        const date = new Date(dateString);
-        const year = date.getUTCFullYear();
-        const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-        const day = String(date.getUTCDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
-    } catch (e) {
-        return "";
-    }
-};
-
-// Función para obtener solo el día del mes
-const getDayOfMonth = (dateString) => {
-    if (!dateString) return null;
-    try {
-        const date = new Date(dateString);
-        return date.getDate();
-    } catch (e) {
-        return null;
-    }
-};
-
-// Función para formatear hora
-const formatTime = (timeString) => {
-    if (!timeString) return "";
-    return timeString.substring(0, 5);
-};
-
-// Función para escapar caracteres problemáticos
-const escapeJS = (str) => {
-    if (!str) return "";
-    return String(str)
-        .replace(/'/g, "\\'")
-        .replace(/"/g, '\\"')
-        .replace(/\n/g, "\\n")
-        .replace(/\r/g, "\\r");
-};
-
-// Agrupar citas
-const citasPorFechaCompleta = {};
-const citasPorDia = {};
-
-citas.forEach((cita) => {
-    if (cita.currentday) {
-        try {
-            const fechaCompleta = formatDateToYYYYMMDD(cita.currentday);
-            if (!fechaCompleta) return;
-
-            if (!citasPorFechaCompleta[fechaCompleta]) {
-                citasPorFechaCompleta[fechaCompleta] = [];
-            }
-            citasPorFechaCompleta[fechaCompleta].push(cita);
-
-            const dia = getDayOfMonth(cita.currentday);
-            if (dia !== null) {
-                if (!citasPorDia[dia]) {
-                    citasPorDia[dia] = [];
-                }
-                citasPorDia[dia].push(cita);
-            }
-        } catch (error) {
-            console.error("Error procesando cita:", error);
-        }
-    }
-});
-
-const hoy = new Date();
-const fechaActual = hoy
-    .toLocaleDateString("es-ES", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-    })
-    .toUpperCase();
-const mesActualTexto = hoy
-    .toLocaleDateString("es-ES", {
-        month: "long",
-        year: "numeric",
-    })
-    .toUpperCase();
 ---
 
 <Layout title="Agenda">
@@ -150,121 +48,149 @@ const mesActualTexto = hoy
             >
             </div>
 
-            <HeaderEmpleado titulo="AGENDA" nombreUsuario="EMPLEADO" />
+            <TopTag titulo="AGENDA" nombreUsuario="ADMINISTRADOR">
+                <!-- Botón Nueva Cita en el Header para mejor visibilidad -->
+                <button
+                    id="nuevaCitaBtnHeader"
+                    class="hidden md:flex glass-button px-4 py-2 rounded-xl bg-[#2F5D50] text-white hover:bg-[#234D20] transition-all font-medium items-center gap-2 shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-0.5 text-sm ml-4"
+                >
+                    <i class="fa-solid fa-plus"></i>
+                    NUEVA CITA
+                </button>
+            </TopTag>
 
             <main
                 class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-[#2F5D50]/20 scrollbar-track-transparent relative z-10 flex flex-col"
             >
-                <!-- Barra de herramientas -->
-                <div
-                    class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 animate-fade-in-up stagger-1"
+                <!-- Botón Flotante para Móvil -->
+                <button
+                    id="nuevaCitaBtnMobile"
+                    class="md:hidden fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[#2F5D50] text-white shadow-xl flex items-center justify-center text-2xl hover:scale-110 transition-transform"
                 >
-                    <div class="flex gap-3">
-                        <button
-                            id="nuevaCitaBtn"
-                            class="glass-button px-5 py-2.5 rounded-xl bg-[#2F5D50] text-white hover:bg-[#234D20] transition-all font-medium flex items-center gap-2 shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-0.5"
-                        >
-                            <i class="fa-solid fa-plus"></i>
-                            NUEVA CITA
-                        </button>
-                    </div>
-                </div>
+                    <i class="fa-solid fa-plus"></i>
+                </button>
 
-                <!-- Calendario completo -->
-                <div
-                    class="glass-panel rounded-3xl p-6 flex-1 flex flex-col shadow-xl animate-fade-in-up stagger-2 overflow-hidden border border-white/60"
-                >
-                    <div class="flex justify-between items-center mb-6">
-                        <div class="flex items-center gap-2">
-                            <span class="text-2xl font-bold text-[#2F5D50]"
-                                >Calendario</span
-                            >
-                        </div>
-                        <div
-                            class="flex items-center gap-4 bg-white/40 rounded-xl p-1 border border-white/50 shadow-inner"
-                        >
-                            <button
-                                class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/80 text-[#2F5D50] transition-all"
-                                id="mesAnterior"
-                            >
-                                <i class="fa-solid fa-chevron-left"></i>
-                            </button>
-                            <span
-                                class="text-lg font-bold text-[#2F5D50] min-w-[150px] text-center"
-                                id="mesActual"
-                            >
-                                {mesActualTexto}
-                            </span>
-                            <button
-                                class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/80 text-[#2F5D50] transition-all"
-                                id="mesSiguiente"
-                            >
-                                <i class="fa-solid fa-chevron-right"></i>
-                            </button>
-                        </div>
-                        <div
-                            class="hidden md:flex bg-white/40 rounded-xl p-1 border border-white/50 shadow-inner"
-                        >
-                            <button
-                                class="px-4 py-1.5 rounded-lg bg-white text-[#2F5D50] shadow-sm font-medium text-sm transition-all"
-                                data-view="mes">Mes</button
-                            >
-                            <button
-                                class="px-4 py-1.5 rounded-lg hover:bg-white/50 text-gray-600 font-medium text-sm transition-all"
-                                data-view="semana">Semana</button
-                            >
-                            <button
-                                class="px-4 py-1.5 rounded-lg hover:bg-white/50 text-gray-600 font-medium text-sm transition-all"
-                                data-view="dia">Día</button
-                            >
-                        </div>
-                    </div>
-
-                    <!-- Encabezado de días de la semana -->
-                    <div class="grid grid-cols-7 mb-2">
-                        <div
-                            class="text-center py-2 text-sm font-bold text-[#2F5D50]/70"
-                        >
-                            LUN
-                        </div>
-                        <div
-                            class="text-center py-2 text-sm font-bold text-[#2F5D50]/70"
-                        >
-                            MAR
-                        </div>
-                        <div
-                            class="text-center py-2 text-sm font-bold text-[#2F5D50]/70"
-                        >
-                            MIE
-                        </div>
-                        <div
-                            class="text-center py-2 text-sm font-bold text-[#2F5D50]/70"
-                        >
-                            JUE
-                        </div>
-                        <div
-                            class="text-center py-2 text-sm font-bold text-[#2F5D50]/70"
-                        >
-                            VIE
-                        </div>
-                        <div
-                            class="text-center py-2 text-sm font-bold text-[#2F5D50]/70"
-                        >
-                            SAB
-                        </div>
-                        <div
-                            class="text-center py-2 text-sm font-bold text-[#2F5D50]/70"
-                        >
-                            DOM
-                        </div>
-                    </div>
-
-                    <!-- Grid de días del mes -->
+                <!-- Contenedor Principal: Calendario + Panel Lateral -->
+                <div class="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
+                    <!-- Calendario -->
                     <div
-                        class="grid grid-cols-7 grid-rows-6 gap-2 flex-1 min-h-0"
-                        id="daysGrid"
+                        class="glass-panel rounded-3xl p-4 sm:p-6 flex-1 flex flex-col shadow-xl animate-fade-in-up stagger-2 overflow-hidden border border-white/60 relative"
                     >
-                        <!-- Días se generarán dinámicamente -->
+                        <div
+                            class="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6 gap-4"
+                        >
+                            <div
+                                class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start"
+                            >
+                                <span
+                                    class="text-xl sm:text-2xl font-bold text-[#2F5D50]"
+                                    >Calendario</span
+                                >
+                                <!-- Botón Nueva Cita (visible en tablet/desktop si no cabe en header) -->
+                                <button
+                                    id="nuevaCitaBtn"
+                                    class="md:hidden glass-button px-3 py-1.5 rounded-lg bg-[#2F5D50] text-white text-xs font-bold"
+                                >
+                                    + Cita
+                                </button>
+                            </div>
+                            <div
+                                class="flex items-center gap-2 sm:gap-4 bg-white/40 rounded-xl p-1 border border-white/50 shadow-inner w-full sm:w-auto justify-between sm:justify-center"
+                            >
+                                <button
+                                    class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/80 text-[#2F5D50] transition-all"
+                                    id="mesAnterior"
+                                >
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <span
+                                    class="text-base sm:text-lg font-bold text-[#2F5D50] min-w-[120px] sm:min-w-[150px] text-center capitalize"
+                                    id="mesActual"
+                                >
+                                    <!-- Mes Actual -->
+                                </span>
+                                <button
+                                    class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/80 text-[#2F5D50] transition-all"
+                                    id="mesSiguiente"
+                                >
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Contenedor con scroll horizontal para móvil -->
+                        <div
+                            class="flex-1 min-h-0 overflow-auto custom-scrollbar"
+                        >
+                            <div class="min-w-[600px] h-full flex flex-col">
+                                <!-- Encabezado de días de la semana -->
+                                <div class="grid grid-cols-7 mb-2">
+                                    {
+                                        [
+                                            "DOM",
+                                            "LUN",
+                                            "MAR",
+                                            "MIE",
+                                            "JUE",
+                                            "VIE",
+                                            "SAB",
+                                        ].map((dia) => (
+                                            <div class="text-center py-2 text-xs sm:text-sm font-bold text-[#2F5D50]/70">
+                                                {dia}
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+
+                                <!-- Grid de días del mes -->
+                                <div
+                                    class="grid grid-cols-7 grid-rows-6 gap-1 sm:gap-2 flex-1 min-h-0"
+                                    id="daysGrid"
+                                >
+                                    <!-- Días se generarán dinámicamente -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel Lateral (Detalles del Día / Cita) -->
+                    <div
+                        id="sidePanel"
+                        class="hidden lg:flex flex-col w-full lg:w-96 glass-panel rounded-3xl shadow-xl border border-white/60 overflow-hidden transition-all duration-300 transform translate-x-full lg:translate-x-0 opacity-0 lg:opacity-100 absolute lg:relative inset-0 lg:inset-auto z-20 bg-white/95 lg:bg-transparent"
+                        style="display: none;"
+                    >
+                        <!-- Header del Panel -->
+                        <div
+                            class="p-6 border-b border-[#2F5D50]/10 bg-white/40 flex justify-between items-center"
+                        >
+                            <h3
+                                class="text-[#2F5D50] text-xl font-bold"
+                                id="sidePanelTitle"
+                            >
+                                Detalles
+                            </h3>
+                            <button
+                                id="closeSidePanelBtn"
+                                class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-[#2F5D50]/10 transition-colors"
+                            >
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <!-- Contenido del Panel -->
+                        <div
+                            id="sidePanelContent"
+                            class="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-4"
+                        >
+                            <!-- Aquí se inyectarán las citas del día o el detalle de una cita -->
+                            <div
+                                class="flex flex-col items-center justify-center h-full text-gray-400 text-center"
+                            >
+                                <i class="fa-regular fa-calendar text-4xl mb-3"
+                                ></i>
+                                <p>Selecciona un día para ver las citas</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -374,6 +300,7 @@ const mesActualTexto = hoy
                         <option value="wait">En espera</option>
                         <option value="confirmed">Confirmada</option>
                         <option value="canceled">Cancelada</option>
+                        <option value="concluded">Concluida</option>
                     </select>
                 </div>
                 <div>
@@ -403,877 +330,587 @@ const mesActualTexto = hoy
         </div>
     </FormModal>
 
-    <!-- Modal Editar Cita -->
-    <FormModal
-        id="modalEditarCita"
-        title="EDITAR CITA"
-        formId="formEditarCita"
-        submitText="ACTUALIZAR"
-        cancelText="CANCELAR"
-        size="lg"
-    >
-        <input type="hidden" id="editarId" />
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1"
-                        >PACIENTE *</label
-                    >
-                    <select
-                        id="editarIdPatient"
-                        class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                        required
-                    >
-                        <option value="">Seleccionar paciente</option>
-                        {
-                            pacientes.map((paciente) => (
-                                <option value={paciente.id}>
-                                    {paciente.firstname} {paciente.lastname}{" "}
-                                    {paciente.motherlastname}
-                                </option>
-                            ))
-                        }
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1"
-                        >EMPLEADO *</label
-                    >
-                    <select
-                        id="editarIdEmployed"
-                        class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                        required
-                    >
-                        <option value="">Seleccionar empleado</option>
-                        {
-                            empleados.map((empleado) => (
-                                <option value={empleado.id}>
-                                    {empleado.firstname} {empleado.lastname}
-                                </option>
-                            ))
-                        }
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1"
-                        >FECHA *</label
-                    >
-                    <input
-                        type="date"
-                        id="editarCurrentday"
-                        class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                        required
-                    />
-                </div>
-            </div>
-            <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label
-                            class="block text-sm font-bold text-gray-700 mb-1"
-                            >HORA INICIO *</label
-                        >
-                        <input
-                            type="time"
-                            id="editarInitHour"
-                            class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                            required
-                            step="300"
-                        />
-                    </div>
-                    <div>
-                        <label
-                            class="block text-sm font-bold text-gray-700 mb-1"
-                            >HORA FIN *</label
-                        >
-                        <input
-                            type="time"
-                            id="editarEndHour"
-                            class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                            required
-                            step="300"
-                        />
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1"
-                        >ESTADO *</label
-                    >
-                    <select
-                        id="editarStatus"
-                        class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                        required
-                    >
-                        <option value="wait">En espera</option>
-                        <option value="confirmed">Confirmada</option>
-                        <option value="canceled">Cancelada</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1"
-                        >RAZÓN/MOTIVO *</label
-                    >
-                    <input
-                        type="text"
-                        id="editarReason"
-                        class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                        required
-                    />
-                </div>
-            </div>
-            <div class="col-span-1 md:col-span-2">
-                <label class="block text-sm font-bold text-gray-700 mb-1"
-                    >FOTO (URL)</label
-                >
-                <input
-                    type="url"
-                    id="editarPhoto"
-                    class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                />
-            </div>
-        </div>
-    </FormModal>
-
-    <!-- Modal Ver Citas (Custom Styled to match Liquid Glass) -->
-    <div
-        id="modalVerCitas"
-        class="fixed inset-0 z-50 hidden"
-        role="dialog"
-        aria-modal="true"
-    >
-        <div
-            class="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
-            onclick="cerrarModal('modalVerCitas')"
-        >
-        </div>
-        <div class="flex min-h-full items-center justify-center p-4">
-            <div
-                class="relative w-full max-w-6xl glass-panel rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
-            >
-                <div
-                    class="flex justify-between items-center px-6 py-4 border-b border-[#2F5D50]/10 bg-white/40"
-                >
-                    <h2 class="text-[#2F5D50] text-xl font-bold tracking-tight">
-                        TODAS LAS CITAS PROGRAMADAS
-                    </h2>
-                    <button
-                        class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-[#2F5D50]/10 transition-colors"
-                        onclick="cerrarModal('modalVerCitas')"
-                    >
-                        <i class="fa-solid fa-xmark text-xl"></i>
-                    </button>
-                </div>
-                <div class="p-0 overflow-hidden flex-1 flex flex-col">
-                    <div class="overflow-x-auto custom-scrollbar flex-1">
-                        <table class="w-full text-left border-collapse">
-                            <thead
-                                class="bg-[#2F5D50]/5 text-[#2F5D50] sticky top-0 z-10 backdrop-blur-md"
-                            >
-                                <tr>
-                                    <th class="p-4 font-bold text-center w-16"
-                                        >Sel</th
-                                    >
-                                    <th class="p-4 font-bold">Fecha</th>
-                                    <th class="p-4 font-bold">Hora Inicio</th>
-                                    <th class="p-4 font-bold">Hora Fin</th>
-                                    <th class="p-4 font-bold">Paciente</th>
-                                    <th class="p-4 font-bold">Empleado</th>
-                                    <th class="p-4 font-bold">Estado</th>
-                                    <th class="p-4 font-bold text-center"
-                                        >Acciones</th
-                                    >
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-[#2F5D50]/5">
-                                {
-                                    citas.map((cita) => {
-                                        const paciente =
-                                            pacientes.find(
-                                                (p) => p.id === cita.idpatient,
-                                            ) || {};
-                                        const empleado =
-                                            empleados.find(
-                                                (e) => e.id === cita.idemployed,
-                                            ) || {};
-                                        const nombrePaciente = `${paciente.firstname || ""} ${paciente.lastname || ""} ${paciente.motherlastname || ""}`;
-                                        const nombreEmpleado = `${empleado.firstname || ""} ${empleado.lastname || ""}`;
-                                        return (
-                                            <tr class="hover:bg-white/60 transition-colors">
-                                                <td class="p-4 text-center">
-                                                    <input
-                                                        type="checkbox"
-                                                        class="rounded text-[#2F5D50] focus:ring-[#2F5D50]"
-                                                        value={cita.id}
-                                                    />
-                                                </td>
-                                                <td class="p-4">
-                                                    {formatDate(
-                                                        cita.currentday,
-                                                    )}
-                                                </td>
-                                                <td class="p-4 font-mono text-sm">
-                                                    {formatTime(cita.inithour)}
-                                                </td>
-                                                <td class="p-4 font-mono text-sm">
-                                                    {formatTime(cita.endhour)}
-                                                </td>
-                                                <td class="p-4 font-medium text-gray-800">
-                                                    {nombrePaciente}
-                                                </td>
-                                                <td class="p-4 text-gray-600">
-                                                    {nombreEmpleado}
-                                                </td>
-                                                <td class="p-4">
-                                                    <span
-                                                        class={`px-3 py-1 rounded-full text-xs font-bold ${
-                                                            cita.status ===
-                                                            "wait"
-                                                                ? "bg-yellow-100 text-yellow-700"
-                                                                : cita.status ===
-                                                                    "confirmed"
-                                                                  ? "bg-green-100 text-green-700"
-                                                                  : "bg-red-100 text-red-700"
-                                                        }`}
-                                                    >
-                                                        {cita.status === "wait"
-                                                            ? "En espera"
-                                                            : cita.status ===
-                                                                "confirmed"
-                                                              ? "Confirmada"
-                                                              : "Cancelada"}
-                                                    </span>
-                                                </td>
-                                                <td class="p-4 text-center">
-                                                    <button
-                                                        class="text-[#2F5D50] hover:bg-[#2F5D50]/10 p-2 rounded-lg transition-colors"
-                                                        onclick={`abrirModalAcciones(${cita.id}, '${escapeJS(nombrePaciente)}', '${escapeJS(nombreEmpleado)}', '${escapeJS(formatDate(cita.currentday))}', '${escapeJS(formatTime(cita.inithour))}', '${escapeJS(formatTime(cita.endhour))}', '${escapeJS(cita.status)}', '${escapeJS(cita.reason)}', '${escapeJS(cita.photo)}', ${cita.idpatient}, ${cita.idemployed})`}
-                                                    >
-                                                        <i class="fa-solid fa-ellipsis-vertical" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div
-                    class="flex justify-end px-6 py-4 border-t border-[#2F5D50]/10 bg-white/40"
-                >
-                    <button
-                        type="button"
-                        class="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-all"
-                        onclick="cerrarModal('modalVerCitas')"
-                    >
-                        Cerrar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Acciones -->
-    <div id="modalAcciones" class="fixed inset-0 z-[60] hidden">
-        <div
-            class="fixed inset-0 bg-black/40 backdrop-blur-sm"
-            onclick="cerrarModal('modalAcciones')"
-        >
-        </div>
-        <div class="flex min-h-full items-center justify-center p-4">
-            <div
-                class="relative w-full max-w-md glass-panel rounded-2xl shadow-2xl p-6"
-            >
-                <div class="text-center mb-6">
-                    <h3 class="text-xl font-bold text-[#2F5D50]">
-                        Acciones de Cita
-                    </h3>
-                    <p
-                        id="nombreCitaAcciones"
-                        class="text-sm text-gray-500 mt-2 font-medium"
-                    >
-                    </p>
-                </div>
-                <div class="flex justify-center gap-4">
-                    <button
-                        id="btnEditarAccion"
-                        class="flex flex-col items-center justify-center p-4 rounded-xl border border-[#2F5D50]/20 hover:bg-[#2F5D50]/5 transition-all group w-32"
-                    >
-                        <div
-                            class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"
-                        >
-                            <i class="fa-solid fa-pen-to-square text-xl"></i>
-                        </div>
-                        <span class="font-medium text-gray-700">Editar</span>
-                    </button>
-                </div>
-                <div class="mt-6 text-center">
-                    <button
-                        class="text-gray-400 hover:text-gray-600 text-sm"
-                        onclick="cerrarModal('modalAcciones')">Cancelar</button
-                    >
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Detalles Día (Sidebar) -->
-    <div id="modalDetallesDia" class="fixed inset-0 z-50 hidden">
-        <div
-            class="fixed inset-0 bg-black/20 backdrop-blur-sm"
-            onclick="cerrarDetallesDia()"
-        >
-        </div>
-        <div
-            class="absolute right-0 top-0 h-full w-full max-w-md glass-panel border-l border-white/50 shadow-2xl transform transition-transform duration-300 translate-x-0 flex flex-col"
-        >
-            <div
-                class="flex justify-between items-center px-6 py-4 border-b border-[#2F5D50]/10 bg-white/40"
-            >
-                <h3
-                    class="text-[#2F5D50] text-xl font-bold"
-                    id="dayDetailsTitle"
-                >
-                    Citas del Día
-                </h3>
-                <button
-                    class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-[#2F5D50]/10 transition-colors"
-                    id="closeDetallesBtn"
-                >
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
-            </div>
-            <div
-                class="p-6 overflow-y-auto flex-1 custom-scrollbar space-y-4"
-                id="dayDetailsBody"
-            >
-                <!-- Contenido dinámico -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Detalles Cita (Sidebar) -->
-    <div id="modalDetallesCita" class="fixed inset-0 z-[60] hidden">
-        <div
-            class="fixed inset-0 bg-black/20 backdrop-blur-sm"
-            onclick="cerrarDetallesCita()"
-        >
-        </div>
-        <div
-            class="absolute right-0 top-0 h-full w-full max-w-md glass-panel border-l border-white/50 shadow-2xl transform transition-transform duration-300 translate-x-0 flex flex-col"
-        >
-            <div
-                class="flex justify-between items-center px-6 py-4 border-b border-[#2F5D50]/10 bg-white/40"
-            >
-                <h3 class="text-[#2F5D50] text-xl font-bold">
-                    Información de la Reserva
-                </h3>
-                <button
-                    class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-[#2F5D50]/10 transition-colors"
-                    id="closeDetallesCitaBtn"
-                >
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
-            </div>
-            <div
-                class="p-6 overflow-y-auto flex-1 custom-scrollbar"
-                id="detallesCitaBody"
-            >
-                <!-- Contenido dinámico -->
-            </div>
-            <div
-                class="p-6 border-t border-[#2F5D50]/10 bg-white/40 flex gap-3"
-            >
-                <button
-                    id="iniciarConsultaBtn"
-                    class="flex-1 py-3 rounded-xl bg-[#2F5D50] text-white font-bold hover:bg-[#234D20] shadow-lg transition-all"
-                >
-                    INICIAR CONSULTA
-                </button>
-                <button
-                    id="editarCitaBtn"
-                    class="px-4 py-3 rounded-xl border border-[#2F5D50] text-[#2F5D50] font-bold hover:bg-[#2F5D50]/10 transition-all"
-                >
-                    <i class="fa-solid fa-pen"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modales de Mensaje -->
-    <div id="modalExito" class="fixed inset-0 z-[70] hidden">
-        <div
-            class="fixed inset-0 bg-black/40 backdrop-blur-sm"
-            onclick="cerrarModal('modalExito')"
-        >
-        </div>
-        <div class="flex min-h-full items-center justify-center p-4">
-            <div
-                class="relative w-full max-w-sm glass-panel rounded-2xl shadow-2xl p-6 text-center"
-            >
-                <div
-                    class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4"
-                >
-                    <i class="fa-solid fa-check text-green-600 text-xl"></i>
-                </div>
-                <h3 class="text-lg font-bold text-gray-900 mb-2">¡Éxito!</h3>
-                <p id="mensajeExito" class="text-sm text-gray-500 mb-4"></p>
-                <button
-                    class="w-full px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 font-medium"
-                    onclick="cerrarModal('modalExito')">Aceptar</button
-                >
-            </div>
-        </div>
-    </div>
-
-    <div id="modalError" class="fixed inset-0 z-[70] hidden">
-        <div
-            class="fixed inset-0 bg-black/40 backdrop-blur-sm"
-            onclick="cerrarModal('modalError')"
-        >
-        </div>
-        <div class="flex min-h-full items-center justify-center p-4">
-            <div
-                class="relative w-full max-w-sm glass-panel rounded-2xl shadow-2xl p-6 text-center"
-            >
-                <div
-                    class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4"
-                >
-                    <i class="fa-solid fa-xmark text-red-600 text-xl"></i>
-                </div>
-                <h3 class="text-lg font-bold text-gray-900 mb-2">Error</h3>
-                <p id="mensajeError" class="text-sm text-gray-500 mb-4"></p>
-                <button
-                    class="w-full px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium"
-                    onclick="cerrarModal('modalError')">Aceptar</button
-                >
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script
-        define:vars={{
-            pacientesData: pacientes,
-            empleadosData: empleados,
-            todasLasCitas: citas,
-            citasPorFechaCompletaData: citasPorFechaCompleta,
-        }}
-    >
-        window.pacientesData = pacientesData;
-        window.empleadosData = empleadosData;
-        window.todasLasCitas = todasLasCitas;
-        window.citasPorFechaCompleta = citasPorFechaCompletaData;
-    </script>
-
+    <!-- Scripts del Cliente -->
     <script>
-        // Variables globales
-        let citaSeleccionada = null;
-        let citaData = {};
-        let fechaCalendario = new Date();
+        import { io } from "socket.io-client";
 
-        // Funciones de utilidad
-        function formatTimeDisplay(timeString) {
-            if (!timeString) return "";
-            const time = timeString.substring(0, 5);
-            const [hours, minutes] = time.split(":");
-            const hour = parseInt(hours);
-            return hour < 12 ? `${time} AM` : `${time} PM`;
-        }
+        // --- Estado Global ---
+        let fechaActual = new Date();
+        let citasDelMes = [];
+        let citasPorDia = {};
+        let socket;
 
-        function getStatusText(status) {
-            const estados = {
-                wait: "En espera",
-                confirmed: "Confirmada",
-                canceled: "Cancelada",
-            };
-            return estados[status] || status;
-        }
+        // --- Elementos del DOM ---
+        const mesActualEl = document.getElementById("mesActual");
+        const daysGridEl = document.getElementById("daysGrid");
+        const sidePanelEl = document.getElementById("sidePanel");
+        const sidePanelTitleEl = document.getElementById("sidePanelTitle");
+        const sidePanelContentEl = document.getElementById("sidePanelContent");
+        const closeSidePanelBtn = document.getElementById("closeSidePanelBtn");
 
-        // Calendario
-        function actualizarCalendario() {
-            const daysGrid = document.getElementById("daysGrid");
-            const mesActualElement = document.getElementById("mesActual");
-            if (!daysGrid) return;
-
-            mesActualElement.textContent = fechaCalendario
-                .toLocaleDateString("es-ES", { month: "long", year: "numeric" })
-                .toUpperCase();
-            daysGrid.innerHTML = "";
-
-            const primerDia = new Date(
-                fechaCalendario.getFullYear(),
-                fechaCalendario.getMonth(),
-                1,
-            );
-            const primerDiaSemana = primerDia.getDay();
-            const offset = primerDiaSemana === 0 ? 6 : primerDiaSemana - 1;
-            const totalDias = 42;
-            const hoy = new Date();
-
-            for (let i = 0; i < totalDias; i++) {
-                const diaActual = new Date(
-                    fechaCalendario.getFullYear(),
-                    fechaCalendario.getMonth(),
-                    i - offset + 1,
-                );
-                const diaNumero = diaActual.getDate();
-                const mesActual = diaActual.getMonth();
-                const esMesActual = mesActual === fechaCalendario.getMonth();
-                const esHoy = diaActual.toDateString() === hoy.toDateString();
-                const fechaFormateada = `${diaActual.getFullYear()}-${String(mesActual + 1).padStart(2, "0")}-${String(diaNumero).padStart(2, "0")}`;
-
-                const dayElement = document.createElement("div");
-                dayElement.className = `p-2 rounded-xl border border-white/40 transition-all min-h-[100px] flex flex-col gap-1 relative overflow-hidden ${esMesActual ? "bg-white/30 hover:bg-white/50" : "bg-gray-50/30 opacity-60"} ${esHoy ? "ring-2 ring-[#2F5D50] bg-white/60" : ""}`;
-
-                const citasDelDia =
-                    window.citasPorFechaCompleta?.[fechaFormateada] || [];
-
-                let eventosHTML = "";
-                if (citasDelDia.length > 0 && window.pacientesData) {
-                    eventosHTML = citasDelDia
-                        .slice(0, 2)
-                        .map((cita) => {
-                            const paciente =
-                                window.pacientesData.find(
-                                    (p) => p.id == cita.idpatient,
-                                ) || {};
-                            const nombrePaciente =
-                                paciente.firstname || "Paciente";
-                            const statusClass =
-                                cita.status === "confirmed"
-                                    ? "bg-green-100 text-green-800 border-green-200"
-                                    : cita.status === "canceled"
-                                      ? "bg-red-100 text-red-800 border-red-200"
-                                      : "bg-yellow-100 text-yellow-800 border-yellow-200";
-                            return `<div class="text-xs p-1 rounded-lg border ${statusClass} truncate cursor-pointer calendar-event" data-cita-id="${cita.id}">${formatTimeDisplay(cita.inithour)} ${nombrePaciente}</div>`;
-                        })
-                        .join("");
-                    if (citasDelDia.length > 2) {
-                        eventosHTML += `<div class="text-xs text-center text-[#2F5D50] font-bold mt-auto">+${citasDelDia.length - 2} más</div>`;
-                    }
-                }
-
-                dayElement.innerHTML = `<div class="text-right font-bold text-sm ${esHoy ? "text-[#2F5D50]" : "text-gray-500"}">${diaNumero}</div><div class="flex flex-col gap-1 flex-1">${eventosHTML}</div>`;
-
-                if (esMesActual) {
-                    dayElement.addEventListener("click", (e) => {
-                        if (!e.target.closest(".calendar-event"))
-                            mostrarDetallesDia(fechaFormateada, diaNumero);
-                    });
-                    dayElement
-                        .querySelectorAll(".calendar-event")
-                        .forEach((evento) => {
-                            evento.addEventListener("click", (e) => {
-                                e.stopPropagation();
-                                const cita = citasDelDia.find(
-                                    (c) => c.id == evento.dataset.citaId,
-                                );
-                                if (cita) mostrarDetallesCita(cita);
-                            });
-                        });
-                }
-                daysGrid.appendChild(dayElement);
-            }
-        }
-
-        // Detalles Día
-        function mostrarDetallesDia(fechaCompleta, diaNumero) {
-            const citasDelDia =
-                window.citasPorFechaCompleta?.[fechaCompleta] || [];
-            const modal = document.getElementById("modalDetallesDia");
-            const title = document.getElementById("dayDetailsTitle");
-            const body = document.getElementById("dayDetailsBody");
-
-            const [año, mes, dia] = fechaCompleta.split("-");
-            const fechaLocal = new Date(año, mes - 1, dia);
-            title.textContent = `Citas del ${fechaLocal.toLocaleDateString("es-ES", { day: "numeric", month: "long" })}`;
-
-            if (citasDelDia.length === 0) {
-                body.innerHTML = `<div class="flex flex-col items-center justify-center h-40 text-gray-500"><i class="fa-regular fa-calendar-xmark text-4xl mb-2"></i><p>No hay citas programadas</p></div>`;
-            } else {
-                body.innerHTML = citasDelDia
-                    .map((cita) => {
-                        const paciente =
-                            window.pacientesData?.find(
-                                (p) => p.id == cita.idpatient,
-                            ) || {};
-                        const empleado =
-                            window.empleadosData?.find(
-                                (e) => e.id == cita.idemployed,
-                            ) || {};
-                        return `
-                        <div class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-white/60 transition-all cita-item border border-white/50 shadow-sm" data-cita-id="${cita.id}">
-                            <div class="flex justify-between items-start mb-2">
-                                <span class="font-bold text-[#2F5D50]">${formatTimeDisplay(cita.inithour)} - ${formatTimeDisplay(cita.endhour)}</span>
-                                <span class="text-xs px-2 py-1 rounded-full ${cita.status === "confirmed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}">${getStatusText(cita.status)}</span>
-                            </div>
-                            <h4 class="font-bold text-gray-800">${paciente.firstname} ${paciente.lastname}</h4>
-                            <p class="text-sm text-gray-600 mb-1">${cita.reason}</p>
-                            <div class="flex items-center gap-2 text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
-                                <i class="fa-solid fa-user-doctor"></i> ${empleado.firstname} ${empleado.lastname}
-                            </div>
-                        </div>
-                    `;
-                    })
-                    .join("");
-
-                body.querySelectorAll(".cita-item").forEach((item) => {
-                    item.addEventListener("click", () => {
-                        const cita = citasDelDia.find(
-                            (c) => c.id == item.dataset.citaId,
-                        );
-                        if (cita) {
-                            cerrarDetallesDia();
-                            mostrarDetallesCita(cita);
-                        }
-                    });
-                });
-            }
-            modal.classList.remove("hidden");
-        }
-
-        // Detalles Cita
-        function mostrarDetallesCita(cita) {
-            citaSeleccionada = cita.id;
-            citaData = cita;
-            const modal = document.getElementById("modalDetallesCita");
-            const body = document.getElementById("detallesCitaBody");
-            const paciente =
-                window.pacientesData?.find((p) => p.id == cita.idpatient) || {};
-            const empleado =
-                window.empleadosData?.find((e) => e.id == cita.idemployed) ||
-                {};
-
-            body.innerHTML = `
-                <div class="space-y-6">
-                    <div class="text-center">
-                        <div class="w-20 h-20 rounded-full bg-[#2F5D50]/10 mx-auto flex items-center justify-center text-[#2F5D50] text-3xl mb-3">
-                            ${paciente.photo ? `<img src="${paciente.photo}" class="w-full h-full rounded-full object-cover">` : '<i class="fa-solid fa-user"></i>'}
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800">${paciente.firstname} ${paciente.lastname}</h3>
-                        <p class="text-sm text-gray-500">Paciente</p>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="glass-panel p-3 rounded-xl text-center">
-                            <i class="fa-regular fa-calendar text-[#2F5D50] mb-1"></i>
-                            <p class="text-xs text-gray-500">Fecha</p>
-                            <p class="font-bold text-sm">${new Date(cita.currentday).toLocaleDateString()}</p>
-                        </div>
-                        <div class="glass-panel p-3 rounded-xl text-center">
-                            <i class="fa-regular fa-clock text-[#2F5D50] mb-1"></i>
-                            <p class="text-xs text-gray-500">Hora</p>
-                            <p class="font-bold text-sm">${formatTimeDisplay(cita.inithour)}</p>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0"><i class="fa-solid fa-stethoscope"></i></div>
-                            <div>
-                                <p class="text-xs text-gray-500">Motivo</p>
-                                <p class="font-medium text-gray-800">${cita.reason}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 shrink-0"><i class="fa-solid fa-user-doctor"></i></div>
-                            <div>
-                                <p class="text-xs text-gray-500">Especialista</p>
-                                <p class="font-medium text-gray-800">${empleado.firstname} ${empleado.lastname}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-600 shrink-0"><i class="fa-solid fa-info-circle"></i></div>
-                            <div>
-                                <p class="text-xs text-gray-500">Estado</p>
-                                <span class="inline-block px-2 py-0.5 rounded text-xs font-bold ${cita.status === "confirmed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}">${getStatusText(cita.status)}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            modal.classList.remove("hidden");
-        }
-
-        // Global functions
-        window.cerrarModal = (id) =>
-            document.getElementById(id)?.classList.add("hidden");
-        window.cerrarDetallesDia = () =>
-            document
-                .getElementById("modalDetallesDia")
-                ?.classList.add("hidden");
-        window.cerrarDetallesCita = () =>
-            document
-                .getElementById("modalDetallesCita")
-                ?.classList.add("hidden");
-
-        window.abrirModalAcciones = (
-            id,
-            pName,
-            eName,
-            date,
-            start,
-            end,
-            status,
-            reason,
-            photo,
-            pId,
-            eId,
-        ) => {
-            citaSeleccionada = id;
-            citaData = {
-                id,
-                idpatient: pId,
-                idemployed: eId,
-                currentday: date,
-                inithour: start,
-                endhour: end,
-                status,
-                reason,
-                photo,
-            };
-            document.getElementById("nombreCitaAcciones").textContent =
-                `${pName} - ${date}`;
-            document.getElementById("modalAcciones").classList.remove("hidden");
-        };
-
-        // Event Listeners
+        // --- Inicialización ---
         document.addEventListener("DOMContentLoaded", () => {
-            actualizarCalendario();
+            // Inicializar Socket.io
+            socket = io("http://localhost:3000");
 
+            socket.on("connect", () => {
+                console.log("Conectado al servidor de WebSocket");
+            });
+
+            socket.on("appointment_created", (newAppointment) => {
+                console.log("Nueva cita recibida:", newAppointment);
+                // Verificar si la cita pertenece al mes actual (opcional, pero buena práctica)
+                // Por simplicidad, la agregamos y reprocesamos. Si no es de este mes, no se mostrará en el grid.
+                citasDelMes.push(newAppointment);
+                procesarCitas();
+
+                // Si el panel lateral está abierto y es el día de la cita, actualizar lista
+                actualizarPanelSiEsNecesario(newAppointment.currentday);
+            });
+
+            socket.on("appointment_updated", (updatedAppointment) => {
+                console.log("Cita actualizada:", updatedAppointment);
+                const index = citasDelMes.findIndex(
+                    (c) =>
+                        c.id === updatedAppointment.id ||
+                        c.idappointment === updatedAppointment.id,
+                );
+                if (index !== -1) {
+                    citasDelMes[index] = {
+                        ...citasDelMes[index],
+                        ...updatedAppointment,
+                    };
+                    procesarCitas();
+                    actualizarPanelSiEsNecesario(updatedAppointment.currentday);
+                }
+            });
+
+            socket.on("appointment_deleted", (deletedAppointment) => {
+                console.log("Cita eliminada:", deletedAppointment);
+                const index = citasDelMes.findIndex(
+                    (c) =>
+                        c.id === deletedAppointment.id ||
+                        c.idappointment === deletedAppointment.id,
+                );
+                if (index !== -1) {
+                    // Guardamos la fecha antes de eliminar para actualizar el panel
+                    const fecha = citasDelMes[index].currentday;
+                    citasDelMes.splice(index, 1);
+                    procesarCitas();
+                    actualizarPanelSiEsNecesario(fecha);
+                }
+            });
+
+            renderCalendario();
+            cargarCitasMes();
+
+            // Event Listeners de Navegación
             document
                 .getElementById("mesAnterior")
                 ?.addEventListener("click", () => {
-                    fechaCalendario.setMonth(fechaCalendario.getMonth() - 1);
-                    actualizarCalendario();
+                    fechaActual.setMonth(fechaActual.getMonth() - 1);
+                    renderCalendario();
+                    cargarCitasMes();
                 });
+
             document
                 .getElementById("mesSiguiente")
                 ?.addEventListener("click", () => {
-                    fechaCalendario.setMonth(fechaCalendario.getMonth() + 1);
-                    actualizarCalendario();
+                    fechaActual.setMonth(fechaActual.getMonth() + 1);
+                    renderCalendario();
+                    cargarCitasMes();
                 });
 
+            // Botones de Nueva Cita (Header, Mobile, Toolbar)
+            const abrirModal = () => window.abrirModalAgregar();
             document
                 .getElementById("nuevaCitaBtn")
-                ?.addEventListener("click", window.abrirModalAgregar);
+                ?.addEventListener("click", abrirModal);
             document
-                .getElementById("verCitasBtn")
-                ?.addEventListener("click", window.abrirModalVerCitas);
+                .getElementById("nuevaCitaBtnHeader")
+                ?.addEventListener("click", abrirModal);
+            document
+                .getElementById("nuevaCitaBtnMobile")
+                ?.addEventListener("click", abrirModal);
 
-            document
-                .getElementById("btnEditarAccion")
-                ?.addEventListener("click", () => {
-                    window.cerrarModal("modalAcciones");
-                    window.abrirModalEditar();
-                });
-
-            document
-                .getElementById("editarCitaBtn")
-                ?.addEventListener("click", () => {
-                    window.cerrarDetallesCita();
-                    window.abrirModalEditar();
-                });
+            closeSidePanelBtn?.addEventListener("click", () => {
+                sidePanelEl.style.display = "none";
+            });
         });
 
-        // Form Submissions
+        // --- Helper de Fechas ---
+        function getLocalYYYYMMDD(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        }
+
+        function getYYYYMMDDFromParts(year, monthIndex, day) {
+            const m = String(monthIndex + 1).padStart(2, "0");
+            const d = String(day).padStart(2, "0");
+            return `${year}-${m}-${d}`;
+        }
+
+        // --- Funciones de Calendario ---
+        function renderCalendario() {
+            // Actualizar título del mes
+            mesActualEl.textContent = fechaActual.toLocaleDateString("es-ES", {
+                month: "long",
+                year: "numeric",
+            });
+
+            daysGridEl.innerHTML = "";
+
+            const year = fechaActual.getFullYear();
+            const month = fechaActual.getMonth(); // 0-indexed
+
+            const primerDiaMes = new Date(year, month, 1);
+            const ultimoDiaMes = new Date(year, month + 1, 0);
+
+            // Ajustar para que la semana empiece en Domingo (0)
+            const diaInicioSemana = primerDiaMes.getDay();
+            const totalDiasMes = ultimoDiaMes.getDate();
+
+            // Rellenar días vacíos previos
+            for (let i = 0; i < diaInicioSemana; i++) {
+                const emptyDay = document.createElement("div");
+                emptyDay.className = "bg-transparent";
+                daysGridEl.appendChild(emptyDay);
+            }
+
+            // Crear días del mes
+            for (let dia = 1; dia <= totalDiasMes; dia++) {
+                // Construir string YYYY-MM-DD manualmente para evitar problemas de timezone
+                const fechaStr = getYYYYMMDDFromParts(year, month, dia);
+
+                // Para comprobar "hoy", usamos la fecha local
+                const hoyStr = getLocalYYYYMMDD(new Date());
+                const esHoy = hoyStr === fechaStr;
+
+                const dayEl = document.createElement("div");
+                dayEl.className = `
+                    relative p-1 sm:p-2 rounded-xl border border-white/40 transition-all min-h-[60px] sm:min-h-[80px] flex flex-col gap-1 cursor-pointer hover:bg-white/60
+                    ${esHoy ? "ring-2 ring-[#2F5D50] bg-white/50" : "bg-white/30"}
+                `;
+                dayEl.dataset.date = fechaStr;
+
+                // Número del día
+                dayEl.innerHTML = `
+                    <div class="text-right font-bold text-xs sm:text-sm ${esHoy ? "text-[#2F5D50]" : "text-gray-600"}">
+                        ${dia}
+                    </div>
+                    <div class="flex-1 flex flex-col justify-center items-center gap-1 overflow-hidden" id="citas-${fechaStr}">
+                        <!-- Indicadores de citas se inyectarán aquí -->
+                    </div>
+                `;
+
+                dayEl.addEventListener("click", () =>
+                    seleccionarDia(fechaStr, dia),
+                );
+                daysGridEl.appendChild(dayEl);
+            }
+        }
+
+        async function cargarCitasMes() {
+            const year = fechaActual.getFullYear();
+            const month = fechaActual.getMonth();
+
+            // Calcular rango de fechas para la API
+            // startDate: Primer día del mes
+            const startDate = getYYYYMMDDFromParts(year, month, 1);
+            // endDate: Último día del mes
+            const ultimoDia = new Date(year, month + 1, 0).getDate();
+            const endDate = getYYYYMMDDFromParts(year, month, ultimoDia);
+
+            console.log(
+                `Solicitando citas desde ${startDate} hasta ${endDate}`,
+            );
+
+            try {
+                // Usar ruta relativa para que pase por el proxy de Astro
+                const response = await fetch(
+                    `/api/v1/Agenda?startDate=${startDate}&endDate=${endDate}`,
+                );
+                if (response.ok) {
+                    citasDelMes = await response.json();
+                    console.log("Citas recibidas:", citasDelMes); // Debug
+                    procesarCitas();
+                } else {
+                    console.error(
+                        "Error al cargar citas del mes:",
+                        response.status,
+                    );
+                }
+            } catch (error) {
+                console.error("Error de red:", error);
+            }
+        }
+
+        function procesarCitas() {
+            citasPorDia = {}; // Reiniciar agrupación
+
+            if (!Array.isArray(citasDelMes)) {
+                console.error("Formato de respuesta inesperado:", citasDelMes);
+                return;
+            }
+
+            citasDelMes.forEach((cita) => {
+                // Asumimos que currentday viene como "YYYY-MM-DD..."
+                // Tomamos los primeros 10 caracteres para obtener la fecha
+                if (cita.currentday) {
+                    const fechaStr = cita.currentday.substring(0, 10);
+
+                    if (!citasPorDia[fechaStr]) {
+                        citasPorDia[fechaStr] = [];
+                    }
+                    citasPorDia[fechaStr].push(cita);
+                } else {
+                    console.warn("Cita sin fecha:", cita);
+                }
+            });
+
+            console.log("Citas procesadas por día:", citasPorDia);
+            actualizarIndicadoresCalendario();
+        }
+
+        function actualizarIndicadoresCalendario() {
+            Object.keys(citasPorDia).forEach((fechaStr) => {
+                const container = document.getElementById(`citas-${fechaStr}`);
+                if (container) {
+                    container.innerHTML = ""; // Limpiar
+                    const citas = citasPorDia[fechaStr];
+
+                    // Mostrar TAG con contador de citas
+                    if (citas.length > 0) {
+                        const badge = document.createElement("div");
+                        badge.className =
+                            "bg-[#2F5D50] text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full shadow-sm animate-fade-in";
+                        badge.textContent = `${citas.length} Citas`;
+                        container.appendChild(badge);
+                    }
+                } else {
+                    // Si no se encuentra la celda (ej. cambio de mes), no hacemos nada
+                }
+            });
+        }
+
+        function actualizarPanelSiEsNecesario(fechaISO) {
+            if (!fechaISO) return;
+            const fechaStr = fechaISO.substring(0, 10);
+
+            // Verificar si el panel está visible
+            if (sidePanelEl.style.display !== "none") {
+                // Verificar si el título del panel corresponde a la fecha modificada
+                // Esto es un poco hacky porque el título es texto formateado.
+                // Mejor opción: Guardar la fecha seleccionada en una variable global.
+                if (window.fechaSeleccionada === fechaStr) {
+                    const citas = citasPorDia[fechaStr] || [];
+                    renderListaCitasDia(citas);
+                }
+            }
+        }
+
+        // --- Lógica del Panel Lateral ---
+        function seleccionarDia(fechaStr, diaNumero) {
+            // Guardar fecha seleccionada para actualizaciones en tiempo real
+            window.fechaSeleccionada = fechaStr;
+
+            // Mostrar panel
+            sidePanelEl.style.display = "flex";
+            // Pequeño timeout para permitir la transición de opacidad
+            setTimeout(() => {
+                sidePanelEl.classList.remove("translate-x-full", "opacity-0");
+            }, 10);
+
+            // Formatear fecha para título
+            const [year, month, day] = fechaStr.split("-");
+            // Nota: month es 1-based en el string, pero Date constructor usa 0-based
+            const dateObj = new Date(
+                parseInt(year),
+                parseInt(month) - 1,
+                parseInt(day),
+            );
+
+            sidePanelTitleEl.textContent = `Citas del ${dateObj.toLocaleDateString("es-ES", { day: "numeric", month: "long" })}`;
+
+            const citas = citasPorDia[fechaStr] || [];
+            console.log(`Mostrando citas para ${fechaStr}:`, citas);
+            renderListaCitasDia(citas);
+        }
+
+        function renderListaCitasDia(citas) {
+            sidePanelContentEl.innerHTML = "";
+
+            if (citas.length === 0) {
+                sidePanelContentEl.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-40 text-gray-400">
+                        <i class="fa-regular fa-calendar-xmark text-3xl mb-2"></i>
+                        <p>No hay citas programadas</p>
+                    </div>
+                `;
+                return;
+            }
+
+            citas.forEach((cita) => {
+                const card = document.createElement("div");
+                card.className =
+                    "glass-panel p-4 rounded-xl cursor-pointer hover:bg-white/60 transition-all border border-white/50 shadow-sm group mb-3";
+
+                const statusColorText =
+                    cita.status === "confirmed"
+                        ? "text-blue-600"
+                        : cita.status === "concluded"
+                          ? "text-green-600"
+                          : cita.status === "canceled"
+                            ? "text-red-600"
+                            : "text-yellow-600";
+
+                const statusBg =
+                    cita.status === "confirmed"
+                        ? "bg-blue-100"
+                        : cita.status === "concluded"
+                          ? "bg-green-100"
+                          : cita.status === "canceled"
+                            ? "bg-red-100"
+                            : "bg-yellow-100";
+
+                // Safe substring handling
+                const initHour = cita.inithour
+                    ? cita.inithour.substring(0, 5)
+                    : "--:--";
+                const endHour = cita.endhour
+                    ? cita.endhour.substring(0, 5)
+                    : "--:--";
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="font-bold text-[#2F5D50] text-sm bg-[#2F5D50]/10 px-2 py-0.5 rounded">
+                            ${initHour} - ${endHour}
+                        </span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${statusBg} ${statusColorText}">
+                            ${cita.status}
+                        </span>
+                    </div>
+                    <h4 class="font-bold text-gray-800 text-base mb-1">${cita.patientname || "Paciente sin nombre"}</h4>
+                    <p class="text-xs text-gray-500 line-clamp-2">${cita.reason || "Sin motivo"}</p>
+                `;
+
+                card.addEventListener("click", () =>
+                    cargarDetalleCita(cita.idappointment),
+                );
+                sidePanelContentEl.appendChild(card);
+            });
+        }
+
+        async function cargarDetalleCita(id) {
+            sidePanelContentEl.innerHTML = `
+                <div class="flex justify-center items-center h-40">
+                    <i class="fa-solid fa-spinner fa-spin text-2xl text-[#2F5D50]"></i>
+                </div>
+            `;
+            sidePanelTitleEl.textContent = "Detalle de Cita";
+
+            try {
+                // Usar ruta relativa para proxy
+                const response = await fetch(`/api/v1/Agenda/${id}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    // La respuesta es un array con un objeto que tiene "get_appointment_detail"
+                    if (
+                        data &&
+                        data.length > 0 &&
+                        data[0].get_appointment_detail
+                    ) {
+                        renderDetalleCita(data[0].get_appointment_detail);
+                    } else {
+                        sidePanelContentEl.innerHTML =
+                            "<p class='text-center text-red-500'>No se encontraron detalles</p>";
+                    }
+                } else {
+                    throw new Error("Error al obtener detalles");
+                }
+            } catch (error) {
+                console.error(error);
+                sidePanelContentEl.innerHTML =
+                    "<p class='text-center text-red-500'>Error al cargar detalles</p>";
+            }
+        }
+
+        function renderDetalleCita(detalle) {
+            const { appointment, patient, employed, notes } = detalle;
+
+            // Botón volver
+            const backBtn = document.createElement("button");
+            backBtn.className =
+                "mb-4 text-sm text-[#2F5D50] font-bold flex items-center gap-2 hover:underline";
+            backBtn.innerHTML =
+                '<i class="fa-solid fa-arrow-left"></i> Volver a la lista';
+            backBtn.onclick = () => {
+                // Volver a mostrar la lista del día actual
+                const fechaStr = appointment.currentday.split("T")[0]; // Asegurar formato
+                // Re-seleccionar el día para volver a renderizar la lista
+                const [y, m, d] = fechaStr.split("-");
+                seleccionarDia(fechaStr, parseInt(d));
+            };
+
+            sidePanelContentEl.innerHTML = "";
+            sidePanelContentEl.appendChild(backBtn);
+
+            const initHour = appointment.inithour
+                ? appointment.inithour.substring(0, 5)
+                : "--:--";
+            const endHour = appointment.endhour
+                ? appointment.endhour.substring(0, 5)
+                : "--:--";
+
+            const content = `
+                <div class="space-y-6 animate-fade-in">
+                    <!-- Header Paciente -->
+                    <div class="text-center">
+                        <div class="w-20 h-20 rounded-full bg-[#2F5D50]/10 mx-auto flex items-center justify-center text-[#2F5D50] text-3xl mb-3 overflow-hidden shadow-inner">
+                            ${patient.photo ? `<img src="${patient.photo}" class="w-full h-full object-cover">` : '<i class="fa-solid fa-user"></i>'}
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800">${patient.firstname} ${patient.lastname}</h3>
+                        <p class="text-sm text-gray-500">Paciente</p>
+                    </div>
+
+                    <!-- Info Grid -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="glass-panel p-3 rounded-xl text-center bg-white/40">
+                            <i class="fa-regular fa-clock text-[#2F5D50] mb-1"></i>
+                            <p class="text-xs text-gray-500">Horario</p>
+                            <p class="font-bold text-sm text-gray-800">${initHour} - ${endHour}</p>
+                        </div>
+                        <div class="glass-panel p-3 rounded-xl text-center bg-white/40">
+                            <i class="fa-solid fa-info-circle text-[#2F5D50] mb-1"></i>
+                            <p class="text-xs text-gray-500">Estado</p>
+                            <p class="font-bold text-sm capitalize text-gray-800">${appointment.status}</p>
+                        </div>
+                    </div>
+
+                    <!-- Detalles -->
+                    <div class="space-y-4">
+                        <div class="bg-white/40 p-4 rounded-xl border border-white/50">
+                            <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Motivo</h4>
+                            <p class="text-gray-800 font-medium">${appointment.reason}</p>
+                        </div>
+
+                        <div class="bg-white/40 p-4 rounded-xl border border-white/50">
+                            <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Especialista</h4>
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-[#2F5D50]/20 flex items-center justify-center text-[#2F5D50]">
+                                    <i class="fa-solid fa-user-doctor text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-sm text-gray-800">${employed.firstname} ${employed.lastname}</p>
+                                    <p class="text-xs text-gray-500">ID: ${employed.id}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        ${
+                            notes
+                                ? `
+                        <div class="bg-yellow-50/80 p-4 rounded-xl border border-yellow-100">
+                            <h4 class="text-xs font-bold text-yellow-700 uppercase mb-2"><i class="fa-regular fa-note-sticky mr-1"></i> Nota Terapéutica</h4>
+                            <p class="text-sm text-gray-700 italic">"${notes.therapeuticnote}"</p>
+                            ${notes.diagnostic ? `<p class="text-sm text-gray-700 mt-2 font-bold">Dx: ${notes.diagnostic}</p>` : ""}
+                        </div>
+                        `
+                                : ""
+                        }
+                    </div>
+                </div>
+            `;
+
+            const contentDiv = document.createElement("div");
+            contentDiv.innerHTML = content;
+            sidePanelContentEl.appendChild(contentDiv);
+        }
+
+        // --- Manejo del Formulario Nueva Cita ---
         document
             .getElementById("formAgregarCita")
             ?.addEventListener("submit", async (e) => {
                 e.preventDefault();
-                // ... (Logic for adding appointment - keeping it simple for brevity, assume similar to original)
-                // For now, just reload to simulate
-                try {
-                    const data = {
-                        IdPatient: parseInt(
-                            document.getElementById("agregarIdPatient").value,
-                        ),
-                        IdEmployed: parseInt(
-                            document.getElementById("agregarIdEmployed").value,
-                        ),
-                        currentday:
-                            document.getElementById("agregarCurrentday").value,
-                        initHour:
-                            document.getElementById("agregarInitHour").value +
-                            ":00",
-                        endHour:
-                            document.getElementById("agregarEndHour").value +
-                            ":00",
-                        status: document.getElementById("agregarStatus").value,
-                        reason: document.getElementById("agregarReason").value,
-                        photo:
-                            document.getElementById("agregarPhoto").value ||
-                            null,
-                    };
 
-                    const response = await fetch(
-                        "http://localhost:3001/api/v1/Citas",
-                        {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(data),
-                        },
-                    );
+                const data = {
+                    idpatient: parseInt(
+                        document.getElementById("agregarIdPatient").value,
+                    ),
+                    idemployed: parseInt(
+                        document.getElementById("agregarIdEmployed").value,
+                    ),
+                    currentday:
+                        document.getElementById("agregarCurrentday").value,
+                    inithour: document.getElementById("agregarInitHour").value,
+                    endhour: document.getElementById("agregarEndHour").value,
+                    status: document.getElementById("agregarStatus").value,
+                    reason: document.getElementById("agregarReason").value,
+                    photo:
+                        document.getElementById("agregarPhoto").value || null,
+                    idpatientpackage: null, // Opcional según requerimiento
+                };
+
+                // Asegurar formato de hora HH:MM:SS
+                if (data.inithour.length === 5) data.inithour += ":00";
+                if (data.endhour.length === 5) data.endhour += ":00";
+
+                try {
+                    // Usar ruta relativa para proxy
+                    const response = await fetch("/api/v1/Citas", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data),
+                    });
 
                     if (response.ok) {
                         window.cerrarModal("modalAgregarCita");
-                        location.reload();
+                        // Recargar citas del mes para mostrar la nueva
+                        cargarCitasMes();
+                        alert("Cita creada exitosamente");
                     } else {
-                        alert("Error al guardar cita");
+                        alert("Error al crear la cita");
                     }
                 } catch (error) {
                     console.error(error);
+                    alert("Error de conexión");
                 }
             });
 
-        document
-            .getElementById("formEditarCita")
-            ?.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                try {
-                    const data = {
-                        IdPatient: parseInt(
-                            document.getElementById("editarIdPatient").value,
-                        ),
-                        IdEmployed: parseInt(
-                            document.getElementById("editarIdEmployed").value,
-                        ),
-                        currentday:
-                            document.getElementById("editarCurrentday").value,
-                        initHour:
-                            document.getElementById("editarInitHour").value, // Already has :00 if from input time? No, input time is HH:MM
-                        endHour: document.getElementById("editarEndHour").value,
-                        status: document.getElementById("editarStatus").value,
-                        reason: document.getElementById("editarReason").value,
-                        photo:
-                            document.getElementById("editarPhoto").value ||
-                            null,
-                    };
-
-                    // Ensure seconds
-                    if (data.initHour.length === 5) data.initHour += ":00";
-                    if (data.endHour.length === 5) data.endHour += ":00";
-
-                    const response = await fetch(
-                        `http://localhost:3001/api/v1/Citas/${citaSeleccionada}`,
-                        {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(data),
-                        },
-                    );
-
-                    if (response.ok) {
-                        window.cerrarModal("modalEditarCita");
-                        location.reload();
-                    } else {
-                        alert("Error al actualizar cita");
-                    }
-                } catch (error) {
-                    console.error(error);
+        // Exponer funciones globales para el modal
+        window.abrirModalAgregar = () => {
+            const modal = document.getElementById("modalAgregarCita");
+            if (modal) {
+                modal.classList.remove("hidden");
+                // Animar entrada
+                const content = modal.querySelector(".modal-content-wrapper");
+                if (content) {
+                    setTimeout(() => {
+                        content.classList.remove("scale-95", "opacity-0");
+                        content.classList.add("scale-100", "opacity-100");
+                    }, 10);
                 }
-            });
+            }
+        };
+
+        window.cerrarModal = (id) => {
+            const modal = document.getElementById(id);
+            if (modal) {
+                const content = modal.querySelector(".modal-content-wrapper");
+                if (content) {
+                    content.classList.remove("scale-100", "opacity-100");
+                    content.classList.add("scale-95", "opacity-0");
+
+                    // Esperar a que termine la transición antes de ocultar
+                    setTimeout(() => {
+                        modal.classList.add("hidden");
+                    }, 300);
+                } else {
+                    modal.classList.add("hidden");
+                }
+            }
+        };
     </script>
 </Layout>

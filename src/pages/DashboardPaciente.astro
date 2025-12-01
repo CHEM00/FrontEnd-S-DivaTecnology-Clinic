@@ -1,17 +1,28 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import TopTag from '../components/TopTag.astro';
-import FichaClinica from '../components/FichaClinica.astro';
+export const prerender = false;
+import Layout from "../layouts/Layout.astro";
+import TopTag from "../components/TopTag.astro";
+import FichaClinica from "../components/FichaClinica.astro";
 ---
+
 <Layout>
-  <TopTag/>
+  <TopTag />
   <main>
-    <div id="ContenedorGrids" class="m-10 mt-18 w-auto h-auto grid-cols-2 gap-4 grid">
-      <div class="w-full h-full shadow-md border-gray-300 border flex flex-col p-2 rounded-lg">
+    <div
+      id="ContenedorGrids"
+      class="m-10 mt-18 w-auto h-auto grid-cols-2 gap-4 grid"
+    >
+      <div
+        class="w-full h-full shadow-md border-gray-300 border flex flex-col p-2 rounded-lg"
+      >
         <div class="flex items-center gap-2 w-full">
           <span class="ml-4 text-2xl">Fichas clínicas</span>
           <div>
-            <input type="text" class="border border-gray-400 p-1 ml-4" placeholder="Filtrar por                   ⬇️">
+            <input
+              type="text"
+              class="border border-gray-400 p-1 ml-4"
+              placeholder="Filtrar por                   ⬇️"
+            />
           </div>
           <div class="flex gap-2 ml-auto items-center">
             <button class="rounded px-2 py-1">‹</button>
@@ -34,24 +45,27 @@ import FichaClinica from '../components/FichaClinica.astro';
           </div>
         </div>
       </div>
-    <div class="h-[calc(90vh-8rem)] border border-gray-200 shadow-md"> <!-- Este es el contenedor general de la derecho -->
-      <div> 
-      <div class="flex items-center gap-2 w-full p-2">
-        <span class="text-lg font-semibold ml-2">Previsualización</span>
-        <button class="ml-auto bg-[#2F5D50] text-white px-3 py-1 rounded hover:bg-[#23483c] transition"
-            type="button">
-        Descargar
-        </button>
-      </div>
-      <div class="p-2 h-[calc(88vh-10rem)]">
-        <div class="w-full h-full border border-gray-400 rounded flex items-center justify-center">
-        <span class="text-black">No hay archivo seleccionado</span>
+      <div class="h-[calc(90vh-8rem)] border border-gray-200 shadow-md">
+        <!-- Este es el contenedor general de la derecho -->
+        <div>
+          <div class="flex items-center gap-2 w-full p-2">
+            <span class="text-lg font-semibold ml-2">Previsualización</span>
+            <button
+              class="ml-auto bg-[#2F5D50] text-white px-3 py-1 rounded hover:bg-[#23483c] transition"
+              type="button"
+            >
+              Descargar
+            </button>
+          </div>
+          <div class="p-2 h-[calc(88vh-10rem)]">
+            <div
+              class="w-full h-full border border-gray-400 rounded flex items-center justify-center"
+            >
+              <span class="text-black">No hay archivo seleccionado</span>
+            </div>
+          </div>
         </div>
       </div>
-      </div>
     </div>
-  </div>
-</div>
   </main>
 </Layout>
-

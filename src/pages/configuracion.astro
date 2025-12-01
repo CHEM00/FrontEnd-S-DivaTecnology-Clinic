@@ -1,7 +1,39 @@
 ---
+export const prerender = false;
 import NavBar from "../components/NavBar.astro";
 import Layout from "../layouts/Layout.astro";
 import TopTag from "../components/TopTag.astro";
+
+let clinicData = {};
+let scheduleData = [];
+
+try {
+    const [clinicRes, scheduleRes] = await Promise.all([
+        fetch("http://localhost:3000/api/v1/Clinicas"),
+        fetch("http://localhost:3000/api/v1/Horarios"),
+    ]);
+
+    if (clinicRes.ok) {
+        const clinics = await clinicRes.json();
+        clinicData = clinics[0] || {}; // Assuming we want the first clinic
+    }
+
+    if (scheduleRes.ok) {
+        scheduleData = await scheduleRes.json();
+    }
+} catch (error) {
+    console.error("Error fetching data:", error);
+}
+
+const daysMap = {
+    1: "Lunes",
+    2: "Martes",
+    3: "Miércoles",
+    4: "Jueves",
+    5: "Viernes",
+    6: "Sábado",
+    7: "Domingo",
+};
 ---
 
 <Layout title="Configuración">
@@ -10,7 +42,7 @@ import TopTag from "../components/TopTag.astro";
     >
         <NavBar />
         <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-            <!-- Background Elements for depth -->
+            <!-- Background Elements -->
             <div
                 class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#2F5D50]/10 rounded-full blur-3xl pointer-events-none"
             >
@@ -28,28 +60,6 @@ import TopTag from "../components/TopTag.astro";
             <main
                 class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-[#2F5D50]/20 scrollbar-track-transparent relative z-10"
             >
-                <!-- Header con título y botón guardar -->
-                <div
-                    class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 animate-fade-in-up stagger-1"
-                >
-                    <div>
-                        <h1
-                            class="text-3xl font-bold text-[#2F5D50] tracking-tight"
-                        >
-                            Ajustes Generales
-                        </h1>
-                        <p class="text-gray-500 mt-1">
-                            Personaliza el funcionamiento de la clínica
-                        </p>
-                    </div>
-                    <button
-                        class="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-[#2F5D50] hover:bg-[#234D20] transition-all shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-1"
-                    >
-                        <i class="fa-solid fa-save"></i>
-                        <span class="font-semibold">Guardar Cambios</span>
-                    </button>
-                </div>
-
                 <div class="flex flex-col lg:flex-row gap-8">
                     <!-- Menú lateral -->
                     <div
@@ -68,56 +78,6 @@ import TopTag from "../components/TopTag.astro";
                                     <i class="fas fa-building"></i>
                                 </div>
                                 Información de la Clínica
-                            </li>
-                            <li
-                                class="p-3 hover:bg-white/40 text-gray-600 hover:text-[#2F5D50] rounded-xl cursor-pointer transition-all font-medium flex items-center group"
-                            >
-                                <div
-                                    class="w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-[#2F5D50]/10 flex items-center justify-center mr-3 transition-colors"
-                                >
-                                    <i class="fas fa-users"></i>
-                                </div>
-                                Usuarios y Roles
-                            </li>
-                            <li
-                                class="p-3 hover:bg-white/40 text-gray-600 hover:text-[#2F5D50] rounded-xl cursor-pointer transition-all font-medium flex items-center group"
-                            >
-                                <div
-                                    class="w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-[#2F5D50]/10 flex items-center justify-center mr-3 transition-colors"
-                                >
-                                    <i class="fas fa-cog"></i>
-                                </div>
-                                Preferencias
-                            </li>
-                            <li
-                                class="p-3 hover:bg-white/40 text-gray-600 hover:text-[#2F5D50] rounded-xl cursor-pointer transition-all font-medium flex items-center group"
-                            >
-                                <div
-                                    class="w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-[#2F5D50]/10 flex items-center justify-center mr-3 transition-colors"
-                                >
-                                    <i class="fas fa-receipt"></i>
-                                </div>
-                                Facturación
-                            </li>
-                            <li
-                                class="p-3 hover:bg-white/40 text-gray-600 hover:text-[#2F5D50] rounded-xl cursor-pointer transition-all font-medium flex items-center group"
-                            >
-                                <div
-                                    class="w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-[#2F5D50]/10 flex items-center justify-center mr-3 transition-colors"
-                                >
-                                    <i class="fas fa-bell"></i>
-                                </div>
-                                Notificaciones
-                            </li>
-                            <li
-                                class="p-3 hover:bg-white/40 text-gray-600 hover:text-[#2F5D50] rounded-xl cursor-pointer transition-all font-medium flex items-center group"
-                            >
-                                <div
-                                    class="w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-[#2F5D50]/10 flex items-center justify-center mr-3 transition-colors"
-                                >
-                                    <i class="fas fa-shield-alt"></i>
-                                </div>
-                                Seguridad
                             </li>
                         </ul>
                     </div>
@@ -138,20 +98,39 @@ import TopTag from "../components/TopTag.astro";
                                 ></i>
                             </div>
 
-                            <h2
-                                class="text-xl font-bold mb-8 text-[#2F5D50] flex items-center gap-3 border-b border-[#2F5D50]/10 pb-4"
-                            >
-                                <div
-                                    class="w-10 h-10 rounded-xl bg-[#2F5D50]/10 flex items-center justify-center"
-                                >
-                                    <i class="fas fa-building"></i>
-                                </div>
-                                Información de la Clínica
-                            </h2>
-
                             <div
+                                class="flex justify-between items-center mb-8 border-b border-[#2F5D50]/10 pb-4"
+                            >
+                                <h2
+                                    class="text-xl font-bold text-[#2F5D50] flex items-center gap-3"
+                                >
+                                    <div
+                                        class="w-10 h-10 rounded-xl bg-[#2F5D50]/10 flex items-center justify-center"
+                                    >
+                                        <i class="fas fa-building"></i>
+                                    </div>
+                                    Información de la Clínica
+                                </h2>
+                                <button
+                                    id="btnActualizar"
+                                    class="glass-button px-4 py-2 rounded-xl flex items-center gap-2 text-white bg-[#2F5D50] hover:bg-[#234D20] transition-all shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-1"
+                                >
+                                    <i class="fa-solid fa-save"></i>
+                                    <span class="font-semibold text-sm"
+                                        >Actualizar Datos</span
+                                    >
+                                </button>
+                            </div>
+
+                            <form
+                                id="formClinica"
                                 class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10"
                             >
+                                <input
+                                    type="hidden"
+                                    id="clinicId"
+                                    value={clinicData.id || ""}
+                                />
                                 <div class="space-y-2">
                                     <label
                                         class="block text-sm font-bold text-gray-700 ml-1"
@@ -159,8 +138,9 @@ import TopTag from "../components/TopTag.astro";
                                     >
                                     <input
                                         type="text"
+                                        id="name"
                                         class="glass-input w-full px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                                        value="Clínica Especializada"
+                                        value={clinicData.name || ""}
                                     />
                                 </div>
 
@@ -171,8 +151,9 @@ import TopTag from "../components/TopTag.astro";
                                     >
                                     <input
                                         type="text"
+                                        id="rfc_clinic"
                                         class="glass-input w-full px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                                        value="CLI123456789"
+                                        value={clinicData.rfc_clinic || ""}
                                     />
                                 </div>
 
@@ -183,8 +164,9 @@ import TopTag from "../components/TopTag.astro";
                                     >
                                     <input
                                         type="email"
+                                        id="email"
                                         class="glass-input w-full px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                                        value="contacto@clinica.com"
+                                        value={clinicData.email || ""}
                                     />
                                 </div>
 
@@ -195,8 +177,9 @@ import TopTag from "../components/TopTag.astro";
                                     >
                                     <input
                                         type="tel"
+                                        id="phone"
                                         class="glass-input w-full px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                                        value="5512345678"
+                                        value={clinicData.phone || ""}
                                     />
                                 </div>
 
@@ -207,8 +190,9 @@ import TopTag from "../components/TopTag.astro";
                                     >
                                     <input
                                         type="text"
+                                        id="address"
                                         class="glass-input w-full px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                                        value="Av. Principal #123, Col. Centro"
+                                        value={clinicData.address || ""}
                                     />
                                 </div>
 
@@ -219,11 +203,12 @@ import TopTag from "../components/TopTag.astro";
                                     >
                                     <input
                                         type="text"
+                                        id="postalcode"
                                         class="glass-input w-full px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                                        value="01000"
+                                        value={clinicData.postalcode || ""}
                                     />
                                 </div>
-                            </div>
+                            </form>
                         </div>
 
                         <!-- Configuración de Horarios -->
@@ -249,81 +234,47 @@ import TopTag from "../components/TopTag.astro";
                             </h2>
 
                             <div class="space-y-4 relative z-10">
-                                <div
-                                    class="flex items-center justify-between p-5 bg-white/40 rounded-2xl border border-white/50 hover:bg-white/60 transition-colors"
-                                >
-                                    <div class="flex items-center gap-3">
-                                        <div
-                                            class="w-2 h-2 rounded-full bg-green-500"
-                                        >
+                                {
+                                    scheduleData.map((schedule) => (
+                                        <div class="flex flex-col sm:flex-row items-center justify-between p-5 bg-white/40 rounded-2xl border border-white/50 hover:bg-white/60 transition-colors gap-4">
+                                            <div class="flex items-center gap-3 w-full sm:w-auto">
+                                                <div
+                                                    class={`w-2 h-2 rounded-full ${schedule.dayofweek >= 1 && schedule.dayofweek <= 5 ? "bg-green-500" : "bg-yellow-500"}`}
+                                                />
+                                                <span class="font-bold text-gray-700">
+                                                    {daysMap[
+                                                        schedule.dayofweek
+                                                    ] ||
+                                                        `Día ${schedule.dayofweek}`}
+                                                </span>
+                                            </div>
+                                            <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                                                <input
+                                                    type="time"
+                                                    class="glass-input px-4 py-2 rounded-lg text-sm font-medium"
+                                                    value={schedule.openhour}
+                                                    readonly
+                                                />
+                                                <span class="text-gray-400 font-medium">
+                                                    a
+                                                </span>
+                                                <input
+                                                    type="time"
+                                                    class="glass-input px-4 py-2 rounded-lg text-sm font-medium"
+                                                    value={schedule.closehour}
+                                                    readonly
+                                                />
+                                            </div>
                                         </div>
-                                        <span class="font-bold text-gray-700"
-                                            >Lunes a Viernes</span
-                                        >
-                                    </div>
-                                    <div class="flex items-center gap-3">
-                                        <input
-                                            type="time"
-                                            class="glass-input px-4 py-2 rounded-lg text-sm font-medium"
-                                            value="09:00"
-                                        />
-                                        <span class="text-gray-400 font-medium"
-                                            >a</span
-                                        >
-                                        <input
-                                            type="time"
-                                            class="glass-input px-4 py-2 rounded-lg text-sm font-medium"
-                                            value="18:00"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div
-                                    class="flex items-center justify-between p-5 bg-white/40 rounded-2xl border border-white/50 hover:bg-white/60 transition-colors"
-                                >
-                                    <div class="flex items-center gap-3">
-                                        <div
-                                            class="w-2 h-2 rounded-full bg-yellow-500"
-                                        >
-                                        </div>
-                                        <span class="font-bold text-gray-700"
-                                            >Sábados</span
-                                        >
-                                    </div>
-                                    <div class="flex items-center gap-3">
-                                        <input
-                                            type="time"
-                                            class="glass-input px-4 py-2 rounded-lg text-sm font-medium"
-                                            value="09:00"
-                                        />
-                                        <span class="text-gray-400 font-medium"
-                                            >a</span
-                                        >
-                                        <input
-                                            type="time"
-                                            class="glass-input px-4 py-2 rounded-lg text-sm font-medium"
-                                            value="14:00"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div
-                                    class="flex items-center justify-between p-5 bg-white/40 rounded-2xl border border-white/50 hover:bg-white/60 transition-colors"
-                                >
-                                    <div class="flex items-center gap-3">
-                                        <div
-                                            class="w-2 h-2 rounded-full bg-red-500"
-                                        >
-                                        </div>
-                                        <span class="font-bold text-gray-700"
-                                            >Domingos</span
-                                        >
-                                    </div>
-                                    <span
-                                        class="text-red-500 font-bold bg-red-50 px-4 py-2 rounded-xl border border-red-100"
-                                        >Cerrado</span
-                                    >
-                                </div>
+                                    ))
+                                }
+                                {
+                                    scheduleData.length === 0 && (
+                                        <p class="text-center text-gray-500">
+                                            No hay horarios configurados.
+                                        </p>
+                                    )
+                                }
                             </div>
                         </div>
 
@@ -473,11 +424,7 @@ import TopTag from "../components/TopTag.astro";
                                             checked
                                         />
                                         <div
-                                            class="w-14 h-8 bg-gray-200 peer-focus:outline-none rounded-full peer
-                                                    peer-checked:after:translate-x-full peer-checked:after:border-white
-                                                    after:content-[''] after:absolute after:top-[4px] after:left-[4px]
-                                                    after:bg-white after:border-gray-300 after:border after:rounded-full
-                                                    after:h-6 after:w-6 after:transition-all peer-checked:bg-[#2F5D50] shadow-inner"
+                                            class="w-14 h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#2F5D50] shadow-inner"
                                         >
                                         </div>
                                     </label>
@@ -506,11 +453,7 @@ import TopTag from "../components/TopTag.astro";
                                             checked
                                         />
                                         <div
-                                            class="w-14 h-8 bg-gray-200 peer-focus:outline-none rounded-full peer
-                                                    peer-checked:after:translate-x-full peer-checked:after:border-white
-                                                    after:content-[''] after:absolute after:top-[4px] after:left-[4px]
-                                                    after:bg-white after:border-gray-300 after:border after:rounded-full
-                                                    after:h-6 after:w-6 after:transition-all peer-checked:bg-[#2F5D50] shadow-inner"
+                                            class="w-14 h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#2F5D50] shadow-inner"
                                         >
                                         </div>
                                     </label>
@@ -538,11 +481,7 @@ import TopTag from "../components/TopTag.astro";
                                             class="sr-only peer"
                                         />
                                         <div
-                                            class="w-14 h-8 bg-gray-200 peer-focus:outline-none rounded-full peer
-                                                    peer-checked:after:translate-x-full peer-checked:after:border-white
-                                                    after:content-[''] after:absolute after:top-[4px] after:left-[4px]
-                                                    after:bg-white after:border-gray-300 after:border after:rounded-full
-                                                    after:h-6 after:w-6 after:transition-all peer-checked:bg-[#2F5D50] shadow-inner"
+                                            class="w-14 h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#2F5D50] shadow-inner"
                                         >
                                         </div>
                                     </label>
@@ -557,16 +496,49 @@ import TopTag from "../components/TopTag.astro";
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // GSAP Animations
-            // if (typeof gsap !== "undefined") {
-            //     gsap.from(".glass-panel", {
-            //         duration: 0.8,
-            //         y: 30,
-            //         opacity: 0,
-            //         stagger: 0.1,
-            //         ease: "power3.out",
-            //     });
-            // }
+            const btnActualizar = document.getElementById("btnActualizar");
+            const clinicId = document.getElementById("clinicId").value;
+
+            btnActualizar.addEventListener("click", async () => {
+                const data = {
+                    name: document.getElementById("name").value,
+                    rfc_clinic: document.getElementById("rfc_clinic").value,
+                    email: document.getElementById("email").value,
+                    phone: document.getElementById("phone").value,
+                    address: document.getElementById("address").value,
+                    postalcode: document.getElementById("postalcode").value,
+                };
+
+                // Si no hay ID, asumimos que es 1 o manejamos el error
+                const targetId = clinicId || "1";
+
+                try {
+                    const response = await fetch(
+                        `/api/v1/Clinicas/${targetId}`,
+                        {
+                            method: "PATCH",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(data),
+                        },
+                    );
+
+                    if (response.ok) {
+                        alert("Datos actualizados correctamente");
+                        // Opcional: recargar para ver cambios si es necesario, aunque los inputs ya tienen los nuevos valores
+                    } else {
+                        const err = await response.json();
+                        alert(
+                            "Error al actualizar: " +
+                                (err.message || response.statusText),
+                        );
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                    alert("Error de conexión al actualizar los datos");
+                }
+            });
         });
     </script>
 </Layout>

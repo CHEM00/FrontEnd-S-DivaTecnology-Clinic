@@ -1,122 +1,41 @@
 ---
+export const prerender = false;
 import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
-import axios from "axios";
+import { jwtVerify } from "jose";
 
-// Manejo seguro de las peticiones API
-let citas = [];
-let pacientes = [];
-let empleados = [];
-let detallesCitas = [];
+const token = Astro.cookies.get("auth_token")?.value;
+// NOTA: En producción, usa variables de entorno
+const SECRET_KEY = new TextEncoder().encode("secret_dev_key_change_in_prod");
 
-try {
-    const [citasRes, pacientesRes, empleadosRes, detallesRes] =
-        await Promise.all([
-            axios
-                .get("http://localhost:3001/api/v1/Citas")
-                .catch(() => ({ data: [] })),
-            axios
-                .get("http://localhost:3001/api/v1/Pacientes")
-                .catch(() => ({ data: [] })),
-            axios
-                .get("http://localhost:3001/api/v1/Trabajadores")
-                .catch(() => ({ data: [] })),
-            axios
-                .get("http://localhost:3001/api/v1/DetalleCitas")
-                .catch(() => ({ data: [] })),
-        ]);
+let currentUser = null;
 
-    citas = citasRes.data || [];
-    pacientes = pacientesRes.data || [];
-    empleados = empleadosRes.data || [];
-    detallesCitas = detallesRes.data || [];
-} catch (error) {
-    console.error("Error cargando datos:", error);
+if (token) {
+    try {
+        const { payload } = await jwtVerify(token, SECRET_KEY);
+        currentUser = payload;
+    } catch (error) {
+        console.error("Error validando sesión:", error);
+        return Astro.redirect("/");
+    }
+} else {
+    return Astro.redirect("/");
 }
 
-// Función para formatear fecha
-const formatDate = (dateString) => {
-    if (!dateString) return "";
-    try {
-        const date = new Date(dateString);
-        return date.toISOString().split("T")[0];
-    } catch {
-        return "";
-    }
-};
-
-// Función para formatear hora (solo HH:MM)
-const formatTime = (timeString) => {
-    if (!timeString) return "";
-    if (timeString.includes(":")) {
-        return timeString.substring(0, 5);
-    }
-    return timeString;
-};
-
-// Función para calcular la edad
-const calcularEdad = (fechaNacimiento) => {
-    if (!fechaNacimiento) return "";
-    try {
-        const hoy = new Date();
-        const nacimiento = new Date(fechaNacimiento);
-        let edad = hoy.getFullYear() - nacimiento.getFullYear();
-        const mes = hoy.getMonth() - nacimiento.getMonth();
-        if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
-            edad--;
-        }
-        return `${edad} años`;
-    } catch {
-        return "";
-    }
-};
-
-// Helpers para obtener datos
-const getNombrePaciente = (idPaciente) => {
-    if (!idPaciente || !Array.isArray(pacientes))
-        return "Paciente no encontrado";
-    const paciente = pacientes.find((p) => p.id == idPaciente);
-    return paciente
-        ? `${paciente.firstname || ""} ${paciente.lastname || ""}`.trim()
-        : "Paciente no encontrado";
-};
-
-const getPacienteData = (idPaciente) => {
-    if (!idPaciente || !Array.isArray(pacientes)) return {};
-    return pacientes.find((p) => p.id == idPaciente) || {};
-};
-
-const getEmpleadoData = (idEmpleado) => {
-    if (!idEmpleado || !Array.isArray(empleados)) return {};
-    return empleados.find((e) => e.id == idEmpleado) || {};
-};
-
-const getDetalleCita = (idCita) => {
-    if (!idCita || !Array.isArray(detallesCitas)) return {};
-    return detallesCitas.find((d) => d.IdAppointment == idCita) || {};
-};
-
-const citasParaMostrar = Array.isArray(citas) ? citas : [];
-
-// Escapar caracteres para JavaScript
-const escapeJS = (str) => {
-    if (!str) return "";
-    return String(str)
-        .replace(/'/g, "\\'")
-        .replace(/"/g, '\\"')
-        .replace(/\n/g, "\\n")
-        .replace(/\r/g, "\\r");
-};
+const userName = currentUser
+    ? `${currentUser.firstname} ${currentUser.lastname}`
+    : "Empleado";
+const userId = currentUser?.id;
 ---
 
 <Layout title="Dashboard Empleado">
     <div
-        class="flex h-screen overflow-hidden bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8]"
+        class="flex h-[100dvh] overflow-hidden bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8]"
     >
         <NavBar />
         <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-            <!-- Background Elements for depth -->
+            <!-- Background Elements -->
             <div
                 class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#2F5D50]/10 rounded-full blur-3xl pointer-events-none"
             >
@@ -126,227 +45,51 @@ const escapeJS = (str) => {
             >
             </div>
 
-            <TopTag titulo="Dashboard Empleado" nombreUsuario="Empleado" />
+            <TopTag titulo="Mi Agenda" nombreUsuario={userName} />
 
             <main
                 class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-[#2F5D50]/20 scrollbar-track-transparent relative z-10"
             >
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-                    <!-- Columna 1: Lista de Citas -->
+                <div class="max-w-5xl mx-auto space-y-6">
+                    <!-- Date Filter Card -->
                     <div
-                        class="glass-panel rounded-3xl flex flex-col overflow-hidden animate-fade-in-up stagger-1 border border-white/40 shadow-xl"
+                        class="glass-panel rounded-3xl p-6 border border-white/40 shadow-lg flex flex-col sm:flex-row justify-between items-center gap-4"
                     >
-                        <div
-                            class="p-6 border-b border-[#2F5D50]/10 bg-[#2F5D50]/5"
-                        >
-                            <h2
-                                class="text-xl font-bold text-[#2F5D50] mb-4 flex items-center gap-2"
-                            >
-                                <i class="fa-regular fa-calendar-check"></i>
-                                Agenda de Citas
+                        <div>
+                            <h2 class="text-xl font-bold text-[#2F5D50]">
+                                Citas Programadas
                             </h2>
-                            <div class="relative group">
-                                <i
-                                    class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-[#2F5D50] transition-colors"
-                                ></i>
-                                <input
-                                    type="text"
-                                    id="buscarCitaInput"
-                                    class="glass-input w-full pl-11 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                                    placeholder="Buscar por paciente, servicio..."
-                                />
-                            </div>
+                            <p class="text-sm text-gray-500">
+                                Selecciona una fecha para ver tu agenda
+                            </p>
                         </div>
-
-                        <div
-                            class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"
-                            id="citasList"
-                        >
-                            {
-                                citasParaMostrar.length > 0 ? (
-                                    citasParaMostrar.map((cita) => {
-                                        const paciente = getPacienteData(
-                                            cita.idpatient,
-                                        );
-                                        const edad = calcularEdad(
-                                            paciente.birthday,
-                                        );
-                                        const nombrePaciente =
-                                            getNombrePaciente(cita.idpatient);
-                                        const empleado = getEmpleadoData(
-                                            cita.idemployed,
-                                        );
-                                        const nombreEmpleado = empleado
-                                            ? `${empleado.firstname || ""} ${empleado.lastname || ""}`.trim()
-                                            : "Empleado no encontrado";
-                                        const detalleCita = getDetalleCita(
-                                            cita.id,
-                                        );
-
-                                        return (
-                                            <div
-                                                class="cita-item p-5 rounded-2xl border border-white/50 hover:border-[#2F5D50]/30 hover:bg-white/80 cursor-pointer transition-all group bg-white/40 backdrop-blur-sm shadow-sm hover:shadow-md hover:-translate-y-1"
-                                                data-cita-id={cita.id || ""}
-                                                data-paciente-id={
-                                                    cita.idpatient || ""
-                                                }
-                                                data-empleado-id={
-                                                    cita.idemployed || ""
-                                                }
-                                                data-paciente-nombre={escapeJS(
-                                                    nombrePaciente,
-                                                )}
-                                                data-paciente-edad={escapeJS(
-                                                    edad,
-                                                )}
-                                                data-paciente-email={escapeJS(
-                                                    paciente.email || "",
-                                                )}
-                                                data-paciente-telefono={escapeJS(
-                                                    paciente.phone || "",
-                                                )}
-                                                data-cita-hora={escapeJS(
-                                                    formatTime(cita.inithour),
-                                                )}
-                                                data-cita-duracion={escapeJS(
-                                                    `${formatTime(cita.inithour)} - ${formatTime(cita.endhour)}`,
-                                                )}
-                                                data-cita-servicio={escapeJS(
-                                                    cita.reason || "",
-                                                )}
-                                                data-cita-estado={escapeJS(
-                                                    cita.status || "",
-                                                )}
-                                                data-cita-fecha={escapeJS(
-                                                    formatDate(cita.currentday),
-                                                )}
-                                                data-empleado-nombre={escapeJS(
-                                                    nombreEmpleado,
-                                                )}
-                                                data-cita-notas={escapeJS(
-                                                    cita.reason || "",
-                                                )}
-                                                data-diagnostico={escapeJS(
-                                                    detalleCita.diagnostic ||
-                                                        "",
-                                                )}
-                                                data-nota-terapeutica={escapeJS(
-                                                    detalleCita.therapeuticNote ||
-                                                        "",
-                                                )}
-                                            >
-                                                <div class="flex justify-between items-start mb-3">
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="w-10 h-10 rounded-full bg-[#2F5D50]/10 flex items-center justify-center text-[#2F5D50] font-bold">
-                                                            {nombrePaciente.charAt(
-                                                                0,
-                                                            )}
-                                                        </div>
-                                                        <div>
-                                                            <h3 class="font-bold text-gray-800 group-hover:text-[#2F5D50] transition-colors text-lg leading-tight">
-                                                                {nombrePaciente}
-                                                            </h3>
-                                                            <p class="text-xs text-gray-500 font-medium">
-                                                                {edad}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <span
-                                                        class={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm ${
-                                                            cita.status ===
-                                                            "confirmed"
-                                                                ? "bg-green-100 text-green-700"
-                                                                : cita.status ===
-                                                                    "pending"
-                                                                  ? "bg-yellow-100 text-yellow-700"
-                                                                  : "bg-red-100 text-red-700"
-                                                        }`}
-                                                    >
-                                                        {cita.status ||
-                                                            "Pendiente"}
-                                                    </span>
-                                                </div>
-                                                <div class="flex items-center gap-4 text-sm text-gray-600 mb-3 bg-white/30 p-2 rounded-lg">
-                                                    <div class="flex items-center gap-2">
-                                                        <i class="fa-regular fa-clock text-[#2F5D50]" />
-                                                        <span class="font-medium">
-                                                            {formatTime(
-                                                                cita.inithour,
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                    <div class="w-px h-4 bg-gray-300" />
-                                                    <div class="flex items-center gap-2">
-                                                        <i class="fa-regular fa-calendar text-[#2F5D50]" />
-                                                        <span class="font-medium">
-                                                            {formatDate(
-                                                                cita.currentday,
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div class="text-sm text-gray-500 italic flex items-start gap-2">
-                                                    <i class="fa-solid fa-quote-left text-[#2F5D50]/40 text-xs mt-1" />
-                                                    {cita.reason ||
-                                                        "Sin motivo especificado"}
-                                                </div>
-                                            </div>
-                                        );
-                                    })
-                                ) : (
-                                    <div class="flex flex-col items-center justify-center h-64 text-gray-400">
-                                        <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                                            <i class="fa-regular fa-calendar-xmark text-4xl text-gray-300" />
-                                        </div>
-                                        <p class="font-medium">
-                                            No hay citas programadas
-                                        </p>
-                                    </div>
-                                )
-                            }
+                        <div class="relative group w-full sm:w-auto">
+                            <input
+                                type="date"
+                                id="dateFilter"
+                                class="glass-input w-full sm:w-48 rounded-xl px-4 py-2.5 font-bold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20 transition-all cursor-pointer"
+                            />
+                            <div
+                                class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2F5D50]"
+                            >
+                                <i class="fa-regular fa-calendar"></i>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Columna 2: Detalles -->
+                    <!-- Appointments Grid -->
                     <div
-                        class="glass-panel rounded-3xl flex flex-col overflow-hidden animate-fade-in-up stagger-2 relative border border-white/40 shadow-xl"
+                        id="appointmentsGrid"
+                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                     >
+                        <!-- Content injected via JS -->
                         <div
-                            class="p-6 border-b border-[#2F5D50]/10 bg-[#2F5D50]/5 flex justify-between items-center"
+                            class="col-span-full py-12 flex flex-col items-center justify-center text-gray-400"
                         >
-                            <h2
-                                class="text-xl font-bold text-[#2F5D50] flex items-center gap-2"
-                            >
-                                <i class="fa-solid fa-circle-info"></i>
-                                Detalles de la Cita
-                            </h2>
-                            <button
-                                id="btnIniciarConsulta"
-                                class="glass-button px-5 py-2.5 rounded-xl text-white bg-[#2F5D50] font-bold hover:bg-[#234D20] transition-all text-sm hidden shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-1 flex items-center gap-2"
-                            >
-                                <i class="fa-solid fa-stethoscope"></i>
-                                Iniciar Consulta
-                            </button>
-                        </div>
-
-                        <div
-                            class="flex-1 overflow-y-auto p-8 custom-scrollbar"
-                            id="detallesContainer"
-                        >
-                            <div
-                                class="flex flex-col items-center justify-center h-full text-gray-400"
-                            >
-                                <div
-                                    class="w-24 h-24 rounded-full bg-[#2F5D50]/5 flex items-center justify-center mb-6 animate-pulse"
-                                >
-                                    <i
-                                        class="fa-solid fa-hand-pointer text-4xl text-[#2F5D50]/40"
-                                    ></i>
-                                </div>
-                                <p class="text-lg font-medium text-gray-500">
-                                    Selecciona una cita para ver los detalles
-                                </p>
-                            </div>
+                            <i
+                                class="fa-solid fa-circle-notch fa-spin text-4xl mb-4 text-[#2F5D50]"
+                            ></i>
+                            <p>Cargando citas...</p>
                         </div>
                     </div>
                 </div>
@@ -354,236 +97,462 @@ const escapeJS = (str) => {
         </div>
     </div>
 
-    <script is:inline>
-        // Variables globales
-        let citaSeleccionada = null;
-        let todasLasCitas = [];
+    <!-- Appointment Detail Modal -->
+    <div id="appointmentModal" class="fixed inset-0 z-50 hidden">
+        <div
+            class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            id="modalOverlay"
+        >
+        </div>
+        <div
+            class="fixed inset-0 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+        >
+            <div
+                class="bg-white rounded-3xl shadow-2xl w-full max-w-lg transform transition-all scale-95 opacity-0 flex flex-col max-h-[90vh]"
+                id="modalContent"
+            >
+                <!-- Modal Header -->
+                <div
+                    class="p-6 border-b border-gray-100 flex justify-between items-start bg-[#2F5D50]/5"
+                >
+                    <div>
+                        <h3
+                            class="text-xl font-bold text-[#2F5D50]"
+                            id="modalPatientName"
+                        >
+                            Nombre del Paciente
+                        </h3>
+                        <p
+                            class="text-sm text-gray-500 flex items-center gap-2 mt-1"
+                        >
+                            <i class="fa-regular fa-clock"></i>
+                            <span id="modalTimeRange">00:00 - 00:00</span>
+                        </p>
+                    </div>
+                    <button
+                        id="closeModalBtn"
+                        class="w-8 h-8 rounded-full bg-white text-gray-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-all shadow-sm"
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
 
-        document.addEventListener("DOMContentLoaded", function () {
-            // GSAP Animations
-            if (typeof gsap !== "undefined") {
-                gsap.from(".glass-panel", {
-                    duration: 0.8,
-                    y: 30,
-                    opacity: 0,
-                    stagger: 0.1,
-                    ease: "power3.out",
-                });
-                gsap.from(".cita-item", {
-                    duration: 0.5,
-                    opacity: 0,
-                    y: 10,
-                    stagger: 0.05,
-                    delay: 0.2,
-                    ease: "power2.out",
-                });
-            }
+                <!-- Modal Body -->
+                <div class="p-6 overflow-y-auto space-y-6">
+                    <!-- Info Cards -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div
+                            class="bg-blue-50 p-4 rounded-2xl border border-blue-100"
+                        >
+                            <p
+                                class="text-xs text-blue-600 font-bold uppercase mb-1"
+                            >
+                                Servicio
+                            </p>
+                            <p
+                                class="font-semibold text-gray-800 text-sm"
+                                id="modalService"
+                            >
+                                Valoración
+                            </p>
+                        </div>
+                        <div
+                            class="bg-purple-50 p-4 rounded-2xl border border-purple-100"
+                        >
+                            <p
+                                class="text-xs text-purple-600 font-bold uppercase mb-1"
+                            >
+                                Estado
+                            </p>
+                            <p
+                                class="font-semibold text-gray-800 text-sm capitalize"
+                                id="modalStatus"
+                            >
+                                Pendiente
+                            </p>
+                        </div>
+                    </div>
 
-            todasLasCitas = Array.from(document.querySelectorAll(".cita-item"));
+                    <div
+                        class="bg-gray-50 p-4 rounded-2xl border border-gray-100"
+                    >
+                        <p
+                            class="text-xs text-gray-500 font-bold uppercase mb-1"
+                        >
+                            Motivo de consulta
+                        </p>
+                        <p class="text-gray-700 text-sm" id="modalReason">
+                            Dolor en la espalda baja...
+                        </p>
+                    </div>
 
-            // Event Listeners para citas
-            todasLasCitas.forEach((item) => {
-                item.addEventListener("click", function () {
-                    seleccionarCita(this);
-                });
+                    <!-- Consent & Signature Section -->
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-gray-800 text-sm">
+                                Consentimiento Informado
+                            </h4>
+                            <button
+                                id="clearSignatureBtn"
+                                class="text-xs text-red-500 hover:text-red-700 font-medium underline"
+                            >
+                                Borrar firma
+                            </button>
+                        </div>
+                        <div
+                            class="border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 relative overflow-hidden touch-none"
+                            style="height: 160px;"
+                        >
+                            <canvas
+                                id="signatureCanvas"
+                                class="w-full h-full cursor-crosshair"></canvas>
+                            <div
+                                id="signaturePlaceholder"
+                                class="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-400 text-sm"
+                            >
+                                Firmar aquí
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-gray-400 text-center">
+                            Al firmar, el paciente acepta los términos y
+                            condiciones del tratamiento.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div
+                    class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-3xl"
+                >
+                    <button
+                        id="startConsultationBtn"
+                        class="w-full py-3.5 rounded-xl bg-[#2F5D50] text-white font-bold shadow-lg shadow-[#2F5D50]/30 hover:bg-[#234D20] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2"
+                    >
+                        <i class="fa-solid fa-stethoscope"></i>
+                        <span>Iniciar Consulta</span>
+                    </button>
+                    <p
+                        id="timeValidationError"
+                        class="text-xs text-red-500 text-center mt-2 hidden font-medium"
+                    >
+                        Solo puedes iniciar la consulta entre <span
+                            id="allowedTimeRange"></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script define:vars={{ userId }}>
+        document.addEventListener("DOMContentLoaded", () => {
+            const dateInput = document.getElementById("dateFilter");
+            const grid = document.getElementById("appointmentsGrid");
+
+            // Modal Elements
+            const modal = document.getElementById("appointmentModal");
+            const modalContent = document.getElementById("modalContent");
+            const modalOverlay = document.getElementById("modalOverlay");
+            const closeModalBtn = document.getElementById("closeModalBtn");
+            const startBtn = document.getElementById("startConsultationBtn");
+            const errorMsg = document.getElementById("timeValidationError");
+
+            // Canvas Elements
+            const canvas = document.getElementById("signatureCanvas");
+            const clearBtn = document.getElementById("clearSignatureBtn");
+            const placeholder = document.getElementById("signaturePlaceholder");
+            let ctx = null;
+            let isDrawing = false;
+            let currentAppointment = null;
+
+            // Initialize Date to Today
+            const today = new Date();
+            const localDate = today.toLocaleDateString("en-CA"); // YYYY-MM-DD format
+            dateInput.value = localDate;
+
+            // Initial Fetch
+            fetchAppointments(localDate);
+
+            // Date Change Listener
+            dateInput.addEventListener("change", (e) => {
+                fetchAppointments(e.target.value);
             });
 
-            // Búsqueda
-            const buscarInput = document.getElementById("buscarCitaInput");
-            if (buscarInput) {
-                buscarInput.addEventListener("input", function (e) {
-                    const termino = e.target.value.toLowerCase();
-                    todasLasCitas.forEach((cita) => {
-                        const texto = cita.innerText.toLowerCase();
-                        if (texto.includes(termino)) {
-                            cita.style.display = "block";
-                            // Re-animar entrada
-                            if (typeof gsap !== "undefined") {
-                                gsap.to(cita, {
-                                    opacity: 1,
-                                    y: 0,
-                                    duration: 0.3,
-                                });
-                            }
-                        } else {
-                            cita.style.display = "none";
-                        }
-                    });
-                });
-            }
+            // --- Fetch Logic ---
+            async function fetchAppointments(date) {
+                if (!userId) {
+                    grid.innerHTML = `
+                        <div class="col-span-full py-12 flex flex-col items-center justify-center text-red-400">
+                            <i class="fa-solid fa-triangle-exclamation text-4xl mb-4"></i>
+                            <p>Error de sesión: No se encontró el ID del usuario.</p>
+                            <p class="text-sm mt-2">Por favor, cierra sesión e intenta de nuevo.</p>
+                        </div>
+                    `;
+                    return;
+                }
 
-            // Botón Iniciar Consulta
-            document
-                .getElementById("btnIniciarConsulta")
-                ?.addEventListener("click", function () {
-                    if (citaSeleccionada) {
-                        alert(
-                            `Iniciando consulta para: ${citaSeleccionada.paciente.nombre}`,
-                        );
-                        // Redirección o lógica adicional
-                    }
-                });
-        });
+                grid.innerHTML = `
+                    <div class="col-span-full py-12 flex flex-col items-center justify-center text-gray-400">
+                        <i class="fa-solid fa-circle-notch fa-spin text-4xl mb-4 text-[#2F5D50]"></i>
+                        <p>Cargando citas...</p>
+                    </div>
+                `;
 
-        function seleccionarCita(elemento) {
-            // Remover clase activa de todos
-            todasLasCitas.forEach((c) => {
-                c.classList.remove(
-                    "border-[#2F5D50]",
-                    "bg-[#2F5D50]/10",
-                    "ring-2",
-                    "ring-[#2F5D50]/20",
-                );
-                c.classList.add("border-white/50", "bg-white/40");
-            });
-
-            // Agregar clase activa al seleccionado
-            elemento.classList.remove("border-white/50", "bg-white/40");
-            elemento.classList.add(
-                "border-[#2F5D50]",
-                "bg-[#2F5D50]/10",
-                "ring-2",
-                "ring-[#2F5D50]/20",
-            );
-
-            // Extraer datos
-            const ds = elemento.dataset;
-            citaSeleccionada = {
-                id: ds.citaId,
-                paciente: {
-                    id: ds.pacienteId,
-                    nombre: ds.pacienteNombre,
-                    edad: ds.pacienteEdad,
-                    email: ds.pacienteEmail,
-                    telefono: ds.pacienteTelefono,
-                },
-                empleado: {
-                    id: ds.empleadoId,
-                    nombre: ds.empleadoNombre,
-                },
-                cita: {
-                    hora: ds.citaHora,
-                    duracion: ds.citaDuracion,
-                    servicio: ds.citaServicio,
-                    estado: ds.citaEstado,
-                    fecha: ds.citaFecha,
-                    notas: ds.citaNotas,
-                    diagnostico: ds.diagnostico,
-                    notaTerapeutica: ds.notaTerapeutica,
-                },
-            };
-
-            mostrarDetalles(citaSeleccionada);
-        }
-
-        function mostrarDetalles(data) {
-            const container = document.getElementById("detallesContainer");
-            const btnIniciar = document.getElementById("btnIniciarConsulta");
-
-            if (btnIniciar) {
-                btnIniciar.classList.remove("hidden");
-                // Animate button entrance
-                if (typeof gsap !== "undefined") {
-                    gsap.fromTo(
-                        btnIniciar,
-                        { opacity: 0, y: -10 },
-                        { opacity: 1, y: 0, duration: 0.3 },
+                try {
+                    const res = await fetch(
+                        `/api/v1/DashboardEmpleado/${userId}?date=${date}`,
                     );
+                    if (!res.ok) throw new Error("Error fetching appointments");
+                    const data = await res.json();
+                    renderAppointments(data);
+                } catch (error) {
+                    console.error(error);
+                    grid.innerHTML = `
+                        <div class="col-span-full py-12 flex flex-col items-center justify-center text-red-400">
+                            <i class="fa-solid fa-triangle-exclamation text-4xl mb-4"></i>
+                            <p>Error al cargar las citas</p>
+                        </div>
+                    `;
                 }
             }
 
-            // Animación de salida
-            if (typeof gsap !== "undefined") {
-                gsap.to(container, {
-                    opacity: 0,
-                    duration: 0.2,
-                    onComplete: () => {
-                        renderizarContenido(container, data);
-                        // Animación de entrada
-                        gsap.to(container, { opacity: 1, duration: 0.3 });
-                    },
+            function renderAppointments(appointments) {
+                if (!appointments || appointments.length === 0) {
+                    grid.innerHTML = `
+                        <div class="col-span-full py-12 flex flex-col items-center justify-center text-gray-400">
+                            <i class="fa-regular fa-calendar-xmark text-5xl mb-4 opacity-50"></i>
+                            <p class="text-lg">No tienes citas para este día</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                grid.innerHTML = "";
+                appointments.forEach((app) => {
+                    const card = createAppointmentCard(app);
+                    grid.appendChild(card);
                 });
-            } else {
-                renderizarContenido(container, data);
             }
-        }
 
-        function renderizarContenido(container, data) {
-            container.innerHTML = `
-                <div class="space-y-8">
-                    <!-- Header Paciente -->
-                    <div class="flex items-center gap-6 pb-8 border-b border-[#2F5D50]/10">
-                        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-[#2F5D50] to-[#1a3c33] flex items-center justify-center text-3xl font-bold text-white shadow-lg">
-                            ${data.paciente.nombre.charAt(0)}
+            function createAppointmentCard(app) {
+                const div = document.createElement("div");
+                div.className =
+                    "bg-white/80 backdrop-blur-sm rounded-3xl p-5 border border-white/60 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer group relative overflow-hidden";
+
+                // Status Color Logic
+                const statusColors = {
+                    concluded: "green",
+                    confirmed: "blue",
+                    canceled: "red",
+                    pending: "yellow",
+                };
+                const color = statusColors[app.status?.toLowerCase()] || "gray";
+
+                div.innerHTML = `
+                    <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-${color}-500"></div>
+                    <div class="flex justify-between items-start mb-4 pl-3">
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Paciente</span>
+                            <h3 class="font-bold text-gray-800 text-lg leading-tight group-hover:text-[#2F5D50] transition-colors">
+                                ${app.nombre_paciente || "Desconocido"}
+                            </h3>
                         </div>
-                        <div>
-                            <h3 class="text-3xl font-bold text-gray-800 mb-1">${data.paciente.nombre}</h3>
-                            <div class="flex items-center gap-3 text-gray-500 font-medium">
-                                <span class="bg-gray-100 px-2 py-1 rounded-lg text-xs uppercase tracking-wide">Paciente</span>
-                                <span>${data.paciente.edad}</span>
-                                <span>•</span>
-                                <span>${data.paciente.email}</span>
+                        <div class="flex flex-col items-end">
+                             <span class="bg-[#2F5D50]/10 text-[#2F5D50] text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                                <i class="fa-regular fa-clock"></i>
+                                ${app.inithour?.substring(0, 5)}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="pl-3 space-y-2">
+                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                            <div class="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                                <i class="fa-solid fa-user-doctor text-xs"></i>
                             </div>
+                            <span class="font-medium">${app.servicio || "Consulta General"}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-gray-500">
+                            <div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                                <i class="fa-solid fa-align-left text-xs"></i>
+                            </div>
+                            <span class="truncate max-w-[200px]">${app.reason || "Sin motivo especificado"}</span>
                         </div>
                     </div>
 
-                    <!-- Info Cita -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="p-5 rounded-2xl bg-white/60 border border-white/60 shadow-sm hover:shadow-md transition-all">
-                            <span class="text-xs font-bold text-[#2F5D50] uppercase tracking-wider block mb-2">Fecha</span>
-                            <div class="flex items-center gap-2">
-                                <i class="fa-regular fa-calendar text-xl text-gray-400"></i>
-                                <p class="font-bold text-gray-800 text-lg">${data.cita.fecha}</p>
-                            </div>
-                        </div>
-                        <div class="p-5 rounded-2xl bg-white/60 border border-white/60 shadow-sm hover:shadow-md transition-all">
-                            <span class="text-xs font-bold text-[#2F5D50] uppercase tracking-wider block mb-2">Horario</span>
-                            <div class="flex items-center gap-2">
-                                <i class="fa-regular fa-clock text-xl text-gray-400"></i>
-                                <p class="font-bold text-gray-800 text-lg">${data.cita.duracion}</p>
-                            </div>
-                        </div>
-                        <div class="p-5 rounded-2xl bg-[#2F5D50]/5 border border-[#2F5D50]/10 col-span-2 shadow-sm">
-                            <span class="text-xs font-bold text-[#2F5D50] uppercase tracking-wider block mb-2">Servicio Solicitado</span>
-                            <p class="font-bold text-[#2F5D50] text-xl">${data.cita.servicio}</p>
-                        </div>
+                    <div class="mt-4 pt-3 border-t border-gray-100 pl-3 flex justify-between items-center">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-${color}-100 text-${color}-700 capitalize">
+                            ${app.status}
+                        </span>
+                        <span class="text-[#2F5D50] text-xs font-bold group-hover:underline">Ver detalles <i class="fa-solid fa-arrow-right ml-1"></i></span>
                     </div>
+                `;
 
-                    <!-- Detalles Médicos -->
-                    <div class="space-y-4">
-                        <h4 class="font-bold text-gray-800 flex items-center gap-2 text-lg">
-                            <div class="w-8 h-8 rounded-lg bg-[#2F5D50]/10 flex items-center justify-center">
-                                <i class="fa-solid fa-file-medical text-[#2F5D50]"></i>
-                            </div>
-                            Información Médica
-                        </h4>
-                        
-                        <div class="p-5 rounded-2xl bg-white/40 border border-white/50 hover:bg-white/60 transition-colors">
-                            <span class="text-xs font-bold text-gray-400 uppercase block mb-2">Diagnóstico Previo</span>
-                            <p class="text-gray-700 text-sm leading-relaxed italic">
-                                "${data.cita.diagnostico || "No hay diagnóstico registrado."}"
-                            </p>
-                        </div>
+                div.addEventListener("click", () => openModal(app));
+                return div;
+            }
 
-                        <div class="p-5 rounded-2xl bg-white/40 border border-white/50 hover:bg-white/60 transition-colors">
-                            <span class="text-xs font-bold text-gray-400 uppercase block mb-2">Nota Terapéutica</span>
-                            <p class="text-gray-700 text-sm leading-relaxed italic">
-                                "${data.cita.notaTerapeutica || "No hay notas terapéuticas registradas."}"
-                            </p>
-                        </div>
-                    </div>
+            // --- Modal Logic ---
+            function openModal(app) {
+                currentAppointment = app;
 
-                    <!-- Contacto -->
-                    <div class="flex gap-4 pt-4 border-t border-[#2F5D50]/10">
-                        <a href="tel:${data.paciente.telefono}" class="flex-1 py-4 rounded-xl bg-green-50 text-green-700 font-bold text-center hover:bg-green-100 transition-all hover:-translate-y-1 shadow-sm">
-                            <i class="fa-solid fa-phone mr-2"></i>Llamar
-                        </a>
-                        <a href="mailto:${data.paciente.email}" class="flex-1 py-4 rounded-xl bg-blue-50 text-blue-700 font-bold text-center hover:bg-blue-100 transition-all hover:-translate-y-1 shadow-sm">
-                            <i class="fa-solid fa-envelope mr-2"></i>Email
-                        </a>
-                    </div>
-                </div>
-            `;
-        }
+                // Populate Data
+                document.getElementById("modalPatientName").textContent =
+                    app.nombre_paciente;
+                document.getElementById("modalTimeRange").textContent =
+                    `${app.inithour?.substring(0, 5)} - ${app.endhour?.substring(0, 5)}`;
+                document.getElementById("modalService").textContent =
+                    app.servicio;
+                document.getElementById("modalStatus").textContent = app.status;
+                document.getElementById("modalReason").textContent = app.reason;
+
+                // Reset Canvas
+                clearCanvas();
+
+                // Validate Time for Button
+                validateTime(app);
+
+                // Show Modal
+                modal.classList.remove("hidden");
+                setTimeout(() => {
+                    modalContent.classList.remove("scale-95", "opacity-0");
+                    modalContent.classList.add("scale-100", "opacity-100");
+                    initCanvas(); // Re-init canvas dimensions
+                }, 10);
+            }
+
+            function closeModal() {
+                modalContent.classList.remove("scale-100", "opacity-100");
+                modalContent.classList.add("scale-95", "opacity-0");
+                setTimeout(() => {
+                    modal.classList.add("hidden");
+                    currentAppointment = null;
+                }, 300);
+            }
+
+            closeModalBtn.addEventListener("click", closeModal);
+            modalOverlay.addEventListener("click", closeModal);
+
+            // --- Time Validation Logic ---
+            function validateTime(app) {
+                const now = new Date();
+                const currentTime = now.getHours() * 60 + now.getMinutes();
+
+                const [startH, startM] = app.inithour.split(":").map(Number);
+                const [endH, endM] = app.endhour.split(":").map(Number);
+
+                const startTime = startH * 60 + startM;
+                const endTime = endH * 60 + endM;
+
+                const dateStr = app.currentday.split("T")[0]; // YYYY-MM-DD
+                const todayStr = new Date().toLocaleDateString("en-CA");
+
+                const isToday = dateStr === todayStr;
+                const isWithinTime =
+                    currentTime >= startTime && currentTime < endTime;
+
+                // Logic: Must be today AND within time range
+                // Note: User asked to restrict start.
+
+                if (isToday && isWithinTime) {
+                    startBtn.disabled = false;
+                    startBtn.classList.remove(
+                        "opacity-50",
+                        "cursor-not-allowed",
+                    );
+                    errorMsg.classList.add("hidden");
+
+                    // Setup Auto-Finish
+                    const timeRemainingMs = (endTime - currentTime) * 60 * 1000; // minutes to ms
+                    // In a real app, we'd set a timeout here to auto-close/finish
+                    // setTimeout(finishConsultation, timeRemainingMs);
+                } else {
+                    startBtn.disabled = true;
+                    startBtn.classList.add("opacity-50", "cursor-not-allowed");
+                    errorMsg.classList.remove("hidden");
+                    document.getElementById("allowedTimeRange").textContent =
+                        `${app.inithour?.substring(0, 5)} - ${app.endhour?.substring(0, 5)}`;
+                }
+            }
+
+            startBtn.addEventListener("click", () => {
+                if (!startBtn.disabled) {
+                    // Here we would save the signature and start the consultation
+                    const signatureData = canvas.toDataURL(); // Base64 image
+                    console.log(
+                        "Starting consultation for:",
+                        currentAppointment.id,
+                    );
+                    console.log("Signature:", signatureData);
+                    alert("Consulta iniciada. Firma guardada.");
+                    closeModal();
+                }
+            });
+
+            // --- Canvas Logic ---
+            function initCanvas() {
+                // Fix canvas resolution for high DPI displays
+                const rect = canvas.parentElement.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+
+                ctx = canvas.getContext("2d");
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 2;
+                ctx.lineCap = "round";
+            }
+
+            function getPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: clientX - rect.left,
+                    y: clientY - rect.top,
+                };
+            }
+
+            function startDraw(e) {
+                isDrawing = true;
+                const { x, y } = getPos(e);
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                placeholder.classList.add("hidden");
+                e.preventDefault();
+            }
+
+            function draw(e) {
+                if (!isDrawing) return;
+                const { x, y } = getPos(e);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                e.preventDefault();
+            }
+
+            function stopDraw() {
+                isDrawing = false;
+            }
+
+            function clearCanvas() {
+                if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+                placeholder.classList.remove("hidden");
+            }
+
+            // Mouse Events
+            canvas.addEventListener("mousedown", startDraw);
+            canvas.addEventListener("mousemove", draw);
+            canvas.addEventListener("mouseup", stopDraw);
+            canvas.addEventListener("mouseleave", stopDraw);
+
+            // Touch Events (Mobile)
+            canvas.addEventListener("touchstart", startDraw);
+            canvas.addEventListener("touchmove", draw);
+            canvas.addEventListener("touchend", stopDraw);
+
+            clearBtn.addEventListener("click", clearCanvas);
+
+            // Handle resize
+            window.addEventListener("resize", initCanvas);
+        });
     </script>
 </Layout>
+```
