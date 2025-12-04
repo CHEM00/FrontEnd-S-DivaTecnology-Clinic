@@ -15,7 +15,7 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     server: {
-      allowedHosts: ['printless-patentably-india.ngrok-free.dev'],
+      allowedHosts: ['printless-patentably-india.ngrok-free.dev', 'jesstherapy.cloud', 'www.jesstherapy.cloud'],
       proxy: {
         '/api': {
           target: 'http://localhost:3000',

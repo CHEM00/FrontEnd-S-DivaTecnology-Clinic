@@ -13,7 +13,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
         // Prepare headers: Remove 'host' to avoid virtual host issues on the backend
         const headers = new Headers(request.headers);
         headers.delete("host");
-        headers.delete("connection"); // Let the fetch client handle connection
+        headers.delete("connection");
+        headers.delete("content-length"); // Let fetch calculate the correct length from the body
 
         // Create a new request to the backend
         // We need a custom agent to bypass SSL errors if the backend cert is not trusted by Node
@@ -21,11 +22,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
         const { Agent } = await import("node:https");
         const agent = new Agent({ rejectUnauthorized: false });
 
+        // Read the body explicitly to avoid stream issues and content-length mismatches
+        const body = request.method !== "GET" && request.method !== "HEAD"
+            ? await request.arrayBuffer()
+            : null;
+
         const proxyRequest = new Request(targetUrl, {
             method: request.method,
             headers: headers,
-            body: request.body,
-            duplex: "half",
+            body: body,
             // @ts-ignore - node-fetch supports agent, standard Request doesn't type it but it works in Node
             agent: agent
         });
