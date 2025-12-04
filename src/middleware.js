@@ -27,17 +27,24 @@ export const onRequest = defineMiddleware(async (context, next) => {
         if (request.method !== "GET" && request.method !== "HEAD") {
             const contentType = request.headers.get("content-type") || "";
             console.log(`[Proxy] Incoming Content-Type: ${contentType}`);
+            console.log(`[Proxy] Body Used: ${request.bodyUsed}`);
 
-            if (contentType.includes("application/json")) {
-                body = await request.text();
-            } else {
-                body = await request.arrayBuffer();
+            try {
+                if (contentType.includes("application/json")) {
+                    body = await request.text();
+                    console.log(`[Proxy] Read body as text. Length: ${body.length}`);
+                    console.log(`[Proxy] Raw Body: '${body}'`);
+                } else {
+                    body = await request.arrayBuffer();
+                    console.log(`[Proxy] Read body as ArrayBuffer. ByteLength: ${body.byteLength}`);
+                }
+            } catch (e) {
+                console.error(`[Proxy] Error reading body: ${e.message}`);
             }
         }
 
         // Debug logging
         console.log(`[Proxy] ${request.method} ${targetUrl}`);
-        if (body && typeof body === 'string') console.log(`[Proxy] Body: ${body.substring(0, 200)}...`);
 
         // Ensure Content-Type is set correctly for the backend
         if (body && typeof body === 'string' && !headers.has("content-type")) {
