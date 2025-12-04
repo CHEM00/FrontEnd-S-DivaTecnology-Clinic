@@ -10,9 +10,24 @@ let table = [];
 const backendUrl =
     import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
 const token = Astro.cookies.get("auth_token")?.value;
-const headers = {
-    "Content-Type": "application/json",
-    ...(token && { Cookie: `auth_token=${token}` }),
+try {
+    const { Agent } = await import("node:https");
+    const agent = new Agent({ rejectUnauthorized: false });
+
+    const response = await fetch(`${backendUrl}/api/v1/Roles`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            ...(token && { Cookie: `auth_token=${token}` }),
+        },
+        // @ts-ignore
+        agent: agent,
+    });
+
+    if (response.ok) {
+        table = await response.json();
+    } else {
+        console.error("Error fetching roles:", response.statusText);
     }
 } catch (error) {
     console.error("Error fetching data:", error);
