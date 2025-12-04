@@ -5,7 +5,12 @@ import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
 
-let table = [];
+interface Rol {
+    id: number;
+    name: string;
+}
+
+let table: Rol[] = [];
 
 const backendUrl =
     import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
@@ -35,7 +40,7 @@ try {
 }
 
 // Función para escapar caracteres problemáticos en JavaScript
-const escapeJS = (str) => {
+const escapeJS = (str: string) => {
     if (!str) return "";
     return String(str)
         .replace(/'/g, "\\'")
@@ -419,17 +424,30 @@ const escapeJS = (str) => {
 
     <script>
         // Variables globales
-        let rolSeleccionado = null;
-        let rolData = {};
+        let rolSeleccionado: number | null = null;
+        let rolData: { nombre?: string; nombreCompleto?: string } = {};
+
+        // Definir tipos globales
+        declare global {
+            interface Window {
+                abrirModalAcciones: (
+                    id: number,
+                    nombre: string,
+                    nombreCompleto: string,
+                ) => void;
+                abrirModalAgregar: () => void;
+                cerrarModal: (modalId: string) => void;
+            }
+        }
 
         // Función para verificar checkbox seleccionado
-        function verificarCheckboxSeleccionado(rolId) {
+        function verificarCheckboxSeleccionado(rolId: number) {
             const idNum = Number(rolId);
             if (isNaN(idNum)) return false;
 
             const checkbox = document.querySelector(
                 `.rol-checkbox[value="${rolId}"]`,
-            );
+            ) as HTMLInputElement;
             if (!checkbox || !checkbox.checked) {
                 mostrarError(
                     "Por favor, seleccione el rol marcando la casilla.",
@@ -440,84 +458,77 @@ const escapeJS = (str) => {
         }
 
         // Abrir modal de acciones
-        window.abrirModalAcciones = function (id, nombre, nombreCompleto) {
+        window.abrirModalAcciones = function (
+            id: number,
+            nombre: string,
+            nombreCompleto: string,
+        ) {
             if (!verificarCheckboxSeleccionado(id)) return;
 
             rolSeleccionado = Number(id);
             rolData = { nombre, nombreCompleto };
 
-            document.getElementById("nombreRolAcciones").textContent =
-                nombreCompleto;
-            document.getElementById("modalAcciones").classList.remove("hidden");
+            const nombreRolAcciones =
+                document.getElementById("nombreRolAcciones");
+            if (nombreRolAcciones)
+                nombreRolAcciones.textContent = nombreCompleto;
+
+            const modalAcciones = document.getElementById("modalAcciones");
+            if (modalAcciones) modalAcciones.classList.remove("hidden");
         };
 
         // Abrir modal agregar
         window.abrirModalAgregar = function () {
-            const form = document.getElementById("formAgregarRol");
+            const form = document.getElementById(
+                "formAgregarRol",
+            ) as HTMLFormElement;
             if (form) form.reset();
-            document
-                .getElementById("modalAgregarRol")
-                .classList.remove("hidden");
+            const modal = document.getElementById("modalAgregarRol");
+            if (modal) modal.classList.remove("hidden");
         };
 
         // Cerrar modales
-        window.cerrarModal = function (modalId) {
+        window.cerrarModal = function (modalId: string) {
             const modal = document.getElementById(modalId);
             if (modal) modal.classList.add("hidden");
         };
 
         // Mostrar mensajes
-        function mostrarExito(mensaje) {
-            document.getElementById("mensajeExito").textContent = mensaje;
-            document.getElementById("modalExito").classList.remove("hidden");
+        function mostrarExito(mensaje: string) {
+            const mensajeExito = document.getElementById("mensajeExito");
+            if (mensajeExito) mensajeExito.textContent = mensaje;
+            const modalExito = document.getElementById("modalExito");
+            if (modalExito) modalExito.classList.remove("hidden");
         }
 
-        function mostrarError(mensaje) {
-            document.getElementById("mensajeError").textContent = mensaje;
-            document.getElementById("modalError").classList.remove("hidden");
+        function mostrarError(mensaje: string) {
+            const mensajeError = document.getElementById("mensajeError");
+            if (mensajeError) mensajeError.textContent = mensaje;
+            const modalError = document.getElementById("modalError");
+            if (modalError) modalError.classList.remove("hidden");
         }
 
         // Event Listeners
         document.addEventListener("DOMContentLoaded", function () {
-            // GSAP Animations
-            // GSAP Animations
-            // if (typeof gsap !== "undefined") {
-            //     gsap.from(".glass-panel", {
-            //         duration: 0.8,
-            //         y: 30,
-            //         opacity: 0,
-            //         stagger: 0.1,
-            //         ease: "power3.out",
-            //     });
-            //     gsap.from("tr", {
-            //         duration: 0.5,
-            //         opacity: 0,
-            //         y: 10,
-            //         stagger: 0.05,
-            //         delay: 0.2,
-            //         ease: "power2.out",
-            //     });
-            // }
-
             // Botones de acción
             document
                 .getElementById("btnEditarAccion")
                 ?.addEventListener("click", function () {
-                    cerrarModal("modalAcciones");
+                    window.cerrarModal("modalAcciones");
                     abrirModalEditar();
                 });
 
             document
                 .getElementById("btnEliminarAccion")
                 ?.addEventListener("click", function () {
-                    cerrarModal("modalAcciones");
+                    window.cerrarModal("modalAcciones");
                     abrirModalConfirmarEliminar();
                 });
 
             document
                 .getElementById("btnConfirmarEliminar")
                 ?.addEventListener("click", function () {
-                    eliminarRol(rolSeleccionado);
+                    if (rolSeleccionado) eliminarRol(rolSeleccionado);
                 });
         });
 
@@ -525,32 +536,42 @@ const escapeJS = (str) => {
         function abrirModalEditar() {
             if (!rolSeleccionado) return;
 
-            document.getElementById("editarId").value = rolSeleccionado;
-            document.getElementById("editarNombre").value =
-                rolData.nombre || "";
+            const editarId = document.getElementById(
+                "editarId",
+            ) as HTMLInputElement;
+            if (editarId) editarId.value = rolSeleccionado.toString();
 
-            document
-                .getElementById("modalEditarRol")
-                .classList.remove("hidden");
+            const editarNombre = document.getElementById(
+                "editarNombre",
+            ) as HTMLInputElement;
+            if (editarNombre) editarNombre.value = rolData.nombre || "";
+
+            const modalEditarRol = document.getElementById("modalEditarRol");
+            if (modalEditarRol) modalEditarRol.classList.remove("hidden");
         }
 
         // Abrir modal de confirmación de eliminación
         function abrirModalConfirmarEliminar() {
-            document.getElementById("nombreRolEliminar").textContent =
-                rolData.nombreCompleto;
-            document
-                .getElementById("modalConfirmarEliminar")
-                .classList.remove("hidden");
+            const nombreRolEliminar =
+                document.getElementById("nombreRolEliminar");
+            if (nombreRolEliminar)
+                nombreRolEliminar.textContent = rolData.nombreCompleto || "";
+
+            const modalConfirmarEliminar = document.getElementById(
+                "modalConfirmarEliminar",
+            );
+            if (modalConfirmarEliminar)
+                modalConfirmarEliminar.classList.remove("hidden");
         }
 
         // Función para eliminar rol
-        async function eliminarRol(id) {
+        async function eliminarRol(id: number) {
             try {
                 const response = await fetch(`/api/v1/Roles/${id}`, {
                     method: "DELETE",
                 });
                 if (response.ok) {
-                    cerrarModal("modalConfirmarEliminar");
+                    window.cerrarModal("modalConfirmarEliminar");
                     mostrarExito("Rol eliminado correctamente");
                     setTimeout(() => location.reload(), 1500);
                 } else {
@@ -562,7 +583,7 @@ const escapeJS = (str) => {
                                 "Desconocido"),
                     );
                 }
-            } catch (error) {
+            } catch (error: any) {
                 mostrarError("Error de conexión: " + error.message);
             }
         }
@@ -573,9 +594,11 @@ const escapeJS = (str) => {
             ?.addEventListener("submit", async function (e) {
                 e.preventDefault();
 
-                const nombre = document
-                    .getElementById("agregarNombre")
-                    .value.trim();
+                const nombreInput = document.getElementById(
+                    "agregarNombre",
+                ) as HTMLInputElement;
+                const nombre = nombreInput ? nombreInput.value.trim() : "";
+
                 if (!nombre) {
                     mostrarError("El campo Nombre es obligatorio");
                     return;
@@ -591,7 +614,7 @@ const escapeJS = (str) => {
                     });
 
                     if (response.ok) {
-                        cerrarModal("modalAgregarRol");
+                        window.cerrarModal("modalAgregarRol");
                         mostrarExito("Rol agregado correctamente");
                         setTimeout(() => location.reload(), 1500);
                     } else {
@@ -603,7 +626,7 @@ const escapeJS = (str) => {
                                     "Desconocido"),
                         );
                     }
-                } catch (error) {
+                } catch (error: any) {
                     mostrarError("Error de conexión: " + error.message);
                 }
             });
@@ -614,9 +637,11 @@ const escapeJS = (str) => {
             ?.addEventListener("submit", async function (e) {
                 e.preventDefault();
 
-                const nombre = document
-                    .getElementById("editarNombre")
-                    .value.trim();
+                const nombreInput = document.getElementById(
+                    "editarNombre",
+                ) as HTMLInputElement;
+                const nombre = nombreInput ? nombreInput.value.trim() : "";
+
                 if (!nombre) {
                     mostrarError("El campo Nombre es obligatorio");
                     return;
@@ -635,7 +660,7 @@ const escapeJS = (str) => {
                     );
 
                     if (response.ok) {
-                        cerrarModal("modalEditarRol");
+                        window.cerrarModal("modalEditarRol");
                         mostrarExito("Rol actualizado correctamente");
                         setTimeout(() => location.reload(), 1500);
                     } else {
@@ -647,7 +672,7 @@ const escapeJS = (str) => {
                                     "Desconocido"),
                         );
                     }
-                } catch (error) {
+                } catch (error: any) {
                     mostrarError("Error de conexión: " + error.message);
                 }
             });
@@ -656,9 +681,10 @@ const escapeJS = (str) => {
         document
             .getElementById("selectAll")
             ?.addEventListener("change", function (e) {
+                const target = e.target as HTMLInputElement;
                 const checkboxes = document.querySelectorAll(".rol-checkbox");
                 checkboxes.forEach((checkbox) => {
-                    checkbox.checked = e.target.checked;
+                    (checkbox as HTMLInputElement).checked = target.checked;
                 });
             });
     </script>
