@@ -6,15 +6,21 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
     // Proxy /api requests to the backend
     if (url.pathname.startsWith("/api")) {
-        const backendUrl = import.meta.env.BACKEND_URL || "http://localhost:3000";
+        // Use the environment variable or the user's provided URL as fallback
+        const backendUrl = import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
         const targetUrl = new URL(url.pathname + url.search, backendUrl);
+
+        // Prepare headers: Remove 'host' to avoid virtual host issues on the backend
+        const headers = new Headers(request.headers);
+        headers.delete("host");
+        headers.delete("connection"); // Let the fetch client handle connection
 
         // Create a new request to the backend
         const proxyRequest = new Request(targetUrl, {
             method: request.method,
-            headers: request.headers,
+            headers: headers,
             body: request.body,
-            duplex: "half", // Required for streaming bodies in some environments
+            duplex: "half",
         });
 
         // Forward the backend response back to the client
