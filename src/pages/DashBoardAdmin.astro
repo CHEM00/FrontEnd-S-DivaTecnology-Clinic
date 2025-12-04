@@ -5,11 +5,49 @@ import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
 const today = new Date().toISOString().split("T")[0];
-const res = await fetch(`http://localhost:3000/api/v1/Benefit?date=${today}`);
-const appointmentStatus = await fetch(
-	`http://localhost:3000/api/v1/AppointmentStatus?date=${today}`,
-).then((res) => res.json());
-const benefit = await res.json();
+const backendUrl =
+	import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
+const token = Astro.cookies.get("auth_token")?.value;
+
+const headers = {
+	"Content-Type": "application/json",
+	...(token && { Cookie: `auth_token=${token}` }),
+};
+
+// We need to use a custom agent for self-signed certs if needed, similar to the proxy
+// But native fetch in Node 18 might need 'rejectUnauthorized: false' via an agent if the backend is https self-signed
+// However, for simplicity, let's try standard fetch first. If it fails with SSL error, we'll add the agent.
+// Actually, since we had to add the agent in the proxy, we probably need it here too if the backend is the same.
+
+const { Agent } = await import("node:https");
+const agent = new Agent({ rejectUnauthorized: false });
+
+let benefit = [];
+let appointmentStatus = [{ citas: {} }];
+
+try {
+	const resBenefit = await fetch(
+		`${backendUrl}/api/v1/Benefit?date=${today}`,
+		{ headers, agent },
+	);
+	if (resBenefit.ok) {
+		benefit = await resBenefit.json();
+	}
+} catch (e) {
+	console.error("Error fetching Benefit:", e);
+}
+
+try {
+	const resStatus = await fetch(
+		`${backendUrl}/api/v1/AppointmentStatus?date=${today}`,
+		{ headers, agent },
+	);
+	if (resStatus.ok) {
+		appointmentStatus = await resStatus.json();
+	}
+} catch (e) {
+	console.error("Error fetching AppointmentStatus:", e);
+}
 ---
 
 <Layout title="Dashboard Administrador">

@@ -60,10 +60,26 @@ export const ALL = async ({ request, url }) => {
 
     try {
         const response = await fetch(proxyRequest, { agent });
+
+        // Create new headers to modify Set-Cookie if needed
+        const responseHeaders = new Headers(response.headers);
+
+        // Rewrite Set-Cookie to ensure it works on the frontend domain
+        // If the backend sets a cookie, it might be for 'api.jesstherapy.cloud'
+        // We want the browser to accept it for 'jesstherapy.cloud' (the frontend)
+        const setCookie = responseHeaders.get("set-cookie");
+        if (setCookie) {
+            // Remove 'Domain=...' to let it default to the current domain (frontend)
+            // Or replace it with the frontend domain
+            // Simple approach: Remove Domain attribute
+            const newSetCookie = setCookie.replace(/Domain=[^;]+;?/gi, "");
+            responseHeaders.set("set-cookie", newSetCookie);
+        }
+
         return new Response(response.body, {
             status: response.status,
             statusText: response.statusText,
-            headers: response.headers,
+            headers: responseHeaders,
         });
     } catch (error) {
         console.error("[API Route] Proxy error:", error);
