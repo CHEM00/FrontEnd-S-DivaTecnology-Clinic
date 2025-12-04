@@ -23,9 +23,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
         const agent = new Agent({ rejectUnauthorized: false });
 
         // Read the body explicitly to avoid stream issues and content-length mismatches
-        const body = request.method !== "GET" && request.method !== "HEAD"
-            ? await request.arrayBuffer()
-            : null;
+        let body = null;
+        if (request.method !== "GET" && request.method !== "HEAD") {
+            const contentType = request.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                body = await request.text();
+            } else {
+                body = await request.arrayBuffer();
+            }
+        }
 
         const proxyRequest = new Request(targetUrl, {
             method: request.method,
