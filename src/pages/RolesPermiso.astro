@@ -6,8 +6,23 @@ import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
 
 let table = [];
+
+const backendUrl =
+	import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
+const token = Astro.cookies.get("auth_token")?.value;
+const headers = {
+	"Content-Type": "application/json",
+	...(token && { Cookie: `auth_token=${token}` }),
+};
+
+const { Agent } = await import("node:https");
+const agent = new Agent({ rejectUnauthorized: false });
+
 try {
-	const response = await fetch("http://localhost:3000/api/v1/Roles");
+	const response = await fetch(`${backendUrl}/api/v1/Roles`, {
+		headers,
+		agent,
+	});
 	if (response.ok) {
 		table = await response.json();
 	} else {
@@ -521,10 +536,9 @@ const escapeJS = (str) => {
 		// Función para eliminar rol
 		async function eliminarRol(id) {
 			try {
-				const response = await fetch(
-					`http://localhost:3001/api/v1/Roles/${id}`,
-					{ method: "DELETE" },
-				);
+				const response = await fetch(`/api/v1/Roles/${id}`, {
+					method: "DELETE",
+				});
 				if (response.ok) {
 					cerrarModal("modalConfirmarEliminar");
 					mostrarExito("Rol eliminado correctamente");
@@ -560,14 +574,11 @@ const escapeJS = (str) => {
 				const rolData = { name: nombre };
 
 				try {
-					const response = await fetch(
-						"http://localhost:3001/api/v1/Roles",
-						{
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify(rolData),
-						},
-					);
+					const response = await fetch("/api/v1/Roles", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(rolData),
+					});
 
 					if (response.ok) {
 						cerrarModal("modalAgregarRol");
@@ -605,7 +616,7 @@ const escapeJS = (str) => {
 
 				try {
 					const response = await fetch(
-						`http://localhost:3001/api/v1/Roles/${rolSeleccionado}`,
+						`/api/v1/Roles/${rolSeleccionado}`,
 						{
 							method: "PATCH",
 							headers: { "Content-Type": "application/json" },

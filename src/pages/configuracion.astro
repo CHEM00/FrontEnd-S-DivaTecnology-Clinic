@@ -7,10 +7,21 @@ import TopTag from "../components/TopTag.astro";
 let clinicData = {};
 let scheduleData = [];
 
+const backendUrl =
+    import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
+const token = Astro.cookies.get("auth_token")?.value;
+const headers = {
+    "Content-Type": "application/json",
+    ...(token && { Cookie: `auth_token=${token}` }),
+};
+
+const { Agent } = await import("node:https");
+const agent = new Agent({ rejectUnauthorized: false });
+
 try {
     const [clinicRes, scheduleRes] = await Promise.all([
-        fetch("http://localhost:3000/api/v1/Clinicas"),
-        fetch("http://localhost:3000/api/v1/Horarios"),
+        fetch(`${backendUrl}/api/v1/Clinicas`, { headers, agent }),
+        fetch(`${backendUrl}/api/v1/Horarios`, { headers, agent }),
     ]);
 
     if (clinicRes.ok) {

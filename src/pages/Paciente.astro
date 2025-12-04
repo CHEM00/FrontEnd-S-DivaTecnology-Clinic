@@ -21,8 +21,22 @@ interface Paciente {
 let pacientes: Paciente[] = [];
 let error = "";
 
+const backendUrl =
+	import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
+const token = Astro.cookies.get("auth_token")?.value;
+const headers = {
+	"Content-Type": "application/json",
+	...(token && { Cookie: `auth_token=${token}` }),
+};
+
+const { Agent } = await import("node:https");
+const agent = new Agent({ rejectUnauthorized: false });
+
 try {
-	const response = await fetch("http://localhost:3000/api/v1/Pacientes");
+	const response = await fetch(`${backendUrl}/api/v1/Pacientes`, {
+		headers,
+		agent,
+	});
 	if (response.ok) {
 		const data = await response.json();
 		if (Array.isArray(data)) {

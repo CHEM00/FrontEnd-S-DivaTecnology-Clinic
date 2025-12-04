@@ -76,9 +76,7 @@ import Layout from "../layouts/Layout.astro";
 
   btn.addEventListener("click", async () => {
     try {
-      const { data: Pacientes } = await axios.get(
-        "http://localhost:3000/api/v1/Pacientes",
-      );
+      const { data: Pacientes } = await axios.get("/api/v1/Pacientes");
       const inputVal = document.getElementById("InputTelefono").value.trim();
       // Busca si algún paciente tiene ese teléfono
       const encontrado =

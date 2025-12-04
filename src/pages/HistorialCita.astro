@@ -5,10 +5,23 @@ import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
 
 let historial = [];
+
+const backendUrl =
+	import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
+const token = Astro.cookies.get("auth_token")?.value;
+const headers = {
+	"Content-Type": "application/json",
+	...(token && { Cookie: `auth_token=${token}` }),
+};
+
+const { Agent } = await import("node:https");
+const agent = new Agent({ rejectUnauthorized: false });
+
 try {
-	const response = await fetch(
-		"http://localhost:3000/api/v1/HistorialClinico",
-	);
+	const response = await fetch(`${backendUrl}/api/v1/HistorialClinico`, {
+		headers,
+		agent,
+	});
 	if (response.ok) {
 		historial = await response.json();
 	} else {
