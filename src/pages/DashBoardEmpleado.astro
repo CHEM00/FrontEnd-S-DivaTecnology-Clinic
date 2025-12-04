@@ -4,6 +4,7 @@ import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
 import { jwtVerify } from "jose";
+import { generateConsentPDF } from "../utils/ConsentPDFGenerator";
 
 const token = Astro.cookies.get("auth_token")?.value;
 // NOTA: En producción, usa variables de entorno
@@ -186,37 +187,238 @@ const userId = currentUser?.id;
                         </p>
                     </div>
 
-                    <!-- Consent & Signature Section -->
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
+                    <!-- Consent & Signature Section (Document View) -->
+                    <div
+                        id="consentSection"
+                        class="hidden flex flex-col h-full"
+                    >
+                        <div
+                            class="flex justify-between items-center mb-2 px-1"
+                        >
                             <h4 class="font-bold text-gray-800 text-sm">
-                                Consentimiento Informado
+                                Revisión de Documento
                             </h4>
                             <button
                                 id="clearSignatureBtn"
                                 class="text-xs text-red-500 hover:text-red-700 font-medium underline"
                             >
-                                Borrar firma
+                                Limpiar firma
                             </button>
                         </div>
+
+                        <!-- Document Container (Scrollable Paper) -->
                         <div
-                            class="border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 relative overflow-hidden touch-none"
-                            style="height: 160px;"
+                            class="bg-white border border-gray-200 shadow-inner rounded-sm p-8 overflow-y-auto custom-scrollbar flex-1 text-gray-800 font-serif text-xs leading-relaxed select-none"
                         >
-                            <canvas
-                                id="signatureCanvas"
-                                class="w-full h-full cursor-crosshair"></canvas>
-                            <div
-                                id="signaturePlaceholder"
-                                class="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-400 text-sm"
+                            <h2
+                                class="font-bold text-center text-sm mb-6 uppercase"
                             >
-                                Firmar aquí
+                                Documento de Consentimiento Informado y Términos
+                                del Servicio
+                            </h2>
+
+                            <p class="mb-4">
+                                <strong>CLÍNICA:</strong> JessTherapy<br />
+                                <strong>RESPONSABLE SANITARIO:</strong> Fisioterapeuta
+                            </p>
+
+                            <h3 class="font-bold mt-4 mb-1">
+                                1. DECLARACIÓN DEL PACIENTE
+                            </h3>
+                            <p class="mb-3 text-justify">
+                                Yo, <span
+                                    id="docPatientName"
+                                    class="font-bold bg-yellow-100 px-1"
+                                    >[Nombre Paciente]</span
+                                > (en adelante, "el Paciente"), declaro que he solicitado
+                                servicios de fisioterapia en JessTherapy. Entiendo
+                                que la fisioterapia implica el uso de medios físicos,
+                                terapia manual, ejercicio terapéutico y/o agentes
+                                electrofísicos.
+                            </p>
+
+                            <h3 class="font-bold mt-4 mb-1">
+                                2. EXPLICACIÓN DEL PROCEDIMIENTO
+                            </h3>
+                            <p class="mb-3 text-justify">
+                                Se me ha informado que, tras una valoración
+                                inicial, se diseñará un plan de tratamiento que
+                                puede incluir: movilizaciones, masoterapia,
+                                electroterapia, ultrasonido, láser, termoterapia
+                                y ejercicio terapéutico.
+                            </p>
+
+                            <h3 class="font-bold mt-4 mb-1">
+                                3. RIESGOS Y BENEFICIOS
+                            </h3>
+                            <p class="mb-3 text-justify">
+                                Entiendo los riesgos inherentes (dolor muscular
+                                temporal, hematomas leves, irritación cutánea) y
+                                los beneficios esperados (mejora funcional,
+                                disminución del dolor).
+                            </p>
+
+                            <h3 class="font-bold mt-4 mb-1">
+                                4. REVOCACIÓN Y DERECHOS
+                            </h3>
+                            <p class="mb-3 text-justify">
+                                Entiendo que puedo revocar este consentimiento
+                                médico en cualquier momento, deteniendo el
+                                tratamiento clínico sin que ello afecte a mi
+                                atención futura.
+                            </p>
+
+                            <h3 class="font-bold mt-4 mb-1">
+                                5. PROTECCIÓN DE DATOS
+                            </h3>
+                            <p class="mb-3 text-justify">
+                                Autorizo el tratamiento de mis datos personales
+                                y de salud con fines asistenciales y
+                                administrativos conforme a la ley vigente.
+                            </p>
+
+                            <h3 class="font-bold mt-4 mb-1">
+                                6. CLÁUSULA DE PAQUETES Y CANCELACIÓN
+                            </h3>
+                            <p class="mb-3 text-justify">
+                                <strong>A) Intransferibilidad:</strong> Los paquetes
+                                son personales e intransferibles.<br />
+                                <strong>B) No Reembolso:</strong> No se realizarán
+                                reembolsos por abandono de tratamiento.
+                            </p>
+
+                            <h3 class="font-bold mt-4 mb-1">
+                                7. VERACIDAD Y VALIDEZ DE FIRMA
+                            </h3>
+                            <p class="mb-6 text-justify">
+                                Declaro que la información de mi historia
+                                clínica es verdadera. Acepto firmar este
+                                documento mediante medios electrónicos,
+                                reconociendo su plena validez legal.
+                            </p>
+
+                            <!-- Embedded Signature Area -->
+                            <div
+                                class="mt-8 pt-6 border-t-2 border-gray-800 break-inside-avoid"
+                            >
+                                <p class="text-center font-bold mb-4">
+                                    CONFIRMACIÓN Y ACEPTACIÓN
+                                </p>
+
+                                <div class="mb-4">
+                                    <label class="block font-bold mb-1"
+                                        >Firma del Paciente:</label
+                                    >
+                                    <div
+                                        class="border border-gray-400 h-32 relative bg-gray-50 touch-none"
+                                    >
+                                        <canvas
+                                            id="signatureCanvas"
+                                            class="w-full h-full cursor-crosshair"
+                                        ></canvas>
+                                        <div
+                                            id="signaturePlaceholder"
+                                            class="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-400 italic"
+                                        >
+                                            Firmar aquí
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    <label
+                                        for="patientInitials"
+                                        class="font-bold">Iniciales:</label
+                                    >
+                                    <input
+                                        type="text"
+                                        id="patientInitials"
+                                        class="border-b border-gray-400 outline-none px-2 py-1 font-mono uppercase w-24 bg-transparent focus:border-black transition-colors"
+                                        maxlength="4"
+                                        placeholder="A.B.C"
+                                    />
+                                </div>
+                                <p class="text-[10px] text-gray-500 mt-2">
+                                    Fecha: <span id="docDate"></span>
+                                </p>
                             </div>
                         </div>
-                        <p class="text-[10px] text-gray-400 text-center">
-                            Al firmar, el paciente acepta los términos y
-                            condiciones del tratamiento.
-                        </p>
+                    </div>
+
+                    <!-- Mini PDF Preview (Initially Hidden) -->
+                    <div
+                        id="pdfPreview"
+                        class="hidden bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center gap-4 mb-4"
+                    >
+                        <div
+                            class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-500"
+                        >
+                            <i class="fa-solid fa-file-pdf text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-bold text-gray-800">
+                                Consentimiento Firmado
+                            </p>
+                            <p class="text-xs text-gray-500">
+                                Documento generado correctamente
+                            </p>
+                        </div>
+                        <div
+                            class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600"
+                        >
+                            <i class="fa-solid fa-check text-xs"></i>
+                        </div>
+                    </div>
+
+                    <!-- Consultation Fields (Initially Hidden) -->
+                    <div id="consultationFields" class="space-y-4 hidden">
+                        <div
+                            class="bg-yellow-50 p-4 rounded-2xl border border-yellow-100"
+                        >
+                            <label
+                                class="block text-xs font-bold text-yellow-700 uppercase mb-2"
+                                >Diagnóstico</label
+                            >
+                            <input
+                                type="text"
+                                id="consultationDiagnosis"
+                                class="w-full bg-white border border-yellow-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500/20 outline-none"
+                                placeholder="Diagnóstico del paciente..."
+                            />
+                        </div>
+                        <div
+                            class="bg-green-50 p-4 rounded-2xl border border-green-100"
+                        >
+                            <label
+                                class="block text-xs font-bold text-green-700 uppercase mb-2"
+                                >Nota Terapéutica</label
+                            >
+                            <textarea
+                                id="consultationNote"
+                                rows="4"
+                                class="w-full bg-white border border-green-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-green-500/20 outline-none"
+                                placeholder="Evolución, tratamiento aplicado..."
+                            ></textarea>
+                        </div>
+
+                        <!-- Additionals Section -->
+                        <div
+                            class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100"
+                        >
+                            <label
+                                class="block text-xs font-bold text-indigo-700 uppercase mb-2"
+                                >Adicionales</label
+                            >
+                            <div
+                                id="additionalsContainer"
+                                class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar"
+                            >
+                                <!-- Injected via JS -->
+                                <p class="text-xs text-gray-400 italic">
+                                    Cargando adicionales...
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -228,8 +430,22 @@ const userId = currentUser?.id;
                         id="startConsultationBtn"
                         class="w-full py-3.5 rounded-xl bg-[#2F5D50] text-white font-bold shadow-lg shadow-[#2F5D50]/30 hover:bg-[#234D20] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2"
                     >
-                        <i class="fa-solid fa-stethoscope"></i>
-                        <span>Iniciar Consulta</span>
+                        <i class="fa-solid fa-file-signature"></i>
+                        <span>Firmar e Iniciar</span>
+                    </button>
+                    <button
+                        id="confirmSignatureBtn"
+                        class="w-full py-3.5 rounded-xl bg-[#2F5D50] text-white font-bold shadow-lg shadow-[#2F5D50]/30 hover:bg-[#234D20] active:scale-[0.98] transition-all hidden flex items-center justify-center gap-2"
+                    >
+                        <i class="fa-solid fa-check"></i>
+                        <span>Confirmar Firma</span>
+                    </button>
+                    <button
+                        id="finishConsultationBtn"
+                        class="w-full py-3.5 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-600/30 hover:bg-blue-700 active:scale-[0.98] transition-all hidden flex items-center justify-center gap-2"
+                    >
+                        <i class="fa-solid fa-clipboard-check"></i>
+                        <span>Finalizar Consulta</span>
                     </button>
                     <p
                         id="timeValidationError"
@@ -243,9 +459,26 @@ const userId = currentUser?.id;
         </div>
     </div>
 
-    <script define:vars={{ userId }}>
+    <!-- Data for Client Script -->
+    <div
+        id="dashboard-data"
+        data-user-id={userId}
+        data-user-name={userName}
+        class="hidden"
+    >
+    </div>
+
+    <script>
+        import { generateConsentPDF } from "../utils/ConsentPDFGenerator";
+
         document.addEventListener("DOMContentLoaded", () => {
-            const dateInput = document.getElementById("dateFilter");
+            const dataEl = document.getElementById("dashboard-data");
+            const userId = dataEl.dataset.userId;
+            const userName = dataEl.dataset.userName;
+
+            const dateInput = document.getElementById(
+                "dateFilter",
+            ) as HTMLInputElement;
             const grid = document.getElementById("appointmentsGrid");
 
             // Modal Elements
@@ -253,16 +486,37 @@ const userId = currentUser?.id;
             const modalContent = document.getElementById("modalContent");
             const modalOverlay = document.getElementById("modalOverlay");
             const closeModalBtn = document.getElementById("closeModalBtn");
-            const startBtn = document.getElementById("startConsultationBtn");
+
+            const startBtn = document.getElementById(
+                "startConsultationBtn",
+            ) as HTMLButtonElement;
+            const confirmSignBtn = document.getElementById(
+                "confirmSignatureBtn",
+            );
+            const finishBtn = document.getElementById(
+                "finishConsultationBtn",
+            ) as HTMLButtonElement;
+            const consentSection = document.getElementById("consentSection");
+            const consultationFields =
+                document.getElementById("consultationFields");
+            const initialsInput = document.getElementById(
+                "patientInitials",
+            ) as HTMLInputElement;
             const errorMsg = document.getElementById("timeValidationError");
 
+            // PDF Preview Element
+            const pdfPreview = document.getElementById("pdfPreview");
+
             // Canvas Elements
-            const canvas = document.getElementById("signatureCanvas");
+            const canvas = document.getElementById(
+                "signatureCanvas",
+            ) as HTMLCanvasElement;
             const clearBtn = document.getElementById("clearSignatureBtn");
             const placeholder = document.getElementById("signaturePlaceholder");
             let ctx = null;
             let isDrawing = false;
             let currentAppointment = null;
+            let currentPdfBlob = null;
 
             // Initialize Date to Today
             const today = new Date();
@@ -274,7 +528,8 @@ const userId = currentUser?.id;
 
             // Date Change Listener
             dateInput.addEventListener("change", (e) => {
-                fetchAppointments(e.target.value);
+                const target = e.target as HTMLInputElement;
+                fetchAppointments(target.value);
             });
 
             // --- Fetch Logic ---
@@ -393,6 +648,10 @@ const userId = currentUser?.id;
 
             // --- Modal Logic ---
             function openModal(app) {
+                console.log(
+                    "Appointment Data (Full):",
+                    JSON.stringify(app, null, 2),
+                );
                 currentAppointment = app;
 
                 // Populate Data
@@ -404,6 +663,12 @@ const userId = currentUser?.id;
                     app.servicio;
                 document.getElementById("modalStatus").textContent = app.status;
                 document.getElementById("modalReason").textContent = app.reason;
+
+                // Populate Document Fields
+                document.getElementById("docPatientName").textContent =
+                    app.nombre_paciente;
+                document.getElementById("docDate").textContent =
+                    new Date().toLocaleDateString();
 
                 // Reset Canvas
                 clearCanvas();
@@ -417,6 +682,34 @@ const userId = currentUser?.id;
                     modalContent.classList.remove("scale-95", "opacity-0");
                     modalContent.classList.add("scale-100", "opacity-100");
                     initCanvas(); // Re-init canvas dimensions
+
+                    // Reset UI State
+                    startBtn.classList.remove("hidden");
+                    confirmSignBtn.classList.add("hidden");
+                    finishBtn.classList.add("hidden");
+                    consentSection.classList.add("hidden");
+                    consultationFields.classList.add("hidden");
+                    pdfPreview.classList.add("hidden");
+                    initialsInput.value = "";
+                    (
+                        document.getElementById(
+                            "consultationDiagnosis",
+                        ) as HTMLInputElement
+                    ).value = "";
+                    (
+                        document.getElementById(
+                            "consultationNote",
+                        ) as HTMLTextAreaElement
+                    ).value = "";
+                    currentPdfBlob = null;
+
+                    // Reset Additionals
+                    selectedAdditionals = [];
+                    document
+                        .querySelectorAll(".additional-checkbox")
+                        .forEach((cb) => {
+                            (cb as HTMLInputElement).checked = false;
+                        });
                 }, 10);
             }
 
@@ -434,6 +727,21 @@ const userId = currentUser?.id;
 
             // --- Time Validation Logic ---
             function validateTime(app) {
+                const startBtnSpan = startBtn.querySelector("span");
+
+                // Check if already concluded
+                if (app.status === "concluded") {
+                    startBtn.disabled = true;
+                    startBtn.classList.add("opacity-50", "cursor-not-allowed");
+                    if (startBtnSpan)
+                        startBtnSpan.textContent = "Consulta Concluida";
+                    errorMsg.classList.add("hidden");
+                    return;
+                }
+
+                // Reset text for other statuses
+                if (startBtnSpan) startBtnSpan.textContent = "Firmar e Iniciar";
+
                 const now = new Date();
                 const currentTime = now.getHours() * 60 + now.getMinutes();
 
@@ -450,9 +758,6 @@ const userId = currentUser?.id;
                 const isWithinTime =
                     currentTime >= startTime && currentTime < endTime;
 
-                // Logic: Must be today AND within time range
-                // Note: User asked to restrict start.
-
                 if (isToday && isWithinTime) {
                     startBtn.disabled = false;
                     startBtn.classList.remove(
@@ -460,11 +765,6 @@ const userId = currentUser?.id;
                         "cursor-not-allowed",
                     );
                     errorMsg.classList.add("hidden");
-
-                    // Setup Auto-Finish
-                    const timeRemainingMs = (endTime - currentTime) * 60 * 1000; // minutes to ms
-                    // In a real app, we'd set a timeout here to auto-close/finish
-                    // setTimeout(finishConsultation, timeRemainingMs);
                 } else {
                     startBtn.disabled = true;
                     startBtn.classList.add("opacity-50", "cursor-not-allowed");
@@ -476,15 +776,277 @@ const userId = currentUser?.id;
 
             startBtn.addEventListener("click", () => {
                 if (!startBtn.disabled) {
-                    // Here we would save the signature and start the consultation
-                    const signatureData = canvas.toDataURL(); // Base64 image
-                    console.log(
-                        "Starting consultation for:",
-                        currentAppointment.id,
+                    // Show Signature Section
+                    startBtn.classList.add("hidden");
+                    confirmSignBtn.classList.remove("hidden");
+                    consentSection.classList.remove("hidden");
+
+                    // Re-init canvas
+                    setTimeout(initCanvas, 50);
+                }
+            });
+
+            confirmSignBtn.addEventListener("click", async () => {
+                // Validation
+                if (placeholder.classList.contains("hidden") === false) {
+                    alert(
+                        "Por favor, solicite al paciente que firme el consentimiento.",
                     );
-                    console.log("Signature:", signatureData);
-                    alert("Consulta iniciada. Firma guardada.");
+                    return;
+                }
+                if (!initialsInput.value.trim()) {
+                    alert("Por favor, ingrese las iniciales del paciente.");
+                    return;
+                }
+
+                try {
+                    const signatureData = canvas.toDataURL("image/png");
+                    const initials = initialsInput.value.trim();
+
+                    // Generate PDF Blob
+                    const pdfBytes = await generateConsentPDF(
+                        currentAppointment.nombre_paciente,
+                        "Fisioterapeuta",
+                        signatureData,
+                        initials,
+                    );
+
+                    currentPdfBlob = new Blob([pdfBytes], {
+                        type: "application/pdf",
+                    });
+
+                    // Switch to Consultation Mode
+                    confirmSignBtn.classList.add("hidden");
+                    consentSection.classList.add("hidden");
+
+                    // Show Mini PDF Preview
+                    pdfPreview.classList.remove("hidden");
+
+                    consultationFields.classList.remove("hidden");
+                    finishBtn.classList.remove("hidden");
+                } catch (error) {
+                    console.error("Error generating PDF:", error);
+                    alert(
+                        "Hubo un error al procesar la firma. Verifique que sus datos de sesión estén completos.",
+                    );
+                }
+            });
+
+            // --- Additionals Logic ---
+            let availableAdditionals = [];
+            let selectedAdditionals = [];
+
+            async function fetchAdditionals() {
+                try {
+                    const res = await fetch(
+                        "/api/v1/Product_Service/additional",
+                    );
+                    if (!res.ok) throw new Error("Error fetching additionals");
+                    availableAdditionals = await res.json();
+                    renderAdditionals();
+                } catch (error) {
+                    console.error("Error loading additionals:", error);
+                }
+            }
+
+            function renderAdditionals() {
+                const container = document.getElementById(
+                    "additionalsContainer",
+                );
+                if (!container) return;
+
+                container.innerHTML = availableAdditionals
+                    .map(
+                        (item) => `
+                    <label class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" value="${item.id}" class="w-4 h-4 text-[#2F5D50] rounded focus:ring-[#2F5D50] additional-checkbox">
+                            <div>
+                                <p class="text-sm font-bold text-gray-800">${item.name}</p>
+                                <p class="text-xs text-gray-500">${item.description}</p>
+                            </div>
+                        </div>
+                        <span class="text-sm font-bold text-[#2F5D50]">$${item.value}</span>
+                    </label>
+                `,
+                    )
+                    .join("");
+
+                // Add listeners
+                container
+                    .querySelectorAll(".additional-checkbox")
+                    .forEach((cb) => {
+                        cb.addEventListener("change", (e) => {
+                            const target = e.target as HTMLInputElement;
+                            const id = target.value;
+                            if (target.checked) {
+                                selectedAdditionals.push(id);
+                            } else {
+                                selectedAdditionals =
+                                    selectedAdditionals.filter(
+                                        (aid) => aid !== id,
+                                    );
+                            }
+                        });
+                    });
+            }
+
+            // Call fetch on load
+            fetchAdditionals();
+
+            finishBtn.addEventListener("click", async () => {
+                const diagnosis = (
+                    document.getElementById(
+                        "consultationDiagnosis",
+                    ) as HTMLInputElement
+                ).value;
+                const note = (
+                    document.getElementById(
+                        "consultationNote",
+                    ) as HTMLTextAreaElement
+                ).value;
+
+                if (!note.trim()) {
+                    alert("Por favor agregue una nota terapéutica.");
+                    return;
+                }
+
+                if (!currentPdfBlob) {
+                    alert("Error: No se encontró el consentimiento firmado.");
+                    return;
+                }
+
+                // Disable button to prevent double submit
+                finishBtn.innerHTML =
+                    '<i class="fa-solid fa-circle-notch fa-spin"></i> Procesando...';
+
+                try {
+                    // Step 0: Get Patient Info (Appointment Number)
+                    const patientRes = await fetch(
+                        `/api/v1/Pacientes/${currentAppointment.idpatient}`,
+                    );
+                    if (!patientRes.ok)
+                        throw new Error("Error fetching patient info");
+                    const patientData = await patientRes.json();
+                    console.log("Patient Data:", patientData); // Debugging
+                    const appointmentNumber = patientData.assispointment || 1;
+
+                    // Step 1: Upload PDF
+                    const pdfFormData = new FormData();
+                    pdfFormData.append(
+                        "pdf",
+                        currentPdfBlob,
+                        `Consentimiento_${currentAppointment.id}.pdf`,
+                    );
+
+                    const pdfRes = await fetch(
+                        `/api/v1/Pacientes/${currentAppointment.idpatient}/pdf`,
+                        {
+                            method: "POST",
+                            body: pdfFormData,
+                        },
+                    );
+                    if (!pdfRes.ok) throw new Error("Error uploading PDF");
+
+                    // Step 2: Save Details
+                    const detailsBody = {
+                        therapeuticnote: note,
+                        diagnostic: diagnosis,
+                        idappointment: currentAppointment.id,
+                    };
+
+                    const detailsRes = await fetch("/api/v1/Citas/detalle", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(detailsBody),
+                    });
+
+                    if (!detailsRes.ok)
+                        throw new Error("Error saving consultation details");
+                    const detailsData = await detailsRes.json();
+                    const idDetail = detailsData.id || detailsData.insertId;
+
+                    // Step 2.5: Save Additionals (New Logic)
+                    if (selectedAdditionals.length > 0) {
+                        for (const additionalId of selectedAdditionals) {
+                            const additionalItem = availableAdditionals.find(
+                                (item) => item.id == additionalId,
+                            );
+                            if (additionalItem) {
+                                const additionalBody = {
+                                    serviceId: additionalItem.id,
+                                    amount: "1",
+                                    unit_price: additionalItem.value,
+                                };
+
+                                const additionalRes = await fetch(
+                                    `/api/v1/Agenda/${currentAppointment.id}/services`,
+                                    {
+                                        method: "POST",
+                                        headers: {
+                                            "Content-Type": "application/json",
+                                        },
+                                        body: JSON.stringify(additionalBody),
+                                    },
+                                );
+
+                                if (!additionalRes.ok) {
+                                    console.error(
+                                        `Error saving additional ${additionalItem.name}`,
+                                    );
+                                }
+                            }
+                        }
+                    }
+
+                    // Step 3: Update Status
+                    const statusRes = await fetch(
+                        `/api/v1/Citas/${currentAppointment.id}`,
+                        {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ status: "concluded" }),
+                        },
+                    );
+                    if (!statusRes.ok)
+                        throw new Error("Error updating appointment status");
+
+                    // Step 4: Save History
+                    const historyBody = {
+                        patientname: currentAppointment.nombre_paciente,
+                        employedname: userName, // Using the variable from Astro script
+                        diagnostic_copy: diagnosis,
+                        therapeutic_copy: note,
+                        numberappointment: appointmentNumber.toString(),
+                        appointment_date:
+                            currentAppointment.currentday.split("T")[0],
+                        appointment_time: currentAppointment.inithour,
+                        idpatient: currentAppointment.idpatient,
+                        idemployed: userId,
+                        idappointment: currentAppointment.id,
+                        iddetailappointment: idDetail,
+                    };
+
+                    const historyRes = await fetch("/api/v1/HistorialClinico", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(historyBody),
+                    });
+                    if (!historyRes.ok)
+                        throw new Error("Error saving medical history");
+
+                    // Success
+                    alert("Consulta finalizada exitosamente.");
                     closeModal();
+                    // Recargar citas
+                    fetchAppointments(dateInput.value);
+                } catch (error: any) {
+                    console.error("Error in consultation workflow:", error);
+                    alert(`Error al finalizar la consulta: ${error.message}`);
+                } finally {
+                    finishBtn.disabled = false;
+                    finishBtn.innerHTML =
+                        '<i class="fa-solid fa-clipboard-check"></i> Finalizar Consulta';
                 }
             });
 
@@ -555,4 +1117,3 @@ const userId = currentUser?.id;
         });
     </script>
 </Layout>
-```
