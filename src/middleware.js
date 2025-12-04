@@ -33,7 +33,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
             });
         } catch (error) {
             console.error("Proxy error:", error);
-            return new Response(JSON.stringify({ error: "Backend unavailable" }), {
+            return new Response(JSON.stringify({
+                error: "Backend unavailable",
+                details: error.message,
+                target: targetUrl.toString()
+            }), {
                 status: 502,
                 headers: { "Content-Type": "application/json" },
             });
