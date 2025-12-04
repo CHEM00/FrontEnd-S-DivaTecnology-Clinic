@@ -712,6 +712,75 @@ const userId = currentUser?.id;
                 return div;
             }
 
+            // --- Modal Logic ---
+            function openModal(app: Appointment) {
+                console.log(
+                    "Appointment Data (Full):",
+                    JSON.stringify(app, null, 2),
+                );
+                currentAppointment = app;
+
+                // Populate Data
+                document.getElementById("modalPatientName")!.textContent =
+                    app.nombre_paciente;
+                document.getElementById("modalTimeRange")!.textContent =
+                    `${app.inithour?.substring(0, 5)} - ${app.endhour?.substring(0, 5)}`;
+                document.getElementById("modalService")!.textContent =
+                    app.servicio;
+                document.getElementById("modalStatus")!.textContent =
+                    app.status;
+                document.getElementById("modalReason")!.textContent =
+                    app.reason;
+
+                // Populate Document Fields
+                document.getElementById("docPatientName")!.textContent =
+                    app.nombre_paciente;
+                document.getElementById("docDate")!.textContent =
+                    new Date().toLocaleDateString();
+
+                // Reset Canvas
+                clearCanvas();
+
+                // Validate Time for Button
+                validateTime(app);
+
+                // Show Modal
+                modal.classList.remove("hidden");
+                setTimeout(() => {
+                    modalContent.classList.remove("scale-95", "opacity-0");
+                    modalContent.classList.add("scale-100", "opacity-100");
+                    initCanvas(); // Re-init canvas dimensions
+
+                    // Reset UI State
+                    startBtn.classList.remove("hidden");
+                    confirmSignBtn.classList.add("hidden");
+                    finishBtn.classList.add("hidden");
+                    consentSection.classList.add("hidden");
+                    consultationFields.classList.add("hidden");
+                    pdfPreview.classList.add("hidden");
+                    initialsInput.value = "";
+                    (
+                        document.getElementById(
+                            "consultationDiagnosis",
+                        ) as HTMLInputElement
+                    ).value = "";
+                    (
+                        document.getElementById(
+                            "consultationNote",
+                        ) as HTMLTextAreaElement
+                    ).value = "";
+                    currentPdfBlob = null;
+
+                    // Reset Additionals
+                    selectedAdditionals = [];
+                    document
+                        .querySelectorAll(".additional-checkbox")
+                        .forEach((cb) => {
+                            (cb as HTMLInputElement).checked = false;
+                        });
+                }, 10);
+            }
+
             function closeModal() {
                 modalContent.classList.remove("scale-100", "opacity-100");
                 modalContent.classList.add("scale-95", "opacity-0");
