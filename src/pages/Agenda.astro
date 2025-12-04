@@ -6,26 +6,43 @@ import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
 
 // Carga inicial de datos para los selectores del modal
-let pacientes = [];
-let empleados = [];
-let servicios = [];
+let pacientes: Paciente[] = [];
+let empleados: Empleado[] = [];
+let servicios: Servicio[] = [];
+
+const backendUrl =
+    import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
+const token = Astro.cookies.get("auth_token")?.value;
+const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...(token && { Cookie: `auth_token=${token}` }),
+};
+
+const { Agent } = await import("node:https");
+const agent = new Agent({ rejectUnauthorized: false });
+
+// Helper para fetch con agente (bypass SSL)
+const fetchWithAgent = async (url: string) => {
+    // @ts-ignore - node-fetch types mismatch with native fetch regarding 'agent'
+    return fetch(url, { headers, agent });
+};
 
 try {
     const [pacientesRes, empleadosRes, serviciosRes] = await Promise.all([
-        fetch("http://localhost:3000/api/v1/Pacientes").then((res) =>
+        fetchWithAgent(`${backendUrl}/api/v1/Pacientes`).then((res) =>
             res.ok ? res.json() : [],
         ),
-        fetch("http://localhost:3000/api/v1/Agenda/fisio").then((res) =>
+        fetchWithAgent(`${backendUrl}/api/v1/Agenda/fisio`).then((res) =>
             res.ok ? res.json() : [],
         ),
-        fetch("http://localhost:3000/api/v1/Agenda/services").then((res) =>
+        fetchWithAgent(`${backendUrl}/api/v1/Agenda/services`).then((res) =>
             res.ok ? res.json() : [],
         ),
     ]);
 
-    pacientes = pacientesRes || [];
-    empleados = empleadosRes || [];
-    servicios = serviciosRes || [];
+    pacientes = (pacientesRes as Paciente[]) || [];
+    empleados = (empleadosRes as Empleado[]) || [];
+    servicios = (serviciosRes as Servicio[]) || [];
 } catch (error) {
     console.error("Error cargando datos iniciales:", error);
 }
@@ -370,9 +387,9 @@ try {
 
         // --- Estado Global ---
         let fechaActual = new Date();
-        let citasDelMes = [];
-        let citasPorDia = {};
-        let socket;
+        let citasDelMes: Cita[] = [];
+        let citasPorDia: Record<string, Cita[]> = {};
+        let socket: any;
 
         // --- Elementos del DOM ---
         const mesActualEl = document.getElementById("mesActual");
@@ -385,13 +402,19 @@ try {
         // --- Inicialización ---
         document.addEventListener("DOMContentLoaded", () => {
             // Inicializar Socket.io
-            socket = io("http://localhost:3000");
+            // En producción, si el backend está en otro dominio, usar la URL completa.
+            // Si está proxied por Nginx en el mismo dominio, usar "/" o path relativo.
+            // Asumimos que api.jesstherapy.cloud maneja los websockets.
+            const socketUrl =
+                import.meta.env.PUBLIC_BACKEND_URL ||
+                "https://api.jesstherapy.cloud";
+            socket = io(socketUrl);
 
             socket.on("connect", () => {
                 console.log("Conectado al servidor de WebSocket");
             });
 
-            socket.on("appointment_created", (newAppointment) => {
+            socket.on("appointment_created", (newAppointment: Cita) => {
                 console.log("Nueva cita recibida:", newAppointment);
                 // Verificar si la cita pertenece al mes actual (opcional, pero buena práctica)
                 // Por simplicidad, la agregamos y reprocesamos. Si no es de este mes, no se mostrará en el grid.
@@ -402,7 +425,7 @@ try {
                 actualizarPanelSiEsNecesario(newAppointment.currentday);
             });
 
-            socket.on("appointment_updated", (updatedAppointment) => {
+            socket.on("appointment_updated", (updatedAppointment: Cita) => {
                 console.log("Cita actualizada:", updatedAppointment);
                 const index = citasDelMes.findIndex(
                     (c) =>
@@ -419,7 +442,7 @@ try {
                 }
             });
 
-            socket.on("appointment_deleted", (deletedAppointment) => {
+            socket.on("appointment_deleted", (deletedAppointment: Cita) => {
                 console.log("Cita eliminada:", deletedAppointment);
                 const index = citasDelMes.findIndex(
                     (c) =>
@@ -468,7 +491,7 @@ try {
                 ?.addEventListener("click", abrirModal);
 
             closeSidePanelBtn?.addEventListener("click", () => {
-                sidePanelEl.style.display = "none";
+                if (sidePanelEl) sidePanelEl.style.display = "none";
             });
 
             // Cargar empleados si no se cargaron desde el servidor
@@ -637,7 +660,7 @@ try {
                 if (res.ok) {
                     const empleados = await res.json();
                     console.log("Datos de empleados recibidos:", empleados); // DEBUG: Ver estructura
-                    empleados.forEach((emp: any) => {
+                    empleados.forEach((emp: Empleado) => {
                         const option = document.createElement("option");
                         option.value = emp.id;
                         option.textContent = `${emp.firstname} ${emp.lastname}`;
@@ -650,14 +673,18 @@ try {
         }
 
         // --- Helper de Fechas ---
-        function getLocalYYYYMMDD(date) {
+        function getLocalYYYYMMDD(date: Date) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, "0");
             const day = String(date.getDate()).padStart(2, "0");
             return `${year}-${month}-${day}`;
         }
 
-        function getYYYYMMDDFromParts(year, monthIndex, day) {
+        function getYYYYMMDDFromParts(
+            year: number,
+            monthIndex: number,
+            day: number,
+        ) {
             const m = String(monthIndex + 1).padStart(2, "0");
             const d = String(day).padStart(2, "0");
             return `${year}-${m}-${d}`;
@@ -666,11 +693,17 @@ try {
         // --- Funciones de Calendario ---
         function renderCalendario() {
             // Actualizar título del mes
-            mesActualEl.textContent = fechaActual.toLocaleDateString("es-ES", {
-                month: "long",
-                year: "numeric",
-            });
+            if (mesActualEl) {
+                mesActualEl.textContent = fechaActual.toLocaleDateString(
+                    "es-ES",
+                    {
+                        month: "long",
+                        year: "numeric",
+                    },
+                );
+            }
 
+            if (!daysGridEl) return;
             daysGridEl.innerHTML = "";
 
             const year = fechaActual.getFullYear();
@@ -719,7 +752,7 @@ try {
                 dayEl.addEventListener("click", () =>
                     seleccionarDia(fechaStr, dia),
                 );
-                daysGridEl.appendChild(dayEl);
+                if (daysGridEl) daysGridEl.appendChild(dayEl);
             }
         }
 
@@ -766,7 +799,7 @@ try {
                 return;
             }
 
-            citasDelMes.forEach((cita) => {
+            citasDelMes.forEach((cita: Cita) => {
                 // Asumimos que currentday viene como "YYYY-MM-DD..."
                 // Tomamos los primeros 10 caracteres para obtener la fecha
                 if (cita.currentday) {
@@ -800,21 +833,17 @@ try {
                         badge.textContent = `${citas.length} Citas`;
                         container.appendChild(badge);
                     }
-                } else {
-                    // Si no se encuentra la celda (ej. cambio de mes), no hacemos nada
                 }
             });
         }
 
-        function actualizarPanelSiEsNecesario(fechaISO) {
+        function actualizarPanelSiEsNecesario(fechaISO: string) {
             if (!fechaISO) return;
             const fechaStr = fechaISO.substring(0, 10);
 
             // Verificar si el panel está visible
-            if (sidePanelEl.style.display !== "none") {
-                // Verificar si el título del panel corresponde a la fecha modificada
-                // Esto es un poco hacky porque el título es texto formateado.
-                // Mejor opción: Guardar la fecha seleccionada en una variable global.
+            if (sidePanelEl && sidePanelEl.style.display !== "none") {
+                // @ts-ignore
                 if (window.fechaSeleccionada === fechaStr) {
                     const citas = citasPorDia[fechaStr] || [];
                     renderListaCitasDia(citas);
@@ -823,34 +852,42 @@ try {
         }
 
         // --- Lógica del Panel Lateral ---
-        function seleccionarDia(fechaStr, diaNumero) {
+        function seleccionarDia(fechaStr: string, diaNumero: number) {
             // Guardar fecha seleccionada para actualizaciones en tiempo real
+            // @ts-ignore
             window.fechaSeleccionada = fechaStr;
 
-            // Mostrar panel
-            sidePanelEl.style.display = "flex";
-            // Pequeño timeout para permitir la transición de opacidad
-            setTimeout(() => {
-                sidePanelEl.classList.remove("translate-x-full", "opacity-0");
-            }, 10);
+            if (sidePanelEl) {
+                // Mostrar panel
+                sidePanelEl.style.display = "flex";
+                // Pequeño timeout para permitir la transición de opacidad
+                setTimeout(() => {
+                    sidePanelEl.classList.remove(
+                        "translate-x-full",
+                        "opacity-0",
+                    );
+                }, 10);
+            }
 
             // Formatear fecha para título
             const [year, month, day] = fechaStr.split("-");
-            // Nota: month es 1-based en el string, pero Date constructor usa 0-based
             const dateObj = new Date(
                 parseInt(year),
                 parseInt(month) - 1,
                 parseInt(day),
             );
 
-            sidePanelTitleEl.textContent = `Citas del ${dateObj.toLocaleDateString("es-ES", { day: "numeric", month: "long" })}`;
+            if (sidePanelTitleEl) {
+                sidePanelTitleEl.textContent = `Citas del ${dateObj.toLocaleDateString("es-ES", { day: "numeric", month: "long" })}`;
+            }
 
             const citas = citasPorDia[fechaStr] || [];
             console.log(`Mostrando citas para ${fechaStr}:`, citas);
             renderListaCitasDia(citas);
         }
 
-        function renderListaCitasDia(citas) {
+        function renderListaCitasDia(citas: Cita[]) {
+            if (!sidePanelContentEl) return;
             sidePanelContentEl.innerHTML = "";
 
             if (citas.length === 0) {
@@ -858,6 +895,9 @@ try {
                     <div class="flex flex-col items-center justify-center h-40 text-gray-400">
                         <i class="fa-regular fa-calendar-xmark text-3xl mb-2"></i>
                         <p>No hay citas programadas</p>
+                        <button onclick="window.abrirModalAgregar()" class="mt-4 text-[#2F5D50] font-bold text-sm hover:underline">
+                            + Agregar Cita
+                        </button>
                     </div>
                 `;
                 return;
@@ -886,7 +926,6 @@ try {
                             ? "bg-red-100"
                             : "bg-yellow-100";
 
-                // Safe substring handling
                 const initHour = cita.inithour
                     ? cita.inithour.substring(0, 5)
                     : "--:--";
@@ -903,31 +942,31 @@ try {
                             ${cita.status}
                         </span>
                     </div>
-                    <h4 class="font-bold text-gray-800 text-base mb-1">${cita.patientname || "Paciente sin nombre"}</h4>
+                    <h4 class="font-bold text-gray-800 text-base mb-1">${cita.patient_firstname || "Paciente"} ${cita.patient_lastname || ""}</h4>
                     <p class="text-xs text-gray-500 line-clamp-2">${cita.reason || "Sin motivo"}</p>
                 `;
 
                 card.addEventListener("click", () =>
-                    cargarDetalleCita(cita.idappointment),
+                    cargarDetalleCita(cita.id || cita.idappointment || 0),
                 );
                 sidePanelContentEl.appendChild(card);
             });
         }
 
-        async function cargarDetalleCita(id) {
+        async function cargarDetalleCita(id: number) {
+            if (!sidePanelContentEl) return;
             sidePanelContentEl.innerHTML = `
                 <div class="flex justify-center items-center h-40">
                     <i class="fa-solid fa-spinner fa-spin text-2xl text-[#2F5D50]"></i>
                 </div>
             `;
-            sidePanelTitleEl.textContent = "Detalle de Cita";
+            if (sidePanelTitleEl)
+                sidePanelTitleEl.textContent = "Detalle de Cita";
 
             try {
-                // Usar ruta relativa para proxy
                 const response = await fetch(`/api/v1/Agenda/${id}`);
                 if (response.ok) {
                     const data = await response.json();
-                    // La respuesta es un array con un objeto que tiene "get_appointment_detail"
                     if (
                         data &&
                         data.length > 0 &&
@@ -948,8 +987,10 @@ try {
             }
         }
 
-        function renderDetalleCita(detalle) {
+        function renderDetalleCita(detalle: any) {
             const { appointment, patient, employed, notes } = detalle;
+
+            if (!sidePanelContentEl) return;
 
             // Botón volver
             const backBtn = document.createElement("button");
@@ -958,9 +999,7 @@ try {
             backBtn.innerHTML =
                 '<i class="fa-solid fa-arrow-left"></i> Volver a la lista';
             backBtn.onclick = () => {
-                // Volver a mostrar la lista del día actual
-                const fechaStr = appointment.currentday.split("T")[0]; // Asegurar formato
-                // Re-seleccionar el día para volver a renderizar la lista
+                const fechaStr = appointment.currentday.split("T")[0];
                 const [y, m, d] = fechaStr.split("-");
                 seleccionarDia(fechaStr, parseInt(d));
             };
@@ -1223,7 +1262,7 @@ try {
             }
         };
 
-        window.cerrarModal = (id) => {
+        window.cerrarModal = (id: string) => {
             const modal = document.getElementById(id);
             if (modal) {
                 const content = modal.querySelector(".modal-content-wrapper");
