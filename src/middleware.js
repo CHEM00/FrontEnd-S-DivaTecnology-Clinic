@@ -16,16 +16,24 @@ export const onRequest = defineMiddleware(async (context, next) => {
         headers.delete("connection"); // Let the fetch client handle connection
 
         // Create a new request to the backend
+        // We need a custom agent to bypass SSL errors if the backend cert is not trusted by Node
+        // (common with internal Docker networks or self-signed certs)
+        const { Agent } = await import("node:https");
+        const agent = new Agent({ rejectUnauthorized: false });
+
         const proxyRequest = new Request(targetUrl, {
             method: request.method,
             headers: headers,
             body: request.body,
             duplex: "half",
+            // @ts-ignore - node-fetch supports agent, standard Request doesn't type it but it works in Node
+            agent: agent
         });
 
         // Forward the backend response back to the client
         try {
-            const response = await fetch(proxyRequest);
+            // Pass the agent to fetch as well just in case
+            const response = await fetch(proxyRequest, { agent });
             return new Response(response.body, {
                 status: response.status,
                 statusText: response.statusText,
