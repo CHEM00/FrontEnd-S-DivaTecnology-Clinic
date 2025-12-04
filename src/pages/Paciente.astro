@@ -33,6 +33,7 @@ const { Agent } = await import("node:https");
 const agent = new Agent({ rejectUnauthorized: false });
 
 try {
+	// @ts-ignore
 	const response = await fetch(`${backendUrl}/api/v1/Pacientes`, {
 		headers,
 		agent,

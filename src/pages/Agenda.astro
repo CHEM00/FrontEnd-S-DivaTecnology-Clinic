@@ -819,11 +819,13 @@ try {
         }
 
         function actualizarIndicadoresCalendario() {
+            console.log("Actualizando indicadores del calendario...");
             Object.keys(citasPorDia).forEach((fechaStr) => {
                 const container = document.getElementById(`citas-${fechaStr}`);
                 if (container) {
                     container.innerHTML = ""; // Limpiar
                     const citas = citasPorDia[fechaStr];
+                    console.log(`Fecha: ${fechaStr}, Citas: ${citas.length}`);
 
                     // Mostrar TAG con contador de citas
                     if (citas.length > 0) {
@@ -833,6 +835,10 @@ try {
                         badge.textContent = `${citas.length} Citas`;
                         container.appendChild(badge);
                     }
+                } else {
+                    console.warn(
+                        `No se encontró el contenedor para la fecha: citas-${fechaStr}`,
+                    );
                 }
             });
         }

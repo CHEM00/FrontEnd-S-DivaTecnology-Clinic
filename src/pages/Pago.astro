@@ -13,21 +13,6 @@ const headers = {
     "Content-Type": "application/json",
     ...(token && { Cookie: `auth_token=${token}` }),
 };
-
-const { Agent } = await import("node:https");
-const agent = new Agent({ rejectUnauthorized: false });
-
-try {
-    // Reusing HistorialClinico endpoint as requested for payment history
-    const response = await fetch(`${backendUrl}/api/v1/HistorialClinico`, {
-        headers,
-        agent,
-    });
-    if (response.ok) {
-        pagos = await response.json();
-    } else {
-        console.error("Error fetching pagos:", response.status);
-    }
 } catch (error) {
     console.error("Error fetching pagos:", error);
 }

@@ -20,7 +20,9 @@ const agent = new Agent({ rejectUnauthorized: false });
 
 try {
     const [clinicRes, scheduleRes] = await Promise.all([
+        // @ts-ignore
         fetch(`${backendUrl}/api/v1/Clinicas`, { headers, agent }),
+        // @ts-ignore
         fetch(`${backendUrl}/api/v1/Horarios`, { headers, agent }),
     ]);
 
