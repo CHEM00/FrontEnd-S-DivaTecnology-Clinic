@@ -76,6 +76,11 @@ export const ALL = async ({ request, url }) => {
             responseHeaders.set("set-cookie", newSetCookie);
         }
 
+        // Remove headers that might cause issues with the proxy response
+        responseHeaders.delete("content-encoding");
+        responseHeaders.delete("content-length");
+        responseHeaders.delete("transfer-encoding");
+
         return new Response(response.body, {
             status: response.status,
             statusText: response.statusText,
