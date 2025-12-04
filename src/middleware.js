@@ -25,8 +25,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
         // Read the body explicitly to avoid stream issues and content-length mismatches
         let body = null;
         if (request.method !== "GET" && request.method !== "HEAD") {
-            const contentType = request.headers.get("content-type");
-            if (contentType && contentType.includes("application/json")) {
+            const contentType = request.headers.get("content-type") || "";
+            console.log(`[Proxy] Incoming Content-Type: ${contentType}`);
+
+            if (contentType.includes("application/json")) {
                 body = await request.text();
             } else {
                 body = await request.arrayBuffer();
@@ -35,8 +37,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
         // Debug logging
         console.log(`[Proxy] ${request.method} ${targetUrl}`);
-        // console.log(`[Proxy] Headers:`, Object.fromEntries(headers.entries())); // Uncomment for verbose header logging
         if (body && typeof body === 'string') console.log(`[Proxy] Body: ${body.substring(0, 200)}...`);
+
+        // Ensure Content-Type is set correctly for the backend
+        if (body && typeof body === 'string' && !headers.has("content-type")) {
+            headers.set("content-type", "application/json");
+        }
 
         const proxyRequest = new Request(targetUrl, {
             method: request.method,
