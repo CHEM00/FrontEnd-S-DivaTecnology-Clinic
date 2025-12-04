@@ -33,6 +33,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
             }
         }
 
+        // Debug logging
+        console.log(`[Proxy] ${request.method} ${targetUrl}`);
+        // console.log(`[Proxy] Headers:`, Object.fromEntries(headers.entries())); // Uncomment for verbose header logging
+        if (body && typeof body === 'string') console.log(`[Proxy] Body: ${body.substring(0, 200)}...`);
+
         const proxyRequest = new Request(targetUrl, {
             method: request.method,
             headers: headers,
