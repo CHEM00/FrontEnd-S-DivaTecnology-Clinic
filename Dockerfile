@@ -6,12 +6,16 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Usar nginx para servir los archivos
-FROM nginx:alpine
-COPY --from=builder /app/dist/ /usr/share/nginx/html/
-COPY nginx.conf.template /etc/nginx/conf.d/default.conf.template
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-EXPOSE 80
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["nginx", "-g", "daemon off;"]
+# Stage 2: Run
+FROM node:18-alpine
+WORKDIR /app
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+ENV HOST=0.0.0.0
+ENV PORT=4321
+EXPOSE 4321
+
+CMD ["node", "./dist/server/entry.mjs"]
