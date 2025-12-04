@@ -27,15 +27,25 @@ export const onRequest = defineMiddleware(async (context, next) => {
         if (request.method !== "GET" && request.method !== "HEAD") {
             const contentType = request.headers.get("content-type") || "";
             console.log(`[Proxy] Incoming Content-Type: ${contentType}`);
-            console.log(`[Proxy] Body Used: ${request.bodyUsed}`);
 
             try {
+                // Clone the request to ensure we don't affect the original stream if needed elsewhere
+                const reqClone = request.clone();
+
                 if (contentType.includes("application/json")) {
-                    body = await request.text();
+                    body = await reqClone.text();
                     console.log(`[Proxy] Read body as text. Length: ${body.length}`);
-                    console.log(`[Proxy] Raw Body: '${body}'`);
+
+                    // If text is empty but it's JSON, try json() directly as a fallback
+                    if (body.length === 0) {
+                        console.log("[Proxy] Body text is empty, trying json() on fresh clone...");
+                        const jsonClone = request.clone();
+                        const jsonData = await jsonClone.json();
+                        body = JSON.stringify(jsonData);
+                        console.log(`[Proxy] Recovered body via json(): ${body.length}`);
+                    }
                 } else {
-                    body = await request.arrayBuffer();
+                    body = await reqClone.arrayBuffer();
                     console.log(`[Proxy] Read body as ArrayBuffer. ByteLength: ${body.byteLength}`);
                 }
             } catch (e) {
@@ -45,6 +55,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
         // Debug logging
         console.log(`[Proxy] ${request.method} ${targetUrl}`);
+        if (body && typeof body === 'string') console.log(`[Proxy] Body: ${body.substring(0, 200)}...`);
 
         // Ensure Content-Type is set correctly for the backend
         if (body && typeof body === 'string' && !headers.has("content-type")) {
