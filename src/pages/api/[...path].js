@@ -3,7 +3,10 @@ export const ALL = async ({ request, url }) => {
     // The path parameter captures everything after /api/
     // But we can just use the request URL to reconstruct the target
 
-    const backendUrl = import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
+    const backendUrl = import.meta.env.BACKEND_URL;
+    if (!backendUrl) {
+        return new Response("BACKEND_URL not defined in environment variables", { status: 500 });
+    }
 
     // url.pathname includes /api/..., so we can just append it to the backend origin if backendUrl is just the origin
     // But if backendUrl includes /api, we need to be careful.

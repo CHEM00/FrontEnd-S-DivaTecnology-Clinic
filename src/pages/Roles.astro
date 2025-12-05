@@ -12,8 +12,7 @@ interface Rol {
 
 let table: Rol[] = [];
 
-const backendUrl =
-    import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
+const backendUrl = import.meta.env.BACKEND_URL;
 const token = Astro.cookies.get("auth_token")?.value;
 try {
     const { Agent } = await import("node:https");

@@ -10,8 +10,7 @@ let pacientes: Paciente[] = [];
 let empleados: Empleado[] = [];
 let servicios: Servicio[] = [];
 
-const backendUrl =
-    import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
+const backendUrl = import.meta.env.BACKEND_URL;
 const token = Astro.cookies.get("auth_token")?.value;
 const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -405,9 +404,7 @@ try {
             // En producción, si el backend está en otro dominio, usar la URL completa.
             // Si está proxied por Nginx en el mismo dominio, usar "/" o path relativo.
             // Asumimos que api.jesstherapy.cloud maneja los websockets.
-            const socketUrl =
-                import.meta.env.PUBLIC_BACKEND_URL ||
-                "https://api.jesstherapy.cloud";
+            const socketUrl = import.meta.env.PUBLIC_BACKEND_URL;
             socket = io(socketUrl);
 
             socket.on("connect", () => {

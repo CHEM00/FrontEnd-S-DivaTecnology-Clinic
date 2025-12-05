@@ -8,9 +8,8 @@ import axios from "axios";
 
 let table = [];
 try {
-    const response = await axios.get(
-        "http://localhost:3001/api/v1/Permisos/Clinica/1",
-    );
+    const backendUrl = import.meta.env.BACKEND_URL;
+    const response = await axios.get(`${backendUrl}/api/v1/Permisos/Clinica/1`);
     table = response.data;
 } catch (error) {
     console.error("Error fetching data:", error);

@@ -25,6 +25,7 @@ try {
 
     if (response.ok) {
         pagos = await response.json();
+        console.log("Server-side Pagos Data:", JSON.stringify(pagos, null, 2));
     } else {
         console.error("Error fetching pagos:", response.statusText);
     }
@@ -211,6 +212,7 @@ try {
 
     <!-- Script Cliente para Paginación y Filtro -->
     <script define:vars={{ pagos }}>
+        console.log("Client-side Pagos Data:", pagos);
         // Datos iniciales desde el servidor
         let allData = pagos || [];
         let filteredData = [...allData];
