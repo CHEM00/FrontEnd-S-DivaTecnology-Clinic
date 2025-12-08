@@ -9,6 +9,13 @@ import FormModal from "../components/modals/FormModal.astro";
 let pacientes: Paciente[] = [];
 let empleados: Empleado[] = [];
 let servicios: Servicio[] = [];
+let paquetes: Paquete[] = [];
+
+interface Paquete {
+    id: string;
+    numsession: number;
+    value: string;
+}
 
 const backendUrl = import.meta.env.BACKEND_URL;
 const token = Astro.cookies.get("auth_token")?.value;
@@ -27,21 +34,27 @@ const fetchWithAgent = async (url: string) => {
 };
 
 try {
-    const [pacientesRes, empleadosRes, serviciosRes] = await Promise.all([
-        fetchWithAgent(`${backendUrl}/api/v1/Pacientes`).then((res) =>
-            res.ok ? res.json() : [],
-        ),
-        fetchWithAgent(`${backendUrl}/api/v1/Agenda/fisio`).then((res) =>
-            res.ok ? res.json() : [],
-        ),
-        fetchWithAgent(`${backendUrl}/api/v1/Agenda/services`).then((res) =>
-            res.ok ? res.json() : [],
-        ),
-    ]);
+    const [pacientesRes, empleadosRes, serviciosRes, paquetesRes] =
+        await Promise.all([
+            fetchWithAgent(`${backendUrl}/api/v1/Pacientes`).then((res) =>
+                res.ok ? res.json() : [],
+            ),
+            fetchWithAgent(`${backendUrl}/api/v1/Agenda/fisio`).then((res) =>
+                res.ok ? res.json() : [],
+            ),
+            fetchWithAgent(`${backendUrl}/api/v1/Agenda/services`).then(
+                (res) => (res.ok ? res.json() : []),
+            ),
+            fetchWithAgent(`${backendUrl}/api/v1/Package`).then((res) =>
+                res.ok ? res.json() : [],
+            ),
+        ]);
 
     pacientes = (pacientesRes as Paciente[]) || [];
     empleados = (empleadosRes as Empleado[]) || [];
     servicios = (serviciosRes as Servicio[]) || [];
+    // @ts-ignore
+    paquetes = (paquetesRes as Paquete[]) || [];
 } catch (error) {
     console.error("Error cargando datos iniciales:", error);
 }
@@ -222,41 +235,88 @@ try {
         cancelText="CANCELAR"
         size="lg"
     >
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-4">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Columna Izquierda: Programación -->
+            <div class="space-y-5">
+                <h3
+                    class="text-sm font-bold text-[#2F5D50] uppercase border-b border-[#2F5D50]/10 pb-2 mb-4"
+                >
+                    <i class="fa-regular fa-calendar-check mr-2"></i> Programación
+                </h3>
+
+                <!-- 1. Paciente (Reordenado) -->
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1"
-                        >PACIENTE *</label
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1"
+                        >Paciente *</label
                     >
-                    <select
-                        id="agregarIdPatient"
-                        class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                        required
-                    >
-                        <option value="">Seleccionar paciente</option>
-                        {
-                            pacientes.map((paciente) => (
-                                <option
-                                    value={paciente.id}
-                                    data-id-employed={paciente.idemployed}
-                                >
-                                    {paciente.firstname || "Sin Nombre"}{" "}
-                                    {paciente.lastname || ""}
-                                </option>
-                            ))
-                        }
-                    </select>
+                    <div class="relative group" id="patient-search-container">
+                        <div
+                            class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none text-[#2F5D50]"
+                        >
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <input
+                            type="text"
+                            id="patientSearchInput"
+                            placeholder="Buscar paciente (nombre)..."
+                            class="glass-input w-full rounded-xl pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                            autocomplete="off"
+                        />
+                        <input
+                            type="hidden"
+                            id="agregarIdPatient"
+                            name="idPatient"
+                            required
+                        />
+
+                        <!-- Lista de resultados -->
+                        <div
+                            id="patientSearchResults"
+                            class="hidden absolute left-0 right-0 top-full mt-1 bg-white glass-panel border border-white/50 shadow-xl rounded-xl max-h-60 overflow-y-auto z-50"
+                        >
+                            <!-- JS inyectará opciones aquí -->
+                        </div>
+                    </div>
                 </div>
+
+                <!-- 2. Fecha (Reordenado) -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label
+                            class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1"
+                            >Fecha *</label
+                        >
+                        <div class="relative">
+                            <div
+                                class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none text-[#2F5D50]"
+                            >
+                                <i class="fa-regular fa-calendar"></i>
+                            </div>
+                            <input
+                                datepicker
+                                datepicker-autohide
+                                type="date"
+                                id="agregarCurrentday"
+                                class="glass-input w-full rounded-xl pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                                required
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Fisioterapeuta (Reordenado) -->
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1"
-                        >EMPLEADO *</label
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1"
+                        >Fisioterapeuta *</label
                     >
                     <select
                         id="agregarIdEmployed"
                         class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
                         required
                     >
-                        <option value="">Seleccionar empleado</option>
+                        <option value="">Seleccionar fisio...</option>
                         {
                             empleados.map((empleado) => (
                                 <option value={empleado.id}>
@@ -266,46 +326,58 @@ try {
                         }
                     </select>
                 </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1"
-                        >FECHA *</label
-                    >
-                    <div class="relative max-w-sm">
-                        <div
-                            class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none"
+
+                <!-- 4. Hora (Reordenado) -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label
+                            class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1"
+                            >Hora Inicio *</label
                         >
-                            <svg
-                                class="w-4 h-4 text-gray-500"
-                                aria-hidden="true"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                            >
-                                <path
-                                    d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"
-                                ></path>
-                            </svg>
-                        </div>
+                        <select
+                            id="agregarInitHour"
+                            class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all cursor-pointer"
+                            required
+                            disabled
+                        >
+                            <option value="">--:--</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1"
+                            >Hora Fin</label
+                        >
                         <input
-                            datepicker
-                            datepicker-autohide
-                            type="date"
-                            id="agregarCurrentday"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5"
-                            placeholder="Select date"
+                            type="text"
+                            id="agregarEndHour"
+                            class="glass-input w-full rounded-xl px-4 py-2.5 bg-gray-50/50 text-gray-500 cursor-not-allowed outline-none transition-all"
+                            readonly
+                            placeholder="--:--"
                         />
                     </div>
                 </div>
+            </div>
+
+            <!-- Columna Derecha: Detalles del Servicio -->
+            <div class="space-y-5">
+                <h3
+                    class="text-sm font-bold text-[#2F5D50] uppercase border-b border-[#2F5D50]/10 pb-2 mb-4"
+                >
+                    <i class="fa-solid fa-list-check mr-2"></i> Detalles del Servicio
+                </h3>
+
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1"
-                        >SERVICIO *</label
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1"
+                        >Servicio *</label
                     >
                     <select
                         id="agregarIdService"
                         class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
                         required
                     >
-                        <option value="">Seleccionar servicio</option>
+                        <option value="">Seleccionar servicio...</option>
                         {
                             servicios.map((servicio) => (
                                 <option
@@ -318,426 +390,615 @@ try {
                         }
                     </select>
                 </div>
-            </div>
-            <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label
-                            class="block text-sm font-bold text-gray-700 mb-1"
-                            >HORA INICIO *</label
-                        >
-                        <select
-                            id="agregarInitHour"
-                            class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all cursor-pointer"
-                            required
-                            disabled
-                        >
-                            <option value="">Seleccionar fecha primero</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label
-                            class="block text-sm font-bold text-gray-700 mb-1"
-                            >HORA FIN</label
-                        >
-                        <input
-                            type="text"
-                            id="agregarEndHour"
-                            class="glass-input w-full rounded-xl px-4 py-2.5 bg-gray-100 text-gray-500 cursor-not-allowed outline-none transition-all"
-                            readonly
-                            placeholder="--:--"
-                        />
-                    </div>
-                </div>
+
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1"
-                        >ESTADO *</label
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1"
+                        >Paquete (Opcional)</label
                     >
                     <select
-                        id="agregarStatus"
+                        id="agregarIdPackage"
                         class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                        required
                     >
-                        <option value="wait">En espera</option>
-                        <option value="confirmed">Confirmada</option>
-                        <option value="canceled">Cancelada</option>
-                        <option value="concluded">Concluida</option>
+                        <option value="">Ninguno / Sin paquete</option>
+                        {
+                            paquetes.map((paquete) => (
+                                <option value={paquete.id}>
+                                    {paquete.numsession} Sesiones - $
+                                    {paquete.value}
+                                </option>
+                            ))
+                        }
                     </select>
                 </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1"
-                        >RAZÓN/MOTIVO *</label
+
+                <div class="pt-4 border-t border-dashed border-gray-200">
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1"
+                        >Estado Inicial *</label
                     >
-                    <input
-                        type="text"
+                    <div class="relative">
+                        <select
+                            id="agregarStatus"
+                            class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all appearance-none"
+                            required
+                        >
+                            <option value="wait">⏳ En espera</option>
+                            <option value="confirmed">✅ Confirmada</option>
+                            <option value="canceled">❌ Cancelada</option>
+                            <option value="concluded">🏁 Concluida</option>
+                            <option value="no assisted">🚫 No Asistió</option>
+                        </select>
+                        <div
+                            class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                        >
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1"
+                        >Motivo / Notas *</label
+                    >
+                    <textarea
                         id="agregarReason"
-                        class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                        rows="3"
+                        class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all resize-none"
                         required
-                        placeholder="Motivo de la cita"
-                    />
+                        placeholder="Escriba el motivo de la consulta..."
+                    ></textarea>
                 </div>
             </div>
         </div>
     </FormModal>
+</Layout>
 
-    <!-- Scripts del Cliente -->
-    <script>
-        import { io } from "socket.io-client";
+<!-- Scripts del Cliente -->
+<script define:vars={{ pacientes }}>
+    window.pacientesData = pacientes;
+</script>
+<script>
+    import { io } from "socket.io-client";
 
-        // --- Estado Global ---
-        let fechaActual = new Date();
-        let citasDelMes: Cita[] = [];
-        let citasPorDia: Record<string, Cita[]> = {};
-        let socket: any;
+    declare global {
+        interface Window {
+            pacientesData: any[];
+            abrirModalAgregar: () => void;
+            cerrarModal: (id: string) => void;
+            iniciarEdicion: (id: number, detalle: any) => void;
+            buscarHorariosDisponibles: () => Promise<void>;
+        }
+    }
 
-        // --- Elementos del DOM ---
-        const mesActualEl = document.getElementById("mesActual");
-        const daysGridEl = document.getElementById("daysGrid");
-        const sidePanelEl = document.getElementById("sidePanel");
-        const sidePanelTitleEl = document.getElementById("sidePanelTitle");
-        const sidePanelContentEl = document.getElementById("sidePanelContent");
-        const closeSidePanelBtn = document.getElementById("closeSidePanelBtn");
+    // --- Estado Global ---
+    let fechaActual = new Date();
+    let citasDelMes: Cita[] = [];
+    let citasPorDia: Record<string, Cita[]> = {};
+    let socket: any;
 
-        // --- Inicialización ---
-        document.addEventListener("DOMContentLoaded", () => {
-            // Inicializar Socket.io
-            // En producción, si el backend está en otro dominio, usar la URL completa.
-            // Si está proxied por Nginx en el mismo dominio, usar "/" o path relativo.
-            // Asumimos que api.jesstherapy.cloud maneja los websockets.
-            const socketUrl = import.meta.env.PUBLIC_BACKEND_URL;
-            socket = io(socketUrl);
+    // --- Estado de Edición ---
+    let isEditMode = false;
+    let editingAppointmentId: number | null = null;
 
-            socket.on("connect", () => {
-                console.log("Conectado al servidor de WebSocket");
-            });
+    // --- Elementos del DOM ---
+    const mesActualEl = document.getElementById("mesActual");
+    const daysGridEl = document.getElementById("daysGrid");
+    const sidePanelEl = document.getElementById("sidePanel");
+    const sidePanelTitleEl = document.getElementById("sidePanelTitle");
+    const sidePanelContentEl = document.getElementById("sidePanelContent");
+    const closeSidePanelBtn = document.getElementById("closeSidePanelBtn");
 
-            socket.on("appointment_created", (newAppointment: Cita) => {
-                console.log("Nueva cita recibida:", newAppointment);
-                // Verificar si la cita pertenece al mes actual (opcional, pero buena práctica)
-                // Por simplicidad, la agregamos y reprocesamos. Si no es de este mes, no se mostrará en el grid.
-                citasDelMes.push(newAppointment);
-                procesarCitas();
+    // --- Inicialización ---
+    document.addEventListener("DOMContentLoaded", () => {
+        // Inicializar Socket.io
+        // En producción, si el backend está en otro dominio, usar la URL completa.
+        // Si está proxied por Nginx en el mismo dominio, usar "/" o path relativo.
+        // Asumimos que api.jesstherapy.cloud maneja los websockets.
+        const socketUrl = import.meta.env.PUBLIC_BACKEND_URL;
+        socket = io(socketUrl);
 
-                // Si el panel lateral está abierto y es el día de la cita, actualizar lista
-                actualizarPanelSiEsNecesario(newAppointment.currentday);
-            });
-
-            socket.on("appointment_updated", (updatedAppointment: Cita) => {
-                console.log("Cita actualizada:", updatedAppointment);
-                const index = citasDelMes.findIndex(
-                    (c) =>
-                        c.id === updatedAppointment.id ||
-                        c.idappointment === updatedAppointment.id,
-                );
-                if (index !== -1) {
-                    citasDelMes[index] = {
-                        ...citasDelMes[index],
-                        ...updatedAppointment,
-                    };
-                    procesarCitas();
-                    actualizarPanelSiEsNecesario(updatedAppointment.currentday);
-                }
-            });
-
-            socket.on("appointment_deleted", (deletedAppointment: Cita) => {
-                console.log("Cita eliminada:", deletedAppointment);
-                const index = citasDelMes.findIndex(
-                    (c) =>
-                        c.id === deletedAppointment.id ||
-                        c.idappointment === deletedAppointment.id,
-                );
-                if (index !== -1) {
-                    // Guardamos la fecha antes de eliminar para actualizar el panel
-                    const fecha = citasDelMes[index].currentday;
-                    citasDelMes.splice(index, 1);
-                    procesarCitas();
-                    actualizarPanelSiEsNecesario(fecha);
-                }
-            });
-
-            renderCalendario();
-            cargarCitasMes();
-
-            // Event Listeners de Navegación
-            document
-                .getElementById("mesAnterior")
-                ?.addEventListener("click", () => {
-                    fechaActual.setMonth(fechaActual.getMonth() - 1);
-                    renderCalendario();
-                    cargarCitasMes();
-                });
-
-            document
-                .getElementById("mesSiguiente")
-                ?.addEventListener("click", () => {
-                    fechaActual.setMonth(fechaActual.getMonth() + 1);
-                    renderCalendario();
-                    cargarCitasMes();
-                });
-
-            // Botones de Nueva Cita (Header, Mobile, Toolbar)
-            const abrirModal = () => window.abrirModalAgregar();
-            document
-                .getElementById("nuevaCitaBtn")
-                ?.addEventListener("click", abrirModal);
-            document
-                .getElementById("nuevaCitaBtnHeader")
-                ?.addEventListener("click", abrirModal);
-            document
-                .getElementById("nuevaCitaBtnMobile")
-                ?.addEventListener("click", abrirModal);
-
-            closeSidePanelBtn?.addEventListener("click", () => {
-                if (sidePanelEl) sidePanelEl.style.display = "none";
-            });
-
-            // Cargar empleados si no se cargaron desde el servidor
-            cargarEmpleados();
-
-            // --- Lógica de Nueva Cita ---
-            const pacienteSelect = document.getElementById(
-                "agregarIdPatient",
-            ) as HTMLSelectElement;
-            const empleadoSelect = document.getElementById(
-                "agregarIdEmployed",
-            ) as HTMLSelectElement;
-            const fechaInput = document.getElementById(
-                "agregarCurrentday",
-            ) as HTMLInputElement;
-            const horaInicioSelect = document.getElementById(
-                "agregarInitHour",
-            ) as HTMLSelectElement;
-            const horaFinInput = document.getElementById(
-                "agregarEndHour",
-            ) as HTMLInputElement;
-
-            // 1. Auto-seleccionar empleado al elegir paciente
-            pacienteSelect?.addEventListener("change", (e) => {
-                const target = e.target as HTMLSelectElement;
-                const selectedOption = target.options[target.selectedIndex];
-                const idEmployed =
-                    selectedOption.getAttribute("data-id-employed");
-
-                if (idEmployed && empleadoSelect) {
-                    empleadoSelect.value = idEmployed;
-                    // Disparar evento change manualmente para activar la búsqueda de horarios
-                    empleadoSelect.dispatchEvent(new Event("change"));
-                }
-            });
-
-            // 2. Buscar horarios disponibles
-            async function buscarHorariosDisponibles() {
-                const idEmployed = empleadoSelect?.value;
-                const fecha = fechaInput?.value; // Formato esperado: YYYY-MM-DD o MM/DD/YYYY según datepicker
-
-                if (!idEmployed || !fecha) {
-                    if (horaInicioSelect) {
-                        horaInicioSelect.innerHTML =
-                            '<option value="">Seleccionar fecha y empleado</option>';
-                        horaInicioSelect.disabled = true;
-                    }
-                    return;
-                }
-
-                // Asegurar formato de fecha YYYY-MM-DD
-                let fechaFormateada = fecha;
-                console.log("Fecha original:", fecha);
-
-                if (fecha.includes("/")) {
-                    const parts = fecha.split("/");
-                    // Asumiendo DD/MM/YYYY
-                    if (parts.length === 3)
-                        fechaFormateada = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                } else if (fecha.includes("-")) {
-                    const parts = fecha.split("-");
-                    // Si es DD-MM-YYYY (año al final)
-                    if (
-                        parts.length === 3 &&
-                        parts[0].length === 2 &&
-                        parts[2].length === 4
-                    ) {
-                        fechaFormateada = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                    }
-                }
-                console.log("Fecha formateada para API:", fechaFormateada);
-
-                try {
-                    if (horaInicioSelect) {
-                        horaInicioSelect.innerHTML =
-                            '<option value="">Cargando...</option>';
-                        horaInicioSelect.disabled = true;
-                    }
-
-                    const url = `/api/v1/Agenda/${idEmployed}/${fechaFormateada}`;
-                    console.log("Consultando horarios:", url);
-
-                    const res = await fetch(url);
-                    if (res.ok) {
-                        const horarios = await res.json();
-                        console.log("Horarios disponibles:", horarios);
-
-                        if (horaInicioSelect) {
-                            horaInicioSelect.innerHTML =
-                                '<option value="">Seleccionar hora</option>';
-
-                            if (
-                                Array.isArray(horarios) &&
-                                horarios.length > 0
-                            ) {
-                                horarios.forEach((item: any) => {
-                                    // La API devuelve objetos { "hora_disponible": "13:00:00" }
-                                    const horaRaw = item.hora_disponible;
-                                    if (horaRaw) {
-                                        const hora = horaRaw.substring(0, 5); // "13:00"
-                                        const option =
-                                            document.createElement("option");
-                                        option.value = hora;
-                                        option.textContent = hora;
-                                        horaInicioSelect.appendChild(option);
-                                    }
-                                });
-                                horaInicioSelect.disabled = false;
-                            } else {
-                                horaInicioSelect.innerHTML =
-                                    '<option value="">No hay horarios disponibles</option>';
-                            }
-                        }
-                    } else {
-                        console.error("Error al obtener horarios");
-                        if (horaInicioSelect)
-                            horaInicioSelect.innerHTML =
-                                '<option value="">Error al cargar</option>';
-                    }
-                } catch (error) {
-                    console.error("Error de red:", error);
-                    if (horaInicioSelect)
-                        horaInicioSelect.innerHTML =
-                            '<option value="">Error de conexión</option>';
-                }
-            }
-
-            empleadoSelect?.addEventListener(
-                "change",
-                buscarHorariosDisponibles,
-            );
-            // El datepicker puede disparar 'changeDate' o 'change' dependiendo de la librería.
-            // Como es el nativo o flowbite, probamos con 'change' y 'blur'
-            fechaInput?.addEventListener("change", buscarHorariosDisponibles);
-            fechaInput?.addEventListener("blur", buscarHorariosDisponibles);
-
-            // 3. Auto-calcular hora fin
-            horaInicioSelect?.addEventListener("change", (e) => {
-                const target = e.target as HTMLSelectElement;
-                const horaInicio = target.value;
-                if (horaInicio && horaFinInput) {
-                    const [hours, minutes] = horaInicio.split(":").map(Number);
-                    const fecha = new Date();
-                    fecha.setHours(hours);
-                    fecha.setMinutes(minutes);
-
-                    // Sumar 1 hora (ajustar según requerimientos)
-                    fecha.setHours(fecha.getHours() + 1);
-
-                    const horaFin = `${String(fecha.getHours()).padStart(2, "0")}:${String(fecha.getMinutes()).padStart(2, "0")}`;
-                    horaFinInput.value = horaFin;
-                } else if (horaFinInput) {
-                    horaFinInput.value = "";
-                }
-            });
+        socket.on("connect", () => {
+            console.log("Conectado al servidor de WebSocket");
         });
 
-        async function cargarEmpleados() {
-            const select = document.getElementById(
-                "agregarIdEmployed",
-            ) as HTMLSelectElement;
-            if (!select || select.options.length > 1) return;
+        socket.on("appointment_created", (newAppointment: Cita) => {
+            console.log("Nueva cita recibida:", newAppointment);
+            // Verificar si la cita pertenece al mes actual (opcional, pero buena práctica)
+            // Por simplicidad, la agregamos y reprocesamos. Si no es de este mes, no se mostrará en el grid.
+            citasDelMes.push(newAppointment);
+            procesarCitas();
+
+            // Si el panel lateral está abierto y es el día de la cita, actualizar lista
+            actualizarPanelSiEsNecesario(newAppointment.currentday);
+        });
+
+        socket.on("appointment_updated", (updatedAppointment: Cita) => {
+            console.log("Cita actualizada:", updatedAppointment);
+            const index = citasDelMes.findIndex(
+                (c) =>
+                    c.id === updatedAppointment.id ||
+                    c.idappointment === updatedAppointment.id,
+            );
+            if (index !== -1) {
+                citasDelMes[index] = {
+                    ...citasDelMes[index],
+                    ...updatedAppointment,
+                };
+                procesarCitas();
+                actualizarPanelSiEsNecesario(updatedAppointment.currentday);
+            }
+        });
+
+        socket.on("appointment_deleted", (deletedAppointment: Cita) => {
+            console.log("Cita eliminada:", deletedAppointment);
+            const index = citasDelMes.findIndex(
+                (c) =>
+                    c.id === deletedAppointment.id ||
+                    c.idappointment === deletedAppointment.id,
+            );
+            if (index !== -1) {
+                // Guardamos la fecha antes de eliminar para actualizar el panel
+                const fecha = citasDelMes[index].currentday;
+                citasDelMes.splice(index, 1);
+                procesarCitas();
+                actualizarPanelSiEsNecesario(fecha);
+            }
+        });
+
+        renderCalendario();
+        cargarCitasMes();
+
+        // Event Listeners de Navegación
+        document
+            .getElementById("mesAnterior")
+            ?.addEventListener("click", () => {
+                fechaActual.setMonth(fechaActual.getMonth() - 1);
+                renderCalendario();
+                cargarCitasMes();
+            });
+
+        document
+            .getElementById("mesSiguiente")
+            ?.addEventListener("click", () => {
+                fechaActual.setMonth(fechaActual.getMonth() + 1);
+                renderCalendario();
+                cargarCitasMes();
+            });
+
+        // Botones de Nueva Cita (Header, Mobile, Toolbar)
+        const abrirModal = () => window.abrirModalAgregar();
+        document
+            .getElementById("nuevaCitaBtn")
+            ?.addEventListener("click", abrirModal);
+        document
+            .getElementById("nuevaCitaBtnHeader")
+            ?.addEventListener("click", abrirModal);
+        document
+            .getElementById("nuevaCitaBtnMobile")
+            ?.addEventListener("click", abrirModal);
+
+        closeSidePanelBtn?.addEventListener("click", () => {
+            if (sidePanelEl) sidePanelEl.style.display = "none";
+        });
+
+        // Cargar empleados si no se cargaron desde el servidor
+        cargarEmpleados();
+
+        // --- Lógica de Nueva Cita (Actualizada) ---
+
+        // Elementos UI
+        const hiddenPatientId = document.getElementById(
+            "agregarIdPatient",
+        ) as HTMLInputElement;
+        const searchInput = document.getElementById(
+            "patientSearchInput",
+        ) as HTMLInputElement;
+        const searchResults = document.getElementById(
+            "patientSearchResults",
+        ) as HTMLDivElement;
+
+        const empleadoSelect = document.getElementById(
+            "agregarIdEmployed",
+        ) as HTMLSelectElement;
+        const fechaInput = document.getElementById(
+            "agregarCurrentday",
+        ) as HTMLInputElement;
+        const horaInicioSelect = document.getElementById(
+            "agregarInitHour",
+        ) as HTMLSelectElement;
+        const horaFinInput = document.getElementById(
+            "agregarEndHour",
+        ) as HTMLInputElement;
+
+        const servicioSelect = document.getElementById(
+            "agregarIdService",
+        ) as HTMLSelectElement;
+        const paqueteSelect = document.getElementById(
+            "agregarIdPackage",
+        ) as HTMLSelectElement;
+
+        // Validar existencia de elementos críticos
+        if (!hiddenPatientId || !empleadoSelect) return;
+
+        // --- 1. Buscador de Pacientes ---
+        // Recuperar datos inyectados
+        const pacientesData = window.pacientesData || [];
+
+        function filterPatients(query: string) {
+            if (!searchResults) return;
+
+            // Si está vacío, mostrar todos (o los primeros 10)
+            const list = query
+                ? pacientesData.filter((p: any) =>
+                      (p.firstname + " " + p.lastname)
+                          .toLowerCase()
+                          .includes(query.toLowerCase()),
+                  )
+                : pacientesData.slice(0, 10); // Límite inicial
+
+            renderResults(list);
+        }
+
+        function renderResults(list: any[]) {
+            if (!searchResults) return;
+            searchResults.innerHTML = "";
+
+            if (list.length === 0) {
+                searchResults.innerHTML = `<div class="p-3 text-sm text-gray-500 text-center">No se encontraron pacientes</div>`;
+                searchResults.classList.remove("hidden");
+                return;
+            }
+
+            list.forEach((p) => {
+                const div = document.createElement("div");
+                div.className =
+                    "px-4 py-3 hover:bg-[#2F5D50]/10 cursor-pointer text-sm text-gray-700 transition-colors border-b border-gray-100 last:border-0";
+                div.innerHTML = `<div class="font-bold text-[#2F5D50]">${p.firstname || "Sin Nombre"} ${p.lastname || ""}</div><div class="text-xs text-gray-500">ID: ...${p.id.slice(-4)}</div>`; // Más info si se desea
+
+                div.onclick = (e) => {
+                    e.stopPropagation(); // Evitar cerrar al click
+                    selectPatient(p);
+                };
+                searchResults.appendChild(div);
+            });
+            searchResults.classList.remove("hidden");
+        }
+
+        function selectPatient(p: any) {
+            if (searchInput)
+                searchInput.value = `${p.firstname || ""} ${p.lastname || ""}`;
+            if (hiddenPatientId) {
+                hiddenPatientId.value = p.id;
+                // Guardar dataset para uso posterior si es necesario
+                hiddenPatientId.setAttribute(
+                    "data-id-employed",
+                    p.idemployed || "",
+                );
+
+                // Lógica original: Auto-seleccionar empleado
+                if (p.idemployed && empleadoSelect) {
+                    empleadoSelect.value = p.idemployed;
+                    empleadoSelect.dispatchEvent(new Event("change"));
+                }
+            }
+            if (searchResults) searchResults.classList.add("hidden");
+        }
+
+        // Search Input Listeners
+        searchInput?.addEventListener("focus", () => {
+            filterPatients(searchInput.value);
+            if (searchResults) searchResults.classList.remove("hidden");
+        });
+
+        searchInput?.addEventListener("input", (e) => {
+            const val = (e.target as HTMLInputElement).value;
+            filterPatients(val);
+            if (val === "" && hiddenPatientId) hiddenPatientId.value = "";
+        });
+
+        // Click Outside to Close
+        document.addEventListener("click", (e) => {
+            if (
+                !searchInput?.contains(e.target as Node) &&
+                !searchResults?.contains(e.target as Node)
+            ) {
+                searchResults?.classList.add("hidden");
+            }
+        });
+
+        // --- 2. Lógica de Horarios (Mantenida y Ampliada) ---
+        async function buscarHorariosDisponibles() {
+            const idEmployed = empleadoSelect?.value;
+            const fecha = fechaInput?.value;
+
+            // CASO 0: Sin fecha -> No hacer nada (o limpiar)
+            if (!fecha) {
+                if (horaInicioSelect) {
+                    horaInicioSelect.innerHTML =
+                        '<option value="">Seleccionar fecha</option>';
+                    horaInicioSelect.disabled = true;
+                }
+                return;
+            }
+
+            // Formateo de fecha robusto
+            let fechaFormateada = fecha;
+            if (fecha.includes("/")) {
+                const parts = fecha.split("/");
+                if (parts.length === 3)
+                    fechaFormateada = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            } else if (fecha.includes("-")) {
+                const parts = fecha.split("-");
+                if (
+                    parts.length === 3 &&
+                    parts[0].length === 2 &&
+                    parts[2].length === 4
+                ) {
+                    fechaFormateada = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                }
+            }
 
             try {
-                const res = await fetch("/api/v1/Agenda/fisio");
-                if (res.ok) {
-                    const empleados = await res.json();
-                    console.log("Datos de empleados recibidos:", empleados); // DEBUG: Ver estructura
-                    empleados.forEach((emp: Empleado) => {
-                        const option = document.createElement("option");
-                        option.value = emp.id;
-                        option.textContent = `${emp.firstname} ${emp.lastname}`;
-                        select.appendChild(option);
-                    });
+                if (horaInicioSelect) {
+                    horaInicioSelect.innerHTML =
+                        '<option value="">Cargando...</option>';
+                    horaInicioSelect.disabled = true;
                 }
-            } catch (e) {
-                console.error("Error cargando empleados:", e);
+
+                let url = "";
+                // CASO 1: Con empleado seleccionado -> Endpoint clásico
+                if (idEmployed) {
+                    url = `/api/v1/Agenda/${idEmployed}/${fechaFormateada}`;
+                }
+                // CASO 2: Sin empleado seleccionado -> Endpoint Global
+                else {
+                    url = `/api/v1/Agenda/slots/${fechaFormateada}`; // Ajustar URL si es diferente
+                }
+
+                const res = await fetch(url);
+
+                if (res.ok) {
+                    const horarios = await res.json();
+
+                    if (horaInicioSelect) {
+                        horaInicioSelect.innerHTML =
+                            '<option value="">Seleccionar hora</option>';
+
+                        // Validar si hay horarios
+                        if (Array.isArray(horarios) && horarios.length > 0) {
+                            horarios.forEach((item: any) => {
+                                // Diferenciar estructura de respuesta
+                                let hora = "";
+                                let physioId = "";
+                                let disponible = true;
+
+                                // Endpoint Clásico: { "hora_disponible": "13:00:00" }
+                                if (item.hora_disponible) {
+                                    hora = item.hora_disponible.substring(0, 5);
+                                }
+                                // Endpoint Global: { "inithour": "13:00:00", "is_available": true, "random_physio_id": "8" }
+                                else if (item.inithour) {
+                                    hora = item.inithour.substring(0, 5);
+                                    disponible = item.is_available === true;
+                                    physioId = item.random_physio_id;
+                                }
+
+                                if (hora && disponible) {
+                                    const option =
+                                        document.createElement("option");
+                                    option.value = hora;
+                                    option.textContent = hora;
+                                    // Guardamos el ID sugerido para autoselección
+                                    if (physioId) {
+                                        option.setAttribute(
+                                            "data-physio-id",
+                                            physioId,
+                                        );
+                                    }
+                                    horaInicioSelect.appendChild(option);
+                                }
+                            });
+
+                            // Si después de filtrar no queda nada (caso raro en global)
+                            if (horaInicioSelect.options.length === 1) {
+                                // Solo el default
+                                horaInicioSelect.innerHTML =
+                                    '<option value="">No hay horarios disponibles</option>';
+                            } else {
+                                horaInicioSelect.disabled = false;
+                            }
+                        } else {
+                            horaInicioSelect.innerHTML =
+                                '<option value="">No hay horarios disponibles</option>';
+                        }
+                    }
+                } else {
+                    if (horaInicioSelect)
+                        horaInicioSelect.innerHTML =
+                            '<option value="">Error al cargar</option>';
+                }
+            } catch (error) {
+                console.error(error);
+                if (horaInicioSelect)
+                    horaInicioSelect.innerHTML =
+                        '<option value="">Error de conexión</option>';
             }
         }
 
-        // --- Helper de Fechas ---
-        function getLocalYYYYMMDD(date: Date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, "0");
-            const day = String(date.getDate()).padStart(2, "0");
-            return `${year}-${month}-${day}`;
-        }
+        empleadoSelect?.addEventListener("change", buscarHorariosDisponibles);
+        fechaInput?.addEventListener("change", buscarHorariosDisponibles);
+        fechaInput?.addEventListener("blur", buscarHorariosDisponibles);
 
-        function getYYYYMMDDFromParts(
-            year: number,
-            monthIndex: number,
-            day: number,
-        ) {
-            const m = String(monthIndex + 1).padStart(2, "0");
-            const d = String(day).padStart(2, "0");
-            return `${year}-${m}-${d}`;
-        }
+        // Exponer globalmente
+        window.buscarHorariosDisponibles = buscarHorariosDisponibles;
 
-        // --- Funciones de Calendario ---
-        function renderCalendario() {
-            // Actualizar título del mes
-            if (mesActualEl) {
-                mesActualEl.textContent = fechaActual.toLocaleDateString(
-                    "es-ES",
-                    {
-                        month: "long",
-                        year: "numeric",
-                    },
-                );
+        // --- 3. Auto-calcular hora fin y Auto-seleccionar Fisio ---
+        horaInicioSelect?.addEventListener("change", (e) => {
+            const target = e.target as HTMLSelectElement;
+            const horaInicio = target.value;
+
+            // 3.1 Auto-selección de Fisio (si aplica)
+            const selectedOption = target.options[target.selectedIndex];
+            const suggestedPhysioId =
+                selectedOption.getAttribute("data-physio-id");
+
+            // Solo autoseleccionar si no hay uno ya (o si queremos forzar el sugerido)
+            // Según requerimiento: "el dato de random_physio se asigne automaticamente en el input de fisio"
+            if (suggestedPhysioId && empleadoSelect) {
+                empleadoSelect.value = suggestedPhysioId;
+                // Importante: No disparar 'change' aquí para evitar un bucle de recarga de horarios
+                // O si se desea recargar, tener cuidado. Por ahora solo visual.
             }
 
-            if (!daysGridEl) return;
-            daysGridEl.innerHTML = "";
-
-            const year = fechaActual.getFullYear();
-            const month = fechaActual.getMonth(); // 0-indexed
-
-            const primerDiaMes = new Date(year, month, 1);
-            const ultimoDiaMes = new Date(year, month + 1, 0);
-
-            // Ajustar para que la semana empiece en Domingo (0)
-            const diaInicioSemana = primerDiaMes.getDay();
-            const totalDiasMes = ultimoDiaMes.getDate();
-
-            // Rellenar días vacíos previos
-            for (let i = 0; i < diaInicioSemana; i++) {
-                const emptyDay = document.createElement("div");
-                emptyDay.className = "bg-transparent";
-                daysGridEl.appendChild(emptyDay);
+            // 3.2 Calcular Hora Fin
+            if (horaInicio && horaFinInput) {
+                const [hours, minutes] = horaInicio.split(":").map(Number);
+                const fecha = new Date();
+                fecha.setHours(hours);
+                fecha.setMinutes(minutes);
+                fecha.setHours(fecha.getHours() + 1);
+                const horaFin = `${String(fecha.getHours()).padStart(2, "0")}:${String(fecha.getMinutes()).padStart(2, "0")}`;
+                horaFinInput.value = horaFin;
+            } else if (horaFinInput) {
+                horaFinInput.value = "";
             }
+        });
 
-            // Crear días del mes
-            for (let dia = 1; dia <= totalDiasMes; dia++) {
-                // Construir string YYYY-MM-DD manualmente para evitar problemas de timezone
-                const fechaStr = getYYYYMMDDFromParts(year, month, dia);
+        // --- 4. Exclusividad Servicio vs Paquete ---
+        servicioSelect?.addEventListener("change", () => {
+            if (servicioSelect.value && servicioSelect.value !== "") {
+                if (paqueteSelect) {
+                    paqueteSelect.value = "";
+                    paqueteSelect.disabled = true;
+                    paqueteSelect.classList.add(
+                        "bg-gray-100",
+                        "cursor-not-allowed",
+                    );
+                }
+            } else {
+                if (paqueteSelect) {
+                    paqueteSelect.disabled = false;
+                    paqueteSelect.classList.remove(
+                        "bg-gray-100",
+                        "cursor-not-allowed",
+                    );
+                }
+            }
+        });
 
-                // Para comprobar "hoy", usamos la fecha local
-                const hoyStr = getLocalYYYYMMDD(new Date());
-                const esHoy = hoyStr === fechaStr;
+        paqueteSelect?.addEventListener("change", () => {
+            if (paqueteSelect.value && paqueteSelect.value !== "") {
+                if (servicioSelect) {
+                    servicioSelect.value = "";
+                    servicioSelect.disabled = true;
+                    servicioSelect.classList.add(
+                        "bg-gray-100",
+                        "cursor-not-allowed",
+                    );
+                }
+            } else {
+                if (servicioSelect) {
+                    servicioSelect.disabled = false;
+                    servicioSelect.classList.remove(
+                        "bg-gray-100",
+                        "cursor-not-allowed",
+                    );
+                }
+            }
+        });
+    });
 
-                const dayEl = document.createElement("div");
-                dayEl.className = `
+    async function cargarEmpleados() {
+        const select = document.getElementById(
+            "agregarIdEmployed",
+        ) as HTMLSelectElement;
+        if (!select || select.options.length > 1) return;
+
+        try {
+            const res = await fetch("/api/v1/Agenda/fisio");
+            if (res.ok) {
+                const empleados = await res.json();
+                console.log("Datos de empleados recibidos:", empleados); // DEBUG: Ver estructura
+                empleados.forEach((emp: Empleado) => {
+                    const option = document.createElement("option");
+                    option.value = emp.id;
+                    option.textContent = `${emp.firstname} ${emp.lastname}`;
+                    select.appendChild(option);
+                });
+            }
+        } catch (e) {
+            console.error("Error cargando empleados:", e);
+        }
+    }
+
+    // --- Helper de Fechas ---
+    function getLocalYYYYMMDD(date: Date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    }
+
+    function getYYYYMMDDFromParts(
+        year: number,
+        monthIndex: number,
+        day: number,
+    ) {
+        const m = String(monthIndex + 1).padStart(2, "0");
+        const d = String(day).padStart(2, "0");
+        return `${year}-${m}-${d}`;
+    }
+
+    // --- Funciones de Calendario ---
+    function renderCalendario() {
+        // Actualizar título del mes
+        if (mesActualEl) {
+            mesActualEl.textContent = fechaActual.toLocaleDateString("es-ES", {
+                month: "long",
+                year: "numeric",
+            });
+        }
+
+        if (!daysGridEl) return;
+        daysGridEl.innerHTML = "";
+
+        const year = fechaActual.getFullYear();
+        const month = fechaActual.getMonth(); // 0-indexed
+
+        const primerDiaMes = new Date(year, month, 1);
+        const ultimoDiaMes = new Date(year, month + 1, 0);
+
+        // Ajustar para que la semana empiece en Domingo (0)
+        const diaInicioSemana = primerDiaMes.getDay();
+        const totalDiasMes = ultimoDiaMes.getDate();
+
+        // Rellenar días vacíos previos
+        for (let i = 0; i < diaInicioSemana; i++) {
+            const emptyDay = document.createElement("div");
+            emptyDay.className = "bg-transparent";
+            daysGridEl.appendChild(emptyDay);
+        }
+
+        // Crear días del mes
+        for (let dia = 1; dia <= totalDiasMes; dia++) {
+            // Construir string YYYY-MM-DD manualmente para evitar problemas de timezone
+            const fechaStr = getYYYYMMDDFromParts(year, month, dia);
+
+            // Para comprobar "hoy", usamos la fecha local
+            const hoyStr = getLocalYYYYMMDD(new Date());
+            const esHoy = hoyStr === fechaStr;
+
+            const dayEl = document.createElement("div");
+            dayEl.className = `
                     relative p-1 sm:p-2 rounded-xl border border-white/40 transition-all min-h-[60px] sm:min-h-[80px] flex flex-col gap-1 cursor-pointer hover:bg-white/60
                     ${esHoy ? "ring-2 ring-[#2F5D50] bg-white/50" : "bg-white/30"}
                 `;
-                dayEl.dataset.date = fechaStr;
+            dayEl.dataset.date = fechaStr;
 
-                // Número del día
-                dayEl.innerHTML = `
+            // Número del día
+            dayEl.innerHTML = `
                     <div class="text-right font-bold text-xs sm:text-sm ${esHoy ? "text-[#2F5D50]" : "text-gray-600"}">
                         ${dia}
                     </div>
@@ -746,155 +1007,150 @@ try {
                     </div>
                 `;
 
-                dayEl.addEventListener("click", () =>
-                    seleccionarDia(fechaStr, dia),
-                );
-                if (daysGridEl) daysGridEl.appendChild(dayEl);
-            }
-        }
-
-        async function cargarCitasMes() {
-            const year = fechaActual.getFullYear();
-            const month = fechaActual.getMonth();
-
-            // Calcular rango de fechas para la API
-            // startDate: Primer día del mes
-            const startDate = getYYYYMMDDFromParts(year, month, 1);
-            // endDate: Último día del mes
-            const ultimoDia = new Date(year, month + 1, 0).getDate();
-            const endDate = getYYYYMMDDFromParts(year, month, ultimoDia);
-
-            console.log(
-                `Solicitando citas desde ${startDate} hasta ${endDate}`,
+            dayEl.addEventListener("click", () =>
+                seleccionarDia(fechaStr, dia),
             );
+            if (daysGridEl) daysGridEl.appendChild(dayEl);
+        }
+    }
 
-            try {
-                // Usar ruta relativa para que pase por el proxy de Astro
-                const response = await fetch(
-                    `/api/v1/Agenda?startDate=${startDate}&endDate=${endDate}`,
+    async function cargarCitasMes() {
+        const year = fechaActual.getFullYear();
+        const month = fechaActual.getMonth();
+
+        // Calcular rango de fechas para la API
+        // startDate: Primer día del mes
+        const startDate = getYYYYMMDDFromParts(year, month, 1);
+        // endDate: Último día del mes
+        const ultimoDia = new Date(year, month + 1, 0).getDate();
+        const endDate = getYYYYMMDDFromParts(year, month, ultimoDia);
+
+        console.log(`Solicitando citas desde ${startDate} hasta ${endDate}`);
+
+        try {
+            // Usar ruta relativa para que pase por el proxy de Astro
+            const response = await fetch(
+                `/api/v1/Agenda?startDate=${startDate}&endDate=${endDate}`,
+            );
+            if (response.ok) {
+                citasDelMes = await response.json();
+                console.log("Citas recibidas:", citasDelMes); // Debug
+                procesarCitas();
+            } else {
+                console.error(
+                    "Error al cargar citas del mes:",
+                    response.status,
                 );
-                if (response.ok) {
-                    citasDelMes = await response.json();
-                    console.log("Citas recibidas:", citasDelMes); // Debug
-                    procesarCitas();
-                } else {
-                    console.error(
-                        "Error al cargar citas del mes:",
-                        response.status,
-                    );
-                }
-            } catch (error) {
-                console.error("Error de red:", error);
             }
+        } catch (error) {
+            console.error("Error de red:", error);
+        }
+    }
+
+    function procesarCitas() {
+        citasPorDia = {}; // Reiniciar agrupación
+
+        if (!Array.isArray(citasDelMes)) {
+            console.error("Formato de respuesta inesperado:", citasDelMes);
+            return;
         }
 
-        function procesarCitas() {
-            citasPorDia = {}; // Reiniciar agrupación
+        citasDelMes.forEach((cita: Cita) => {
+            // Asumimos que currentday viene como "YYYY-MM-DD..."
+            // Tomamos los primeros 10 caracteres para obtener la fecha
+            if (cita.currentday) {
+                const fechaStr = cita.currentday.substring(0, 10);
 
-            if (!Array.isArray(citasDelMes)) {
-                console.error("Formato de respuesta inesperado:", citasDelMes);
-                return;
+                if (!citasPorDia[fechaStr]) {
+                    citasPorDia[fechaStr] = [];
+                }
+                citasPorDia[fechaStr].push(cita);
+            } else {
+                console.warn("Cita sin fecha:", cita);
             }
+        });
 
-            citasDelMes.forEach((cita: Cita) => {
-                // Asumimos que currentday viene como "YYYY-MM-DD..."
-                // Tomamos los primeros 10 caracteres para obtener la fecha
-                if (cita.currentday) {
-                    const fechaStr = cita.currentday.substring(0, 10);
+        console.log("Citas procesadas por día:", citasPorDia);
+        actualizarIndicadoresCalendario();
+    }
 
-                    if (!citasPorDia[fechaStr]) {
-                        citasPorDia[fechaStr] = [];
-                    }
-                    citasPorDia[fechaStr].push(cita);
-                } else {
-                    console.warn("Cita sin fecha:", cita);
+    function actualizarIndicadoresCalendario() {
+        console.log("Actualizando indicadores del calendario...");
+        Object.keys(citasPorDia).forEach((fechaStr) => {
+            const container = document.getElementById(`citas-${fechaStr}`);
+            if (container) {
+                container.innerHTML = ""; // Limpiar
+                const citas = citasPorDia[fechaStr];
+                console.log(`Fecha: ${fechaStr}, Citas: ${citas.length}`);
+
+                // Mostrar TAG con contador de citas
+                if (citas.length > 0) {
+                    const badge = document.createElement("div");
+                    badge.className =
+                        "bg-[#2F5D50] text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full shadow-sm animate-fade-in";
+                    badge.textContent = `${citas.length} Citas`;
+                    container.appendChild(badge);
                 }
-            });
-
-            console.log("Citas procesadas por día:", citasPorDia);
-            actualizarIndicadoresCalendario();
-        }
-
-        function actualizarIndicadoresCalendario() {
-            console.log("Actualizando indicadores del calendario...");
-            Object.keys(citasPorDia).forEach((fechaStr) => {
-                const container = document.getElementById(`citas-${fechaStr}`);
-                if (container) {
-                    container.innerHTML = ""; // Limpiar
-                    const citas = citasPorDia[fechaStr];
-                    console.log(`Fecha: ${fechaStr}, Citas: ${citas.length}`);
-
-                    // Mostrar TAG con contador de citas
-                    if (citas.length > 0) {
-                        const badge = document.createElement("div");
-                        badge.className =
-                            "bg-[#2F5D50] text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full shadow-sm animate-fade-in";
-                        badge.textContent = `${citas.length} Citas`;
-                        container.appendChild(badge);
-                    }
-                } else {
-                    console.warn(
-                        `No se encontró el contenedor para la fecha: citas-${fechaStr}`,
-                    );
-                }
-            });
-        }
-
-        function actualizarPanelSiEsNecesario(fechaISO: string) {
-            if (!fechaISO) return;
-            const fechaStr = fechaISO.substring(0, 10);
-
-            // Verificar si el panel está visible
-            if (sidePanelEl && sidePanelEl.style.display !== "none") {
-                // @ts-ignore
-                if (window.fechaSeleccionada === fechaStr) {
-                    const citas = citasPorDia[fechaStr] || [];
-                    renderListaCitasDia(citas);
-                }
+            } else {
+                console.warn(
+                    `No se encontró el contenedor para la fecha: citas-${fechaStr}`,
+                );
             }
-        }
+        });
+    }
 
-        // --- Lógica del Panel Lateral ---
-        function seleccionarDia(fechaStr: string, diaNumero: number) {
-            // Guardar fecha seleccionada para actualizaciones en tiempo real
+    function actualizarPanelSiEsNecesario(fechaISO: string) {
+        if (!fechaISO) return;
+        const fechaStr = fechaISO.substring(0, 10);
+
+        // Verificar si el panel está visible
+        if (sidePanelEl && sidePanelEl.style.display !== "none") {
             // @ts-ignore
-            window.fechaSeleccionada = fechaStr;
-
-            if (sidePanelEl) {
-                // Mostrar panel
-                sidePanelEl.style.display = "flex";
-                // Pequeño timeout para permitir la transición de opacidad
-                setTimeout(() => {
-                    sidePanelEl.classList.remove(
-                        "translate-x-full",
-                        "opacity-0",
-                    );
-                }, 10);
+            if (window.fechaSeleccionada === fechaStr) {
+                const citas = citasPorDia[fechaStr] || [];
+                renderListaCitasDia(citas);
             }
+        }
+    }
 
-            // Formatear fecha para título
-            const [year, month, day] = fechaStr.split("-");
-            const dateObj = new Date(
-                parseInt(year),
-                parseInt(month) - 1,
-                parseInt(day),
-            );
+    // --- Lógica del Panel Lateral ---
+    function seleccionarDia(fechaStr: string, diaNumero: number) {
+        // Guardar fecha seleccionada para actualizaciones en tiempo real
+        // @ts-ignore
+        window.fechaSeleccionada = fechaStr;
 
-            if (sidePanelTitleEl) {
-                sidePanelTitleEl.textContent = `Citas del ${dateObj.toLocaleDateString("es-ES", { day: "numeric", month: "long" })}`;
-            }
-
-            const citas = citasPorDia[fechaStr] || [];
-            console.log(`Mostrando citas para ${fechaStr}:`, citas);
-            renderListaCitasDia(citas);
+        if (sidePanelEl) {
+            // Mostrar panel
+            sidePanelEl.style.display = "flex";
+            // Pequeño timeout para permitir la transición de opacidad
+            setTimeout(() => {
+                sidePanelEl.classList.remove("translate-x-full", "opacity-0");
+            }, 10);
         }
 
-        function renderListaCitasDia(citas: Cita[]) {
-            if (!sidePanelContentEl) return;
-            sidePanelContentEl.innerHTML = "";
+        // Formatear fecha para título
+        const [year, month, day] = fechaStr.split("-");
+        const dateObj = new Date(
+            parseInt(year),
+            parseInt(month) - 1,
+            parseInt(day),
+        );
 
-            if (citas.length === 0) {
-                sidePanelContentEl.innerHTML = `
+        if (sidePanelTitleEl) {
+            sidePanelTitleEl.textContent = `Citas del ${dateObj.toLocaleDateString("es-ES", { day: "numeric", month: "long" })}`;
+        }
+
+        const citas = citasPorDia[fechaStr] || [];
+        console.log(`Mostrando citas para ${fechaStr}:`, citas);
+        renderListaCitasDia(citas);
+    }
+
+    function renderListaCitasDia(citas: Cita[]) {
+        if (!sidePanelContentEl) return;
+        sidePanelContentEl.innerHTML = "";
+
+        if (citas.length === 0) {
+            sidePanelContentEl.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-40 text-gray-400">
                         <i class="fa-regular fa-calendar-xmark text-3xl mb-2"></i>
                         <p>No hay citas programadas</p>
@@ -903,40 +1159,37 @@ try {
                         </button>
                     </div>
                 `;
-                return;
+            return;
+        }
+
+        citas.forEach((cita) => {
+            const card = document.createElement("div");
+
+            // Mapa de colores (Estilo Notificación: Borde Izquierdo)
+            let statusColorText = "text-gray-600";
+            let statusBg = "bg-gray-100";
+            let borderClass = "border-l-4";
+            let cardBgHover = "hover:bg-gray-50";
+
+            switch (cita.status) {
+                case "concluded":
+                    statusColorText = "text-blue-700";
+                    cardBgHover = "hover:bg-green-50/30";
+                    break;
+                default:
+                    borderClass += " border-l-gray-300";
             }
 
-            citas.forEach((cita) => {
-                const card = document.createElement("div");
-                card.className =
-                    "glass-panel p-4 rounded-xl cursor-pointer hover:bg-white/60 transition-all border border-white/50 shadow-sm group mb-3";
+            card.className = `glass-panel p-4 rounded-xl cursor-pointer transition-all border-y border-r border-white/50 shadow-sm group mb-3 ${borderClass} ${cardBgHover}`;
 
-                const statusColorText =
-                    cita.status === "confirmed"
-                        ? "text-blue-600"
-                        : cita.status === "concluded"
-                          ? "text-green-600"
-                          : cita.status === "canceled"
-                            ? "text-red-600"
-                            : "text-yellow-600";
+            const initHour = cita.inithour
+                ? cita.inithour.substring(0, 5)
+                : "--:--";
+            const endHour = cita.endhour
+                ? cita.endhour.substring(0, 5)
+                : "--:--";
 
-                const statusBg =
-                    cita.status === "confirmed"
-                        ? "bg-blue-100"
-                        : cita.status === "concluded"
-                          ? "bg-green-100"
-                          : cita.status === "canceled"
-                            ? "bg-red-100"
-                            : "bg-yellow-100";
-
-                const initHour = cita.inithour
-                    ? cita.inithour.substring(0, 5)
-                    : "--:--";
-                const endHour = cita.endhour
-                    ? cita.endhour.substring(0, 5)
-                    : "--:--";
-
-                card.innerHTML = `
+            card.innerHTML = `
                     <div class="flex justify-between items-start mb-2">
                         <span class="font-bold text-[#2F5D50] text-sm bg-[#2F5D50]/10 px-2 py-0.5 rounded">
                             ${initHour} - ${endHour}
@@ -949,75 +1202,87 @@ try {
                     <p class="text-xs text-gray-500 line-clamp-2">${cita.reason || "Sin motivo"}</p>
                 `;
 
-                card.addEventListener("click", () =>
-                    cargarDetalleCita(cita.id || cita.idappointment || 0),
-                );
-                sidePanelContentEl.appendChild(card);
-            });
-        }
+            card.addEventListener("click", () =>
+                cargarDetalleCita(cita.id || cita.idappointment || 0),
+            );
+            sidePanelContentEl.appendChild(card);
+        });
+    }
 
-        async function cargarDetalleCita(id: number) {
-            if (!sidePanelContentEl) return;
-            sidePanelContentEl.innerHTML = `
+    async function cargarDetalleCita(id: number) {
+        if (!sidePanelContentEl) return;
+        sidePanelContentEl.innerHTML = `
                 <div class="flex justify-center items-center h-40">
                     <i class="fa-solid fa-spinner fa-spin text-2xl text-[#2F5D50]"></i>
                 </div>
             `;
-            if (sidePanelTitleEl)
-                sidePanelTitleEl.textContent = "Detalle de Cita";
+        if (sidePanelTitleEl) sidePanelTitleEl.textContent = "Detalle de Cita";
 
-            try {
-                const response = await fetch(`/api/v1/Agenda/${id}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (
-                        data &&
-                        data.length > 0 &&
-                        data[0].get_appointment_detail
-                    ) {
-                        renderDetalleCita(data[0].get_appointment_detail);
-                    } else {
-                        sidePanelContentEl.innerHTML =
-                            "<p class='text-center text-red-500'>No se encontraron detalles</p>";
-                    }
+        try {
+            const response = await fetch(`/api/v1/Agenda/${id}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.length > 0 && data[0].get_appointment_detail) {
+                    renderDetalleCita(data[0].get_appointment_detail);
                 } else {
-                    throw new Error("Error al obtener detalles");
+                    sidePanelContentEl.innerHTML =
+                        "<p class='text-center text-red-500'>No se encontraron detalles</p>";
                 }
-            } catch (error) {
-                console.error(error);
-                sidePanelContentEl.innerHTML =
-                    "<p class='text-center text-red-500'>Error al cargar detalles</p>";
+            } else {
+                throw new Error("Error al obtener detalles");
             }
+        } catch (error) {
+            console.error(error);
+            sidePanelContentEl.innerHTML =
+                "<p class='text-center text-red-500'>Error al cargar detalles</p>";
         }
+    }
 
-        function renderDetalleCita(detalle: any) {
-            const { appointment, patient, employed, notes } = detalle;
+    function renderDetalleCita(detalle: any) {
+        const { appointment, patient, employed, notes } = detalle;
 
-            if (!sidePanelContentEl) return;
+        if (!sidePanelContentEl) return;
 
-            // Botón volver
-            const backBtn = document.createElement("button");
-            backBtn.className =
-                "mb-4 text-sm text-[#2F5D50] font-bold flex items-center gap-2 hover:underline";
-            backBtn.innerHTML =
-                '<i class="fa-solid fa-arrow-left"></i> Volver a la lista';
-            backBtn.onclick = () => {
-                const fechaStr = appointment.currentday.split("T")[0];
-                const [y, m, d] = fechaStr.split("-");
-                seleccionarDia(fechaStr, parseInt(d));
-            };
+        // Botón volver
+        const backBtn = document.createElement("button");
+        backBtn.className =
+            "mb-4 text-sm text-[#2F5D50] font-bold flex items-center gap-2 hover:underline";
+        backBtn.innerHTML =
+            '<i class="fa-solid fa-arrow-left"></i> Volver a la lista';
+        backBtn.onclick = () => {
+            const fechaStr = appointment.currentday.split("T")[0];
+            const [y, m, d] = fechaStr.split("-");
+            seleccionarDia(fechaStr, parseInt(d));
+        };
 
-            sidePanelContentEl.innerHTML = "";
-            sidePanelContentEl.appendChild(backBtn);
+        sidePanelContentEl.innerHTML = "";
+        sidePanelContentEl.appendChild(backBtn);
 
-            const initHour = appointment.inithour
-                ? appointment.inithour.substring(0, 5)
-                : "--:--";
-            const endHour = appointment.endhour
-                ? appointment.endhour.substring(0, 5)
-                : "--:--";
+        // Botón Editar
+        const editBtn = document.createElement("button");
+        editBtn.className =
+            "mb-4 ml-auto text-xs font-bold text-[#2F5D50] hover:bg-[#2F5D50]/10 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2";
+        editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editar';
+        editBtn.onclick = () => {
+            if (window.iniciarEdicion) {
+                window.iniciarEdicion(
+                    appointment.id || appointment.idappointment,
+                    detalle,
+                );
+            } else {
+                console.error("Función iniciarEdicion no definida");
+            }
+        };
+        sidePanelContentEl.appendChild(editBtn);
 
-            const content = `
+        const initHour = appointment.inithour
+            ? appointment.inithour.substring(0, 5)
+            : "--:--";
+        const endHour = appointment.endhour
+            ? appointment.endhour.substring(0, 5)
+            : "--:--";
+
+        const content = `
                 <div class="space-y-6 animate-fade-in">
                     <!-- Header Paciente -->
                     <div class="text-center">
@@ -1077,210 +1342,340 @@ try {
                 </div>
             `;
 
-            const contentDiv = document.createElement("div");
-            contentDiv.innerHTML = content;
-            sidePanelContentEl.appendChild(contentDiv);
-        }
+        const contentDiv = document.createElement("div");
+        contentDiv.innerHTML = content;
+        sidePanelContentEl.appendChild(contentDiv);
+    }
 
-        document
-            .getElementById("formAgregarCita")
-            ?.addEventListener("submit", async (e) => {
-                e.preventDefault();
+    document
+        .getElementById("formAgregarCita")
+        ?.addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-                const idPatientEl = document.getElementById(
-                    "agregarIdPatient",
-                ) as HTMLSelectElement;
-                const idEmployedEl = document.getElementById(
-                    "agregarIdEmployed",
-                ) as HTMLSelectElement;
-                const currentDayEl = document.getElementById(
-                    "agregarCurrentday",
-                ) as HTMLInputElement;
-                const initHourEl = document.getElementById(
-                    "agregarInitHour",
-                ) as HTMLSelectElement;
-                const endHourEl = document.getElementById(
-                    "agregarEndHour",
-                ) as HTMLSelectElement;
-                const statusEl = document.getElementById(
-                    "agregarStatus",
-                ) as HTMLSelectElement;
-                const reasonEl = document.getElementById(
-                    "agregarReason",
-                ) as HTMLInputElement;
+            const idPatientEl = document.getElementById(
+                "agregarIdPatient",
+            ) as HTMLSelectElement;
+            const idEmployedEl = document.getElementById(
+                "agregarIdEmployed",
+            ) as HTMLSelectElement;
+            const currentDayEl = document.getElementById(
+                "agregarCurrentday",
+            ) as HTMLInputElement;
+            const initHourEl = document.getElementById(
+                "agregarInitHour",
+            ) as HTMLSelectElement;
+            const endHourEl = document.getElementById(
+                "agregarEndHour",
+            ) as HTMLSelectElement;
+            const statusEl = document.getElementById(
+                "agregarStatus",
+            ) as HTMLSelectElement;
+            const reasonEl = document.getElementById(
+                "agregarReason",
+            ) as HTMLInputElement;
 
-                if (
-                    !idPatientEl ||
-                    !idEmployedEl ||
-                    !currentDayEl ||
-                    !initHourEl ||
-                    !endHourEl
-                ) {
-                    alert(
-                        "Error interno: Elementos del formulario no encontrados",
+            if (
+                !idPatientEl ||
+                !idEmployedEl ||
+                !currentDayEl ||
+                !initHourEl ||
+                !endHourEl
+            ) {
+                alert("Error interno: Elementos del formulario no encontrados");
+                return;
+            }
+
+            const serviceSelect = document.getElementById(
+                "agregarIdService",
+            ) as HTMLSelectElement;
+            const selectedServiceOption =
+                serviceSelect?.options[serviceSelect.selectedIndex];
+            const serviceId = serviceSelect?.value;
+            const servicePrice =
+                selectedServiceOption?.getAttribute("data-price");
+
+            const data = {
+                idpatient: idPatientEl.value.toString(),
+                idemployed: idEmployedEl.value.toString(),
+                // idservice ya no va aquí
+                currentday: currentDayEl.value, // YYYY-MM-DD
+                inithour: initHourEl.value,
+                endhour: endHourEl.value,
+                status: statusEl?.value || "wait",
+                reason: reasonEl?.value || "",
+            };
+
+            // Validar que se hayan seleccionado horas y servicio
+            if (!data.inithour || !data.endhour) {
+                alert("Por favor seleccione hora de inicio y fin");
+                return;
+            }
+
+            if (!serviceId) {
+                alert("Por favor seleccione un servicio");
+                return;
+            }
+
+            try {
+                let response;
+
+                if (isEditMode && editingAppointmentId) {
+                    // Lógica de EDICIÓN (PATCH)
+                    console.log("Enviando actualización (PATCH)...", data);
+                    response = await fetch(
+                        `/api/v1/Citas/${editingAppointmentId}`,
+                        {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(data),
+                        },
                     );
-                    return;
-                }
-
-                const serviceSelect = document.getElementById(
-                    "agregarIdService",
-                ) as HTMLSelectElement;
-                const selectedServiceOption =
-                    serviceSelect?.options[serviceSelect.selectedIndex];
-                const serviceId = serviceSelect?.value;
-                const servicePrice =
-                    selectedServiceOption?.getAttribute("data-price");
-
-                const data = {
-                    idpatient: idPatientEl.value.toString(),
-                    idemployed: idEmployedEl.value.toString(),
-                    // idservice ya no va aquí
-                    currentday: currentDayEl.value, // YYYY-MM-DD
-                    inithour: initHourEl.value,
-                    endhour: endHourEl.value,
-                    status: statusEl?.value || "wait",
-                    reason: reasonEl?.value || "",
-                    photo: null,
-                    idpatientpackage: null,
-                };
-
-                // Validar que se hayan seleccionado horas y servicio
-                if (!data.inithour || !data.endhour) {
-                    alert("Por favor seleccione hora de inicio y fin");
-                    return;
-                }
-
-                if (!serviceId) {
-                    alert("Por favor seleccione un servicio");
-                    return;
-                }
-
-                try {
-                    // 1. Crear la Cita
-                    const response = await fetch("/api/v1/Citas", {
+                } else {
+                    // Lógica de CREACIÓN (POST)
+                    console.log("Enviando creación (POST)...", data);
+                    response = await fetch("/api/v1/Citas", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(data),
                     });
+                }
 
-                    if (response.ok) {
-                        const result = await response.json();
-                        console.log("Respuesta crear cita:", result);
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log("Respuesta crear cita:", result);
 
-                        // Obtener ID de la cita creada.
-                        let idCita = null;
-                        if (result && result.id) {
-                            idCita = result.id;
-                        } else if (result && result.insertId) {
-                            idCita = result.insertId;
-                        } else if (result && result.data && result.data.id) {
-                            idCita = result.data.id;
-                        } else if (
-                            Array.isArray(result) &&
-                            result.length > 0 &&
-                            result[0].id
-                        ) {
-                            idCita = result[0].id;
-                        }
-
-                        console.log("ID Cita capturado:", idCita);
-
-                        if (idCita) {
-                            // 2. Asignar Servicio
-                            const serviceData = {
-                                serviceId: serviceId,
-                                amount: "1",
-                                unit_price: servicePrice || "0.00",
-                            };
-
-                            const serviceResponse = await fetch(
-                                `/api/v1/Agenda/${idCita}/services`,
-                                {
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                    },
-                                    body: JSON.stringify(serviceData),
-                                },
-                            );
-
-                            if (serviceResponse.ok) {
-                                console.log("Servicio asignado correctamente");
-                            } else {
-                                console.error("Error al asignar servicio");
-                                alert(
-                                    "Cita creada, pero hubo un error al asignar el servicio.",
-                                );
-                            }
-                        } else {
-                            console.warn(
-                                "No se pudo obtener el ID de la cita para asignar el servicio",
-                            );
-                        }
-
-                        window.cerrarModal("modalAgregarCita");
-
-                        // Limpiar formulario
-                        (
-                            document.getElementById(
-                                "formAgregarCita",
-                            ) as HTMLFormElement
-                        )?.reset();
-
-                        // Limpiar campos dinámicos y deshabilitar select de hora
-                        if (initHourEl) {
-                            initHourEl.innerHTML =
-                                '<option value="">Seleccionar fecha primero</option>';
-                            initHourEl.disabled = true;
-                        }
-                        if (endHourEl) {
-                            endHourEl.value = "";
-                        }
-
-                        // Recargar citas del mes para mostrar la nueva
-                        cargarCitasMes();
-                        alert("Cita creada exitosamente");
-                    } else {
-                        alert("Error al crear la cita");
+                    // Obtener ID de la cita creada.
+                    let idCita = null;
+                    if (result && result.id) {
+                        idCita = result.id;
+                    } else if (result && result.insertId) {
+                        idCita = result.insertId;
+                    } else if (result && result.data && result.data.id) {
+                        idCita = result.data.id;
+                    } else if (
+                        Array.isArray(result) &&
+                        result.length > 0 &&
+                        result[0].id
+                    ) {
+                        idCita = result[0].id;
                     }
-                } catch (error) {
-                    console.error(error);
-                    alert("Error de conexión");
-                }
-            });
 
-        // Exponer funciones globales para el modal
-        window.abrirModalAgregar = () => {
-            const modal = document.getElementById("modalAgregarCita");
-            if (modal) {
-                modal.classList.remove("hidden");
-                // Animar entrada
-                const content = modal.querySelector(".modal-content-wrapper");
-                if (content) {
-                    setTimeout(() => {
-                        content.classList.remove("scale-95", "opacity-0");
-                        content.classList.add("scale-100", "opacity-100");
-                    }, 10);
-                }
-            }
-        };
+                    console.log("ID Cita capturado:", idCita);
 
-        window.cerrarModal = (id: string) => {
-            const modal = document.getElementById(id);
-            if (modal) {
-                const content = modal.querySelector(".modal-content-wrapper");
-                if (content) {
-                    content.classList.remove("scale-100", "opacity-100");
-                    content.classList.add("scale-95", "opacity-0");
+                    if (idCita) {
+                        // 2. Asignar Servicio
+                        const serviceData = {
+                            serviceId: serviceId,
+                            amount: "1",
+                            unit_price: servicePrice || "0.00",
+                        };
 
-                    // Esperar a que termine la transición antes de ocultar
-                    setTimeout(() => {
-                        modal.classList.add("hidden");
-                    }, 300);
+                        const serviceResponse = await fetch(
+                            `/api/v1/Agenda/${idCita}/services`,
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify(serviceData),
+                            },
+                        );
+
+                        if (serviceResponse.ok) {
+                            console.log("Servicio asignado correctamente");
+                        } else {
+                            console.error("Error al asignar servicio");
+                            alert(
+                                "Cita creada, pero hubo un error al asignar el servicio.",
+                            );
+                        }
+                    } else {
+                        console.warn(
+                            "No se pudo obtener el ID de la cita para asignar el servicio",
+                        );
+                    }
+
+                    window.cerrarModal("modalAgregarCita");
+
+                    // Limpiar formulario
+                    (
+                        document.getElementById(
+                            "formAgregarCita",
+                        ) as HTMLFormElement
+                    )?.reset();
+
+                    // Limpiar campos dinámicos y deshabilitar select de hora
+                    if (initHourEl) {
+                        initHourEl.innerHTML =
+                            '<option value="">Seleccionar fecha primero</option>';
+                        initHourEl.disabled = true;
+                    }
+                    if (endHourEl) {
+                        endHourEl.value = "";
+                    }
+
+                    // Recargar citas del mes para mostrar la nueva
+                    cargarCitasMes();
+                    alert("Cita creada exitosamente");
                 } else {
-                    modal.classList.add("hidden");
+                    alert("Error al crear la cita");
                 }
+            } catch (error) {
+                console.error(error);
+                alert("Error de conexión");
             }
-        };
-    </script>
-</Layout>
+        });
+
+    // Exponer funciones globales para el modal
+    window.abrirModalAgregar = () => {
+        const modal = document.getElementById("modalAgregarCita");
+        if (modal) {
+            modal.classList.remove("hidden");
+            // Animar entrada
+            const content = modal.querySelector(".modal-content-wrapper");
+            if (content) {
+                setTimeout(() => {
+                    content.classList.remove("scale-95", "opacity-0");
+                    content.classList.add("scale-100", "opacity-100");
+                }, 10);
+            }
+        }
+    };
+
+    window.cerrarModal = (id: string) => {
+        const modal = document.getElementById(id);
+        if (modal) {
+            const content = modal.querySelector(".modal-content-wrapper");
+            if (content) {
+                content.classList.remove("scale-100", "opacity-100");
+                content.classList.add("scale-95", "opacity-0");
+
+                // Esperar a que termine la transición antes de ocultar
+                setTimeout(() => {
+                    modal.classList.add("hidden");
+                }, 300);
+            } else {
+                modal.classList.add("hidden");
+            }
+        }
+    };
+
+    window.iniciarEdicion = async (id: number, detalle: any) => {
+        console.log("Iniciando edición para ID:", id, detalle);
+        isEditMode = true;
+        editingAppointmentId = id;
+
+        // Actualizar UI del Modal
+        const modalTitle = document.querySelector("#modalAgregarCita h2");
+        if (modalTitle) modalTitle.textContent = "EDITAR CITA";
+        const submitBtn = document.querySelector(
+            "#formAgregarCita button[type='submit']",
+        );
+        if (submitBtn) submitBtn.textContent = "ACTUALIZAR";
+
+        window.abrirModalAgregar();
+
+        const { appointment, patient, employed } = detalle;
+
+        // 1. Pre-llenar Paciente
+        const hiddenPatientId = document.getElementById(
+            "agregarIdPatient",
+        ) as HTMLInputElement;
+        const searchInput = document.getElementById(
+            "patientSearchInput",
+        ) as HTMLInputElement;
+
+        if (hiddenPatientId) hiddenPatientId.value = patient.id;
+        if (searchInput)
+            searchInput.value = `${patient.firstname} ${patient.lastname}`;
+
+        // 2. Pre-llenar Fecha
+        const currentDayEl = document.getElementById(
+            "agregarCurrentday",
+        ) as HTMLInputElement;
+        if (currentDayEl)
+            currentDayEl.value = appointment.currentday.substring(0, 10);
+
+        // 3. Pre-llenar Fisio
+        const idEmployedEl = document.getElementById(
+            "agregarIdEmployed",
+        ) as HTMLSelectElement;
+        if (idEmployedEl) idEmployedEl.value = employed.id;
+
+        // 4. Pre-llenar Status y Motivo
+        const statusEl = document.getElementById(
+            "agregarStatus",
+        ) as HTMLSelectElement;
+        const reasonEl = document.getElementById(
+            "agregarReason",
+        ) as HTMLInputElement;
+        if (statusEl) statusEl.value = appointment.status;
+        if (reasonEl) reasonEl.value = appointment.reason;
+
+        // 5. Pre-llenar Servicio
+        const serviceSelect = document.getElementById(
+            "agregarIdService",
+        ) as HTMLSelectElement;
+
+        console.log("Datos para edición (Servicios):", detalle.services);
+
+        // La estructura ahora trae un array 'services'
+        let storedServiceId = null;
+        if (
+            detalle &&
+            detalle.services &&
+            Array.isArray(detalle.services) &&
+            detalle.services.length > 0
+        ) {
+            storedServiceId = detalle.services[0].id;
+        } else {
+            // Fallback por si acaso sigue viniendo en appointment
+            storedServiceId = appointment.service_id || appointment.idservice;
+        }
+
+        if (storedServiceId && serviceSelect) {
+            console.log("Pre-seleccionando servicio:", storedServiceId);
+            serviceSelect.value = storedServiceId.toString();
+            serviceSelect.dispatchEvent(new Event("change"));
+        } else {
+            console.warn("No se encontró servicio en la cita", detalle);
+        }
+
+        // 6. Cargar Horarios y Seleccionar Hora
+        if (currentDayEl) {
+            // Llamamos directamente a la función async y esperamos
+            if (window.buscarHorariosDisponibles) {
+                await window.buscarHorariosDisponibles();
+            }
+
+            const initHourEl = document.getElementById(
+                "agregarInitHour",
+            ) as HTMLSelectElement;
+            if (initHourEl && appointment.inithour) {
+                const horaSimple = appointment.inithour.substring(0, 5);
+                console.log("Intentando setear hora:", horaSimple);
+                // Verificar si la opción existe
+                let optionExists = false;
+                for (let i = 0; i < initHourEl.options.length; i++) {
+                    if (initHourEl.options[i].value === horaSimple) {
+                        optionExists = true;
+                        break;
+                    }
+                }
+
+                // Si no existe (porque está ocupada por MI cita actual), la forzamos
+                if (!optionExists) {
+                    const option = document.createElement("option");
+                    option.value = horaSimple;
+                    option.textContent = horaSimple;
+                    option.selected = true;
+                    initHourEl.appendChild(option);
+                }
+
+                initHourEl.value = horaSimple;
+                initHourEl.disabled = false;
+                initHourEl.dispatchEvent(new Event("change"));
+            }
+        }
+    };
+</script>
