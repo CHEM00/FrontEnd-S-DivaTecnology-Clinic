@@ -19,14 +19,19 @@ export async function generateConsentPDF(
 
     const drawText = (text: string, size: number = fontSize, isBold: boolean = false, align: 'left' | 'center' = 'left') => {
         const currentFont = isBold ? fontBold : font;
-        const textWidth = currentFont.widthOfTextAtSize(text, size);
-        let x = margin;
-        if (align === 'center') {
-            x = (width - textWidth) / 2;
-        }
+
+        const getX = (txt: string) => {
+            if (align === 'center') {
+                const txtWidth = currentFont.widthOfTextAtSize(txt, size);
+                return (width - txtWidth) / 2;
+            }
+            return margin;
+        };
 
         // Simple word wrapping
         const maxWidth = width - (margin * 2);
+        const textWidth = currentFont.widthOfTextAtSize(text, size);
+
         if (textWidth > maxWidth) {
             const words = text.split(' ');
             let line = '';
@@ -34,16 +39,16 @@ export async function generateConsentPDF(
                 const testLine = line + word + ' ';
                 const testWidth = currentFont.widthOfTextAtSize(testLine, size);
                 if (testWidth > maxWidth) {
-                    page.drawText(line, { x, y: yPosition, size, font: currentFont, color: rgb(0, 0, 0) });
+                    page.drawText(line, { x: getX(line), y: yPosition, size, font: currentFont, color: rgb(0, 0, 0) });
                     yPosition -= (size + 4);
                     line = word + ' ';
                 } else {
                     line = testLine;
                 }
             }
-            page.drawText(line, { x, y: yPosition, size, font: currentFont, color: rgb(0, 0, 0) });
+            page.drawText(line, { x: getX(line), y: yPosition, size, font: currentFont, color: rgb(0, 0, 0) });
         } else {
-            page.drawText(text, { x, y: yPosition, size, font: currentFont, color: rgb(0, 0, 0) });
+            page.drawText(text, { x: getX(text), y: yPosition, size, font: currentFont, color: rgb(0, 0, 0) });
         }
         yPosition -= (size + 6);
     };
@@ -96,6 +101,9 @@ export async function generateConsentPDF(
     addVerticalSpace(20);
 
     // --- Signature Section ---
+    const signatureWidth = 200;
+    const signatureX = (width - signatureWidth) / 2;
+
     // Embed signature image
     if (signatureImageBase64) {
         try {
@@ -109,30 +117,30 @@ export async function generateConsentPDF(
             }
 
             page.drawImage(pngImage, {
-                x: margin,
+                x: signatureX,
                 y: yPosition - 60,
-                width: 200,
+                width: signatureWidth,
                 height: 60,
             });
         } catch (e) {
             console.error("Error embedding signature", e);
-            drawText('[Error al adjuntar firma]', fontSize, false);
+            drawText('[Error al adjuntar firma]', fontSize, false, 'center');
         }
     }
 
     // Draw lines and text for signature
     page.drawLine({
-        start: { x: margin, y: yPosition - 60 },
-        end: { x: margin + 200, y: yPosition - 60 },
+        start: { x: signatureX, y: yPosition - 60 },
+        end: { x: signatureX + signatureWidth, y: yPosition - 60 },
         thickness: 1,
         color: rgb(0, 0, 0),
     });
 
     yPosition -= 75;
-    drawText(`Firma del Paciente / Tutor Legal`, fontSize, true);
-    drawText(`Nombre Completo: ${patientName}`, fontSize);
-    drawText(`Iniciales: ${initials}`, fontSize);
-    drawText(`Fecha: ${new Date().toLocaleDateString()}`, fontSize);
+    drawText(`Firma del Paciente / Tutor Legal`, fontSize, true, 'center');
+    drawText(`Nombre Completo: ${patientName}`, fontSize, false, 'center');
+    drawText(`Iniciales: ${initials}`, fontSize, false, 'center');
+    drawText(`Fecha: ${new Date().toLocaleDateString()}`, fontSize, false, 'center');
 
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;

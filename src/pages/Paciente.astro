@@ -101,9 +101,11 @@ try {
 					)
 				}
 
-				<!-- Buscador -->
-				<div class="mb-6 animate-fade-in-up stagger-1">
-					<div class="relative">
+				<!-- Buscador y Selector -->
+				<div
+					class="mb-6 animate-fade-in-up stagger-1 flex flex-col sm:flex-row justify-between items-center gap-4"
+				>
+					<div class="relative w-full sm:w-96">
 						<i
 							class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-[#2F5D50]/50"
 						></i>
@@ -112,8 +114,24 @@ try {
 							id="searchInput"
 							placeholder="Buscar paciente por nombre, correo o teléfono..."
 							class="glass-input w-full rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all shadow-sm"
-							oninput="filtrarPacientes(this.value)"
 						/>
+					</div>
+
+					<!-- Selector de Registros por página -->
+					<div
+						class="flex items-center gap-2 bg-white/50 px-4 py-2.5 rounded-xl border border-white/60 shadow-sm w-full sm:w-auto justify-center"
+					>
+						<span
+							class="text-xs font-bold text-gray-500 whitespace-nowrap"
+							>Mostrar:</span
+						>
+						<select
+							id="rowsPerPage"
+							class="bg-transparent text-sm font-bold text-[#2F5D50] outline-none cursor-pointer"
+						>
+							<option value="5">5</option>
+							<option value="10" selected>10</option>
+						</select>
 					</div>
 				</div>
 
@@ -127,162 +145,84 @@ try {
 								<tr
 									class="bg-[#2F5D50]/5 text-[#2F5D50] border-b border-[#2F5D50]/10"
 								>
-									<th class="p-5 font-bold">Paciente</th>
+									<th class="p-4 font-bold">Paciente</th>
 									<th
-										class="p-5 font-bold hidden md:table-cell"
+										class="p-4 font-bold hidden md:table-cell"
 										>Contacto</th
 									>
 									<th
-										class="p-5 font-bold hidden lg:table-cell"
+										class="p-4 font-bold hidden lg:table-cell"
 										>Fecha Nac.</th
 									>
-									<th class="p-5 font-bold text-center w-20"
+									<th class="p-4 font-bold text-center w-20"
 										>Acciones</th
 									>
 								</tr>
 							</thead>
-							<tbody class="divide-y divide-[#2F5D50]/5">
-								{
-									pacientes.map((p) => (
-										<tr
-											class="hover:bg-white/60 transition-colors group paciente-row cursor-pointer"
-											onclick={`verDetallesPaciente(${p.id})`}
-										>
-											<td class="p-5">
-												<div class="flex items-center gap-4">
-													<div class="h-12 w-12 rounded-full bg-gradient-to-br from-[#2F5D50] to-[#1a3c33] flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-														{p.photo &&
-														p.photo !==
-															"default.png" ? (
-															<img
-																src={`/uploads/${p.photo}`}
-																alt={
-																	p.firstname
-																}
-																class="w-full h-full object-cover"
-															/>
-														) : (
-															p.firstname.charAt(
-																0,
-															)
-														)}
-													</div>
-													<div>
-														<div class="font-bold text-gray-800 text-lg">
-															{p.firstname}{" "}
-															{p.lastname}
-														</div>
-														<div class="text-sm text-gray-500 lg:hidden flex items-center gap-1 mt-1">
-															<i class="fa-regular fa-envelope text-[#2F5D50]/60" />
-															{p.email}
-														</div>
-													</div>
-												</div>
-											</td>
-											<td class="p-5 hidden md:table-cell">
-												<div class="flex flex-col gap-1">
-													<span class="text-gray-700 font-medium flex items-center gap-2">
-														<i class="fa-regular fa-envelope text-[#2F5D50]/60" />
-														{p.email}
-													</span>
-													<span class="text-sm text-gray-500 flex items-center gap-2">
-														<i class="fa-solid fa-phone text-[#2F5D50]/60" />
-														{p.phone}
-													</span>
-												</div>
-											</td>
-											<td class="p-5 hidden lg:table-cell">
-												<div class="text-gray-600 font-medium bg-white/50 px-3 py-1 rounded-lg border border-white/40 inline-flex items-center gap-2">
-													<i class="fa-solid fa-cake-candles text-[#2F5D50]/60" />
-													{new Date(
-														p.birthday,
-													).toLocaleDateString()}
-												</div>
-											</td>
-											<td class="p-5 text-center relative">
-												<div class="dropdown relative inline-block text-left">
-													<button
-														type="button"
-														class="w-8 h-8 rounded-lg hover:bg-[#2F5D50]/10 text-gray-500 hover:text-[#2F5D50] transition-colors flex items-center justify-center"
-														onclick={`event.stopPropagation(); toggleDropdown('dropdown-${p.id}')`}
-													>
-														<i class="fa-solid fa-ellipsis-vertical" />
-													</button>
-													<div
-														id={`dropdown-${p.id}`}
-														class="dropdown-menu hidden absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl border border-gray-100 z-50 animate-fade-in-up origin-top-right"
-														onclick="event.stopPropagation()"
-													>
-														<div class="py-1">
-															<button
-																class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#2F5D50] flex items-center gap-2 transition-colors"
-																onclick={`verDetallesPaciente(${p.id}); toggleDropdown('dropdown-${p.id}')`}
-															>
-																<i class="fa-regular fa-pen-to-square" />
-																Editar
-															</button>
-															<button
-																class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
-																onclick={`confirmarEliminacion(${p.id}, '${p.firstname} ${p.lastname}'); toggleDropdown('dropdown-${p.id}')`}
-															>
-																<i class="fa-regular fa-trash-can" />
-																Eliminar
-															</button>
-														</div>
-													</div>
-												</div>
-											</td>
-										</tr>
-									))
-								}
-								{
-									pacientes.length === 0 && !error && (
-										<tr>
-											<td
-												colspan="4"
-												class="p-12 text-center text-gray-500"
-											>
-												<div class="flex flex-col items-center gap-4">
-													<div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center">
-														<i class="fa-solid fa-user-slash text-4xl text-gray-400" />
-													</div>
-													<p class="text-lg font-medium">
-														No hay pacientes
-														registrados
-													</p>
-													<button
-														class="text-[#2F5D50] font-bold hover:underline"
-														onclick="abrirModal('modalFormulario', 'crear')"
-													>
-														Crear el primer paciente
-													</button>
-												</div>
-											</td>
-										</tr>
-									)
-								}
+							<tbody
+								id="tableBody"
+								class="divide-y divide-[#2F5D50]/5"
+							>
+								<!-- Rendered by JS -->
 							</tbody>
 						</table>
+
+						<!-- Estado Vacío -->
+						<div
+							id="emptyState"
+							class="hidden flex flex-col items-center justify-center text-gray-500 py-12"
+						>
+							<div
+								class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4"
+							>
+								<i
+									class="fa-solid fa-user-slash text-4xl text-gray-400"
+								></i>
+							</div>
+							<p class="text-lg font-medium mb-2">
+								No se encontraron pacientes
+							</p>
+							<button
+								class="text-[#2F5D50] font-bold hover:underline"
+								onclick="abrirModal('modalFormulario', 'crear')"
+							>
+								Crear nuevo paciente
+							</button>
+						</div>
 					</div>
 
 					<!-- Pagination -->
 					<div
 						class="p-4 border-t border-[#2F5D50]/10 flex justify-between items-center bg-white/30 backdrop-blur-sm"
 					>
-						<div class="text-sm text-gray-600 font-medium">
-							Mostrando <span class="font-bold text-[#2F5D50]"
-								>{pacientes.length}</span
-							> registros
-						</div>
+						<span
+							class="text-xs sm:text-sm text-gray-600 font-medium"
+						>
+							Mostrando <span
+								id="showingStart"
+								class="font-bold text-[#2F5D50]">0</span
+							> - <span
+								id="showingEnd"
+								class="font-bold text-[#2F5D50]">0</span
+							> de <span
+								id="totalRecords"
+								class="font-bold text-[#2F5D50]">0</span
+							>
+						</span>
+
 						<div class="flex gap-2">
 							<button
-								class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/50 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-white/50 disabled:hover:text-[#2F5D50] shadow-sm"
-								disabled
+								id="prevBtn"
+								class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/50 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-white/50 disabled:hover:text-[#2F5D50] shadow-sm disabled:cursor-not-allowed"
 							>
 								<i class="fa-solid fa-chevron-left"></i>
 							</button>
+
+							<div id="pageNumbers" class="flex gap-1"></div>
+
 							<button
-								class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/50 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all shadow-sm"
+								id="nextBtn"
+								class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/50 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white transition-all shadow-sm disabled:opacity-50 disabled:hover:bg-white/50 disabled:hover:text-[#2F5D50] disabled:cursor-not-allowed"
 							>
 								<i class="fa-solid fa-chevron-right"></i>
 							</button>
@@ -583,9 +523,211 @@ try {
 	</div>
 </div>
 
-<script is:inline>
-	// --- Lógica de Modales y CRUD ---
+<script define:vars={{ pacientes }}>
+	// --- Estado Global ---
+	let allData = pacientes || [];
+	let filteredData = [...allData];
+	let currentPage = 1;
+	let rowsPerPage = 10;
 	let pacienteIdEliminar = null;
+
+	// --- Elementos DOM ---
+	const tableBody = document.getElementById("tableBody");
+	const emptyState = document.getElementById("emptyState");
+	const searchInput = document.getElementById("searchInput");
+	const rowsPerPageSelect = document.getElementById("rowsPerPage");
+	const prevBtn = document.getElementById("prevBtn");
+	const nextBtn = document.getElementById("nextBtn");
+	const showingStart = document.getElementById("showingStart");
+	const showingEnd = document.getElementById("showingEnd");
+	const totalRecords = document.getElementById("totalRecords");
+	const pageNumbers = document.getElementById("pageNumbers");
+
+	// --- Helpers ---
+	const formatDate = (dateString) => {
+		if (!dateString) return "";
+		// Ajustar la fecha para evitar problemas de zona horaria al mostrar solo la fecha
+		const date = new Date(dateString);
+		const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+		const adjustedDate = new Date(date.getTime() + userTimezoneOffset);
+		return adjustedDate.toLocaleDateString("es-MX", {
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+		});
+	};
+
+	// --- Renderizado ---
+	function renderTable() {
+		const startIndex = (currentPage - 1) * rowsPerPage;
+		const endIndex = Math.min(
+			startIndex + rowsPerPage,
+			filteredData.length,
+		);
+		const pageData = filteredData.slice(startIndex, endIndex);
+
+		if (tableBody) tableBody.innerHTML = "";
+
+		if (pageData.length === 0) {
+			if (emptyState) emptyState.classList.remove("hidden");
+			// Reset counters
+			if (showingStart) showingStart.textContent = 0;
+			if (showingEnd) showingEnd.textContent = 0;
+			if (totalRecords) totalRecords.textContent = 0;
+			updatePaginationControls();
+			return;
+		}
+
+		if (emptyState) emptyState.classList.add("hidden");
+
+		pageData.forEach((p) => {
+			const tr = document.createElement("tr");
+			tr.className =
+				"hover:bg-white/60 transition-colors group paciente-row cursor-pointer border-b border-[#2F5D50]/5";
+			tr.onclick = () => verDetallesPaciente(p.id);
+
+			// Photo Logic
+			let photoHtml;
+			if (p.photo && p.photo !== "default.png") {
+				photoHtml = `<img src="/uploads/${p.photo}" alt="${p.firstname}" class="w-full h-full object-cover" />`;
+			} else {
+				photoHtml = p.firstname.charAt(0);
+			}
+
+			// Dropdown ID
+			const dropdownId = `dropdown-${p.id}`;
+
+			tr.innerHTML = `
+				<td class="p-4">
+					<div class="flex items-center gap-3">
+						${photoHtml}
+						<div>
+							<div class="font-bold text-gray-800 text-base">
+								${p.firstname} ${p.lastname}
+							</div>
+							<div class="text-sm text-gray-500 md:hidden">
+								${p.email}
+							</div>
+						</div>
+					</div>
+				</td>
+				<td class="p-4 hidden md:table-cell">
+					<div class="flex flex-col gap-0.5">
+						<span class="text-sm text-gray-700 font-medium flex items-center gap-1.5">
+							<i class="fa-regular fa-envelope text-[#2F5D50]/60 text-xs"></i>
+							${p.email}
+						</span>
+						<span class="text-xs text-gray-500 flex items-center gap-1.5">
+							<i class="fa-solid fa-phone text-[#2F5D50]/60 text-xs"></i>
+							${p.phone}
+						</span>
+					</div>
+				</td>
+				<td class="p-4 hidden lg:table-cell">
+					<div class="text-gray-600 text-sm font-medium bg-white/50 px-2 py-1 rounded-lg border border-white/40 inline-flex items-center gap-1.5">
+						<i class="fa-solid fa-cake-candles text-[#2F5D50]/60"></i>
+						${formatDate(p.birthday)}
+					</div>
+				</td>
+				<td class="p-4 text-center relative">
+					<div class="dropdown relative inline-block text-left">
+						<button
+							type="button"
+							class="w-8 h-8 rounded-lg hover:bg-[#2F5D50]/10 text-gray-500 hover:text-[#2F5D50] transition-colors flex items-center justify-center"
+							onclick="event.stopPropagation(); toggleDropdown('${dropdownId}')"
+						>
+							<i class="fa-solid fa-ellipsis-vertical"></i>
+						</button>
+						<div
+							id="${dropdownId}"
+							class="dropdown-menu hidden absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl border border-gray-100 z-50 animate-fade-in-up origin-top-right"
+							onclick="event.stopPropagation()"
+						>
+							<div class="py-1">
+								<button
+									class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#2F5D50] flex items-center gap-2 transition-colors"
+									onclick="verDetallesPaciente(${p.id}); toggleDropdown('${dropdownId}')"
+								>
+									<i class="fa-regular fa-pen-to-square"></i>
+									Editar
+								</button>
+								<button
+									class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+									onclick="confirmarEliminacion(${p.id}, '${p.firstname} ${p.lastname}'); toggleDropdown('${dropdownId}')"
+								>
+									<i class="fa-regular fa-trash-can"></i>
+									Eliminar
+								</button>
+							</div>
+						</div>
+					</div>
+				</td>
+			`;
+			tableBody.appendChild(tr);
+		});
+
+		// Update Pagination Info
+		if (showingStart) showingStart.textContent = startIndex + 1;
+		if (showingEnd) showingEnd.textContent = endIndex;
+		if (totalRecords) totalRecords.textContent = filteredData.length;
+		updatePaginationControls();
+	}
+
+	function updatePaginationControls() {
+		const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+
+		if (prevBtn) prevBtn.disabled = currentPage === 1;
+		if (nextBtn)
+			nextBtn.disabled = currentPage >= totalPages || totalPages === 0;
+
+		if (pageNumbers) {
+			pageNumbers.innerHTML = "";
+			if (totalPages > 1) {
+				const span = document.createElement("span");
+				span.className =
+					"text-xs font-medium text-gray-500 self-center px-2";
+				span.textContent = `Página ${currentPage} de ${totalPages}`;
+				pageNumbers.appendChild(span);
+			}
+		}
+	}
+
+	// --- Event Listeners ---
+	searchInput?.addEventListener("input", (e) => {
+		const term = e.target.value.toLowerCase();
+		filteredData = allData.filter(
+			(p) =>
+				(p.firstname && p.firstname.toLowerCase().includes(term)) ||
+				(p.lastname && p.lastname.toLowerCase().includes(term)) ||
+				(p.email && p.email.toLowerCase().includes(term)) ||
+				(p.phone && p.phone.includes(term)),
+		);
+		currentPage = 1;
+		renderTable();
+	});
+
+	rowsPerPageSelect?.addEventListener("change", (e) => {
+		rowsPerPage = parseInt(e.target.value);
+		currentPage = 1;
+		renderTable();
+	});
+
+	prevBtn?.addEventListener("click", () => {
+		if (currentPage > 1) {
+			currentPage--;
+			renderTable();
+		}
+	});
+
+	nextBtn?.addEventListener("click", () => {
+		const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+		if (currentPage < totalPages) {
+			currentPage++;
+			renderTable();
+		}
+	});
+
+	// --- Lógica de Modales y CRUD ---
 
 	window.abrirModal = async (id, modo) => {
 		const modal = document.getElementById(id);
@@ -604,7 +746,6 @@ try {
 		// Cargar empleados si es el formulario
 		if (id === "modalFormulario") {
 			await cargarEmpleados();
-
 			const title = document.getElementById(
 				"modal-title-modalFormulario",
 			); // ID generado por FormModal
@@ -641,11 +782,23 @@ try {
 	};
 
 	window.verDetallesPaciente = async (id) => {
+		const paciente = allData.find((p) => p.id == id);
+		if (!paciente) {
+			console.error("Paciente no encontrado en memoria:", id);
+			// Fallback: fetch from API (although it might be redundant if allData is fresh)
+			// But for editing we populated allData from initial load.
+			// Existing logic used fetch check. Let's reuse existing flow logic but adapt it.
+		}
+
+		// Reusing existing API fetch logic just to be safe and consistent with previous behavior,
+		// or simpler: just use memory object if available.
+		// The original code did a fetch even though it had list. Let's keep the fetch for details
+		// to ensure fresh data (e.g. stats might have changed).
 		try {
 			const response = await fetch(`/api/v1/Pacientes/${id}`);
 			if (!response.ok) throw new Error("Error fetching patient");
 			const data = await response.json();
-			const paciente = Array.isArray(data) ? data[0] : data;
+			const p = Array.isArray(data) ? data[0] : data;
 
 			await abrirModal("modalFormulario", "editar");
 			const title = document.getElementById(
@@ -654,43 +807,41 @@ try {
 			if (title) title.textContent = "Detalles del Paciente";
 
 			// Llenar formulario
-			document.getElementById("pacienteId").value = paciente.id;
-			document.getElementById("firstname").value = paciente.firstname;
-			document.getElementById("lastname").value = paciente.lastname;
-			document.getElementById("motherlastname").value =
-				paciente.motherlastname;
+			document.getElementById("pacienteId").value = p.id;
+			document.getElementById("firstname").value = p.firstname;
+			document.getElementById("lastname").value = p.lastname;
+			document.getElementById("motherlastname").value = p.motherlastname;
 			document.getElementById("birthdate").value =
-				paciente.birthday.split("T")[0];
-			document.getElementById("phone").value = paciente.phone;
+				p.birthday.split("T")[0];
+			document.getElementById("phone").value = p.phone;
 			document.getElementById("email").value =
-				paciente.email === "null" ? "" : paciente.email;
+				p.email === "null" ? "" : p.email;
 			document.getElementById("employeeSelect").value =
-				paciente.idemployed || "";
+				p.idemployed || "";
 
 			// Switches
 			document.getElementById("sanction").checked =
-				paciente.sanction === "true" || paciente.sanction === true;
+				p.sanction === "true" || p.sanction === true;
 			document.getElementById("havepackage").checked =
-				paciente.havepackage === "true" ||
-				paciente.havepackage === true;
+				p.havepackage === "true" || p.havepackage === true;
 
 			// Stats
 			const statsSection = document.getElementById("statsSection");
 			if (statsSection) {
 				statsSection.classList.remove("hidden");
 				document.getElementById("statAssist").textContent =
-					paciente.assistappointment || "0";
+					p.assistappointment || "0";
 				document.getElementById("statNoAssist").textContent =
-					paciente.noassistappointment || "0";
+					p.noassistappointment || "0";
 				document.getElementById("statCanceled").textContent =
-					paciente.canceledappointment || "0";
+					p.canceledappointment || "0";
 			}
 
 			// Photo preview
-			if (paciente.photo && paciente.photo !== "default.png") {
+			if (p.photo && p.photo !== "default.png") {
 				const preview = document.getElementById("photoPreview");
 				const placeholder = document.getElementById("photoPlaceholder");
-				preview.src = `/uploads/${paciente.photo}`;
+				preview.src = `/uploads/${p.photo}`;
 				preview.classList.remove("hidden");
 				placeholder.classList.add("hidden");
 			} else {
@@ -727,29 +878,6 @@ try {
 		}
 	});
 
-	// Filtro de Pacientes
-	window.filtrarPacientes = (query) => {
-		const rows = document.querySelectorAll(".paciente-row");
-		const q = query.toLowerCase();
-		let visibleCount = 0;
-
-		rows.forEach((row) => {
-			// Buscar en todo el texto de la fila sería fácil, pero podemos ser específicos si queremos
-			// Por ahora, buscar en todo el contenido visible de la fila es suficiente y flexible
-			const text = row.innerText.toLowerCase();
-			if (text.includes(q)) {
-				row.style.display = "";
-				visibleCount++;
-			} else {
-				row.style.display = "none";
-			}
-		});
-
-		// Actualizar contador si quieres, aunque es opcional
-		// const counter = document.querySelector(".bg-white\\/30 .text-[#2F5D50]");
-		// if(counter) counter.textContent = visibleCount;
-	};
-
 	// Photo preview logic
 	window.previewImage = (input) => {
 		if (input.files && input.files[0]) {
@@ -780,7 +908,7 @@ try {
 		if (select.children.length > 1) return; // Ya cargados
 
 		try {
-			const response = await fetch("/api/v1/Agenda/fisio"); // Corregido endpoint
+			const response = await fetch("/api/v1/Agenda/fisio");
 			if (response.ok) {
 				const data = await response.json();
 				const empleados = Array.isArray(data) ? data : data.body || [];
@@ -869,4 +997,7 @@ try {
 			alert("Error de conexión");
 		}
 	};
+
+	// Init
+	renderTable();
 </script>

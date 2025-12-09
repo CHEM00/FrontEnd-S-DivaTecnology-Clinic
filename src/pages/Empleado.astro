@@ -24,7 +24,14 @@ try {
 		agent,
 	});
 	if (response.ok) {
-		table = await response.json();
+		const data = await response.json();
+		if (Array.isArray(data)) {
+			table = data;
+		} else if (data && Array.isArray(data.body)) {
+			table = data.body;
+		} else {
+			table = [];
+		}
 	} else {
 		console.error("Error en la respuesta:", response.status);
 		table = [];

@@ -130,12 +130,21 @@ const userId = currentUser?.id;
                             <span id="modalTimeRange">00:00 - 00:00</span>
                         </p>
                     </div>
-                    <button
-                        id="closeModalBtn"
-                        class="w-8 h-8 rounded-full bg-white text-gray-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-all shadow-sm"
-                    >
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button
+                            id="historyBtn"
+                            class="px-3 py-1.5 rounded-lg bg-[#2F5D50]/10 text-[#2F5D50] text-sm font-bold hover:bg-[#2F5D50] hover:text-white transition-colors flex items-center gap-2"
+                        >
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            <span class="hidden sm:inline">Historial</span>
+                        </button>
+                        <button
+                            id="closeModalBtn"
+                            class="w-8 h-8 rounded-full bg-white text-gray-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-all shadow-sm"
+                        >
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Modal Body -->
@@ -219,7 +228,8 @@ const userId = currentUser?.id;
 
                             <p class="mb-4">
                                 <strong>CLÍNICA:</strong> JessTherapy<br />
-                                <strong>RESPONSABLE SANITARIO:</strong> Fisioterapeuta
+                                <strong>RESPONSABLE SANITARIO:</strong>
+                                {userName}
                             </p>
 
                             <h3 class="font-bold mt-4 mb-1">
@@ -230,11 +240,11 @@ const userId = currentUser?.id;
                                     id="docPatientName"
                                     class="font-bold bg-yellow-100 px-1"
                                     >[Nombre Paciente]</span
-                                > (en adelante, "el Paciente"), declaro que he solicitado
-                                servicios de fisioterapia en JessTherapy. Entiendo
-                                que la fisioterapia implica el uso de medios físicos,
-                                terapia manual, ejercicio terapéutico y/o agentes
-                                electrofísicos.
+                                >, declaro que he solicitado servicios de
+                                fisioterapia en JessTherapy. Entiendo que la
+                                fisioterapia implica el uso de medios físicos,
+                                terapia manual, ejercicio terapéutico y/o
+                                agentes electrofísicos.
                             </p>
 
                             <h3 class="font-bold mt-4 mb-1">
@@ -441,6 +451,13 @@ const userId = currentUser?.id;
                         <span>Confirmar Firma</span>
                     </button>
                     <button
+                        id="saveDraftBtn"
+                        class="w-full py-3.5 rounded-xl border-2 border-[#2F5D50] text-[#2F5D50] font-bold hover:bg-[#2F5D50]/10 active:scale-[0.98] transition-all hidden flex items-center justify-center gap-2 mb-3"
+                    >
+                        <i class="fa-regular fa-floppy-disk"></i>
+                        <span>Guardar Borrador</span>
+                    </button>
+                    <button
                         id="finishConsultationBtn"
                         class="w-full py-3.5 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-600/30 hover:bg-blue-700 active:scale-[0.98] transition-all hidden flex items-center justify-center gap-2"
                     >
@@ -451,9 +468,45 @@ const userId = currentUser?.id;
                         id="timeValidationError"
                         class="text-xs text-red-500 text-center mt-2 hidden font-medium"
                     >
-                        Solo puedes iniciar la consulta entre <span
-                            id="allowedTimeRange"></span>
+                        <!-- Mensaje de validación eliminado -->
                     </p>
+                </div>
+
+                <!-- History Overlay -->
+                <div
+                    id="historyOverlay"
+                    class="hidden absolute inset-0 bg-white z-20 flex flex-col animate-fade-in"
+                >
+                    <div
+                        class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50"
+                    >
+                        <h3
+                            class="font-bold text-[#2F5D50] flex items-center gap-2"
+                        >
+                            <i class="fa-solid fa-clock-rotate-left"></i> Historial
+                            Clínico
+                        </h3>
+                        <button
+                            id="closeHistoryBtn"
+                            class="w-8 h-8 rounded-full bg-white text-gray-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-all shadow-sm"
+                        >
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div
+                        id="historyList"
+                        class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"
+                    >
+                        <!-- History Items Injected Here -->
+                        <div
+                            class="flex flex-col items-center justify-center h-full text-gray-400"
+                        >
+                            <i
+                                class="fa-solid fa-circle-notch fa-spin text-2xl mb-2 text-[#2F5D50]"
+                            ></i>
+                            <p>Cargando historial...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -524,6 +577,9 @@ const userId = currentUser?.id;
             const confirmSignBtn = document.getElementById(
                 "confirmSignatureBtn",
             ) as HTMLElement;
+            const saveDraftBtn = document.getElementById(
+                "saveDraftBtn",
+            ) as HTMLButtonElement;
             const finishBtn = document.getElementById(
                 "finishConsultationBtn",
             ) as HTMLButtonElement;
@@ -635,6 +691,22 @@ const userId = currentUser?.id;
                 }
             }
 
+            // --- Helper: Calcular Edad ---
+            function calcularEdad(fechaNacimiento: string): number | string {
+                if (!fechaNacimiento) return "?";
+                const hoy = new Date();
+                const nacimiento = new Date(fechaNacimiento);
+                let edad = hoy.getFullYear() - nacimiento.getFullYear();
+                const mes = hoy.getMonth() - nacimiento.getMonth();
+                if (
+                    mes < 0 ||
+                    (mes === 0 && hoy.getDate() < nacimiento.getDate())
+                ) {
+                    edad--;
+                }
+                return edad;
+            }
+
             function renderAppointments(appointments: Appointment[]) {
                 if (!grid) return;
                 if (!appointments || appointments.length === 0) {
@@ -721,8 +793,30 @@ const userId = currentUser?.id;
                 currentAppointment = app;
 
                 // Populate Data
-                document.getElementById("modalPatientName")!.textContent =
-                    app.nombre_paciente;
+                document.getElementById("modalPatientName")!.innerHTML =
+                    `${app.nombre_paciente} <span id="modalPatientAge" class="text-xs text-gray-500 font-normal opacity-0 transition-opacity ml-1"></span>`;
+
+                // Fetch Patient Details for Age (and double check PDF)
+                fetch(`/api/v1/Pacientes/${app.idpatient}`)
+                    .then((res) => (res.ok ? res.json() : null))
+                    .then((data) => {
+                        if (data) {
+                            const p = Array.isArray(data) ? data[0] : data;
+                            if (p && p.birthday) {
+                                const edad = calcularEdad(p.birthday);
+                                const ageSpan =
+                                    document.getElementById("modalPatientAge");
+                                if (ageSpan) {
+                                    ageSpan.textContent = `(${edad} años)`;
+                                    ageSpan.classList.remove("opacity-0");
+                                }
+                            }
+                        }
+                    })
+                    .catch((err) =>
+                        console.error("Error fetching patient age", err),
+                    );
+
                 document.getElementById("modalTimeRange")!.textContent =
                     `${app.inithour?.substring(0, 5)} - ${app.endhour?.substring(0, 5)}`;
                 document.getElementById("modalService")!.textContent =
@@ -754,6 +848,7 @@ const userId = currentUser?.id;
                     // Reset UI State
                     startBtn.classList.remove("hidden");
                     confirmSignBtn.classList.add("hidden");
+                    saveDraftBtn.classList.add("hidden");
                     finishBtn.classList.add("hidden");
                     consentSection.classList.add("hidden");
                     consultationFields.classList.add("hidden");
@@ -794,63 +889,121 @@ const userId = currentUser?.id;
             modalOverlay.addEventListener("click", closeModal);
 
             // --- Time Validation Logic ---
-            function validateTime(app: Appointment) {
+            async function validateTime(app: Appointment) {
                 const startBtnSpan = startBtn.querySelector("span");
 
                 // Check if already concluded
-                if (app.status === "concluded") {
+                if (
+                    app.status === "concluded" ||
+                    app.status === "canceled" ||
+                    app.status === "no assisted"
+                ) {
                     startBtn.disabled = true;
                     startBtn.classList.add("opacity-50", "cursor-not-allowed");
                     if (startBtnSpan)
-                        startBtnSpan.textContent = "Consulta Concluida";
+                        startBtnSpan.textContent = `Consulta ${app.status === "concluded" ? "Concluida" : app.status === "canceled" ? "Cancelada" : "No Asistió"}`;
                     errorMsg.classList.add("hidden");
                     return;
                 }
 
-                // Reset text for other statuses
+                // Removed time restriction as requested
+                startBtn.disabled = false;
+                startBtn.classList.remove("opacity-50", "cursor-not-allowed");
                 if (startBtnSpan) startBtnSpan.textContent = "Firmar e Iniciar";
+                errorMsg.classList.add("hidden");
 
-                const now = new Date();
-                const currentTime = now.getHours() * 60 + now.getMinutes();
-
-                const [startH, startM] = app.inithour.split(":").map(Number);
-                const [endH, endM] = app.endhour.split(":").map(Number);
-
-                const startTime = startH * 60 + startM;
-                const endTime = endH * 60 + endM;
-
-                const dateStr = app.currentday.split("T")[0]; // YYYY-MM-DD
-                const todayStr = new Date().toLocaleDateString("en-CA");
-
-                const isToday = dateStr === todayStr;
-                const isWithinTime =
-                    currentTime >= startTime && currentTime < endTime;
-
-                if (isToday && isWithinTime) {
-                    startBtn.disabled = false;
-                    startBtn.classList.remove(
-                        "opacity-50",
-                        "cursor-not-allowed",
-                    );
-                    errorMsg.classList.add("hidden");
-                } else {
-                    startBtn.disabled = true;
-                    startBtn.classList.add("opacity-50", "cursor-not-allowed");
-                    errorMsg.classList.remove("hidden");
-                    document.getElementById("allowedTimeRange")!.textContent =
-                        `${app.inithour?.substring(0, 5)} - ${app.endhour?.substring(0, 5)}`;
+                // Fetch Draft Data
+                try {
+                    const res = await fetch(`/api/v1/Agenda/${app.id}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (
+                            data &&
+                            data.length > 0 &&
+                            data[0].get_appointment_detail &&
+                            data[0].get_appointment_detail.notes
+                        ) {
+                            const notes = data[0].get_appointment_detail.notes;
+                            // If we have notes, it might be a draft. Populate fields.
+                            (
+                                document.getElementById(
+                                    "consultationDiagnosis",
+                                ) as HTMLInputElement
+                            ).value = notes.diagnostic || "";
+                            (
+                                document.getElementById(
+                                    "consultationNote",
+                                ) as HTMLTextAreaElement
+                            ).value = notes.therapeuticnote || "";
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error fetching draft details", e);
                 }
             }
 
-            startBtn.addEventListener("click", () => {
-                if (!startBtn.disabled) {
-                    // Show Signature Section
-                    startBtn.classList.add("hidden");
-                    confirmSignBtn.classList.remove("hidden");
-                    consentSection.classList.remove("hidden");
+            startBtn.addEventListener("click", async () => {
+                if (!startBtn.disabled && currentAppointment) {
+                    const isValoracion = currentAppointment.servicio
+                        .toLowerCase()
+                        .includes("valoración");
 
-                    // Re-init canvas
-                    setTimeout(initCanvas, 50);
+                    if (isValoracion) {
+                        // Verificar si ya existe consentimiento firmado
+                        const originalText = startBtn.innerHTML;
+                        startBtn.innerHTML =
+                            '<i class="fa-solid fa-circle-notch fa-spin"></i> Verificando...';
+                        startBtn.disabled = true;
+
+                        try {
+                            const res = await fetch(
+                                `/api/v1/Pacientes/${currentAppointment.idpatient}`,
+                            );
+                            if (res.ok) {
+                                const patient = await res.json();
+                                // La API retorna array o objeto, asegurar que tenemos el objeto correcto
+                                const pData = Array.isArray(patient)
+                                    ? patient[0]
+                                    : patient;
+
+                                if (pData && pData.pdf_path) {
+                                    // Ya tiene firma, saltar directo a consulta
+                                    alert(
+                                        "Consentimiento informado ya firmado previamente.",
+                                    );
+                                    startBtn.classList.add("hidden");
+                                    consultationFields.classList.remove(
+                                        "hidden",
+                                    );
+                                    saveDraftBtn.classList.remove("hidden");
+                                    finishBtn.classList.remove("hidden");
+                                    return;
+                                }
+                            }
+                        } catch (error) {
+                            console.error(
+                                "Error verificando consentimiento:",
+                                error,
+                            );
+                        } finally {
+                            startBtn.innerHTML = originalText;
+                            startBtn.disabled = false;
+                        }
+
+                        // Si no tiene firma o error, mostrar sección de firma
+                        startBtn.classList.add("hidden");
+                        confirmSignBtn.classList.remove("hidden");
+                        consentSection.classList.remove("hidden");
+
+                        // Re-init canvas
+                        setTimeout(initCanvas, 50);
+                    } else {
+                        // Skip signature, go to consultation
+                        startBtn.classList.add("hidden");
+                        consultationFields.classList.remove("hidden");
+                        saveDraftBtn.classList.remove("hidden");
+                        finishBtn.classList.remove("hidden");
+                    }
                 }
             });
 
@@ -892,6 +1045,7 @@ const userId = currentUser?.id;
                     pdfPreview.classList.remove("hidden");
 
                     consultationFields.classList.remove("hidden");
+                    saveDraftBtn.classList.remove("hidden"); // Show Draft Button
                     finishBtn.classList.remove("hidden");
                 } catch (error) {
                     console.error("Error generating PDF:", error);
@@ -977,17 +1131,54 @@ const userId = currentUser?.id;
                     ) as HTMLTextAreaElement
                 ).value;
 
-                if (!note.trim()) {
-                    alert("Por favor agregue una nota terapéutica.");
+                if (!note.trim() && !diagnosis.trim()) {
+                    alert(
+                        "Ingrese al menos una nota o diagnóstico para finalizar.",
+                    );
                     return;
                 }
 
-                if (!currentPdfBlob) {
-                    alert("Error: No se encontró el consentimiento firmado.");
-                    return;
+                // --- Validation: Consent Requirement ---
+                const isValoracion = currentAppointment.servicio
+                    .toLowerCase()
+                    .includes("valoración");
+
+                if (isValoracion && !currentPdfBlob) {
+                    // Critical: Require consent for Valoracion
+                    // Check if exists on server before blocking
+                    let pdfExistsOnServer = false;
+                    finishBtn.innerHTML =
+                        '<i class="fa-solid fa-circle-notch fa-spin"></i> Verificando...';
+
+                    try {
+                        const checkRes = await fetch(
+                            `/api/v1/Pacientes/${currentAppointment.idpatient}`,
+                        );
+                        if (checkRes.ok) {
+                            const pData = await checkRes.json();
+                            const patient = Array.isArray(pData)
+                                ? pData[0]
+                                : pData;
+                            if (patient && patient.pdf_path) {
+                                pdfExistsOnServer = true;
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Error checking PDF status", e);
+                    }
+
+                    if (!pdfExistsOnServer) {
+                        finishBtn.innerHTML =
+                            '<i class="fa-solid fa-clipboard-check"></i> Finalizar Consulta';
+                        alert(
+                            "Error: Para servicios de 'Valoración', es obligatorio firmar el consentimiento. Por favor guarde el borrador e intente de nuevo.",
+                        );
+                        return;
+                    }
                 }
 
                 // Disable button to prevent double submit
+                finishBtn.disabled = true;
                 finishBtn.innerHTML =
                     '<i class="fa-solid fa-circle-notch fa-spin"></i> Procesando...';
 
@@ -999,25 +1190,29 @@ const userId = currentUser?.id;
                     if (!patientRes.ok)
                         throw new Error("Error fetching patient info");
                     const patientData = await patientRes.json();
-                    console.log("Patient Data:", patientData); // Debugging
-                    const appointmentNumber = patientData.assispointment || 1;
+                    const patientObj = Array.isArray(patientData)
+                        ? patientData[0]
+                        : patientData;
+                    const appointmentNumber = patientObj.assispointment || 1;
 
-                    // Step 1: Upload PDF
-                    const pdfFormData = new FormData();
-                    pdfFormData.append(
-                        "pdf",
-                        currentPdfBlob,
-                        `Consentimiento_${currentAppointment.id}.pdf`,
-                    );
+                    // Step 1: Upload PDF (Only if NEW signature exists)
+                    if (currentPdfBlob) {
+                        const pdfFormData = new FormData();
+                        pdfFormData.append(
+                            "pdf",
+                            currentPdfBlob,
+                            `Consentimiento_${currentAppointment.id}.pdf`,
+                        );
 
-                    const pdfRes = await fetch(
-                        `/api/v1/Pacientes/${currentAppointment.idpatient}/pdf`,
-                        {
-                            method: "POST",
-                            body: pdfFormData,
-                        },
-                    );
-                    if (!pdfRes.ok) throw new Error("Error uploading PDF");
+                        const pdfRes = await fetch(
+                            `/api/v1/Pacientes/${currentAppointment.idpatient}/pdf`,
+                            {
+                                method: "POST",
+                                body: pdfFormData,
+                            },
+                        );
+                        if (!pdfRes.ok) throw new Error("Error uploading PDF");
+                    }
 
                     // Step 2: Save Details
                     const detailsBody = {
@@ -1121,6 +1316,109 @@ const userId = currentUser?.id;
                 }
             });
 
+            // --- Save Draft Logic ---
+            saveDraftBtn?.addEventListener("click", async () => {
+                if (!currentAppointment) return;
+
+                const diagnosis = (
+                    document.getElementById(
+                        "consultationDiagnosis",
+                    ) as HTMLInputElement
+                ).value;
+                const note = (
+                    document.getElementById(
+                        "consultationNote",
+                    ) as HTMLTextAreaElement
+                ).value;
+
+                if (!note.trim() && !diagnosis.trim()) {
+                    alert(
+                        "Ingrese al menos una nota o diagnóstico para guardar el borrador.",
+                    );
+                    return;
+                }
+
+                saveDraftBtn.disabled = true;
+                saveDraftBtn.innerHTML =
+                    '<i class="fa-solid fa-circle-notch fa-spin"></i> Guardando...';
+
+                try {
+                    // Save Details
+                    const detailsBody = {
+                        therapeuticnote: note,
+                        diagnostic: diagnosis,
+                        idappointment: currentAppointment.id,
+                    };
+
+                    const detailsRes = await fetch("/api/v1/Citas/detalle", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(detailsBody),
+                    });
+
+                    if (!detailsRes.ok) throw new Error("Error saving draft");
+
+                    // Save PDF if exists (Valoración)
+                    if (currentPdfBlob) {
+                        try {
+                            const pdfFormData = new FormData();
+                            pdfFormData.append(
+                                "pdf",
+                                currentPdfBlob,
+                                `Consentimiento_${currentAppointment.id}.pdf`,
+                            );
+
+                            const pdfRes = await fetch(
+                                `/api/v1/Pacientes/${currentAppointment.idpatient}/pdf`,
+                                {
+                                    method: "POST",
+                                    body: pdfFormData,
+                                },
+                            );
+                            if (!pdfRes.ok)
+                                console.error("Error uploading PDF for draft");
+                        } catch (pdfError) {
+                            console.error("Error uploading PDF:", pdfError);
+                        }
+                    }
+
+                    // Save Additionals (Optional for draft, but good to have)
+                    if (selectedAdditionals.length > 0) {
+                        for (const additionalId of selectedAdditionals) {
+                            const additionalItem = availableAdditionals.find(
+                                (item) => item.id == additionalId,
+                            );
+                            if (additionalItem) {
+                                const additionalBody = {
+                                    serviceId: additionalItem.id,
+                                    amount: "1",
+                                    unit_price: additionalItem.value,
+                                };
+                                await fetch(
+                                    `/api/v1/Agenda/${currentAppointment.id}/services`,
+                                    {
+                                        method: "POST",
+                                        headers: {
+                                            "Content-Type": "application/json",
+                                        },
+                                        body: JSON.stringify(additionalBody),
+                                    },
+                                );
+                            }
+                        }
+                    }
+
+                    alert("Borrador guardado correctamente.");
+                } catch (error) {
+                    console.error("Error saving draft:", error);
+                    alert("Error al guardar el borrador.");
+                } finally {
+                    saveDraftBtn.disabled = false;
+                    saveDraftBtn.innerHTML =
+                        '<i class="fa-regular fa-floppy-disk"></i> Guardar Borrador';
+                }
+            });
+
             // --- Canvas Logic ---
             function initCanvas() {
                 // Fix canvas resolution for high DPI displays
@@ -1193,6 +1491,106 @@ const userId = currentUser?.id;
 
             // Handle resize
             window.addEventListener("resize", initCanvas);
+
+            // --- History Logic ---
+            const historyBtn = document.getElementById(
+                "historyBtn",
+            ) as HTMLButtonElement | null;
+            const historyOverlay = document.getElementById(
+                "historyOverlay",
+            ) as HTMLDivElement | null;
+            const closeHistoryBtn = document.getElementById(
+                "closeHistoryBtn",
+            ) as HTMLButtonElement | null;
+            const historyList = document.getElementById(
+                "historyList",
+            ) as HTMLDivElement | null;
+
+            if (
+                historyBtn &&
+                historyOverlay &&
+                closeHistoryBtn &&
+                historyList
+            ) {
+                historyBtn.addEventListener("click", () => {
+                    if (!currentAppointment) return;
+                    historyOverlay.classList.remove("hidden");
+                    loadHistory(currentAppointment.idpatient);
+                });
+
+                closeHistoryBtn.addEventListener("click", () => {
+                    historyOverlay.classList.add("hidden");
+                });
+            }
+
+            async function loadHistory(idpatient: string | number) {
+                if (!historyList) return;
+                historyList.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-gray-400">
+                        <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2 text-[#2F5D50]"></i>
+                        <p>Cargando historial...</p>
+                    </div>
+                `;
+
+                try {
+                    const res = await fetch(
+                        `/api/v1/HistorialClinico/${idpatient}`,
+                    );
+                    if (res.ok) {
+                        const history = await res.json();
+                        if (Array.isArray(history) && history.length > 0) {
+                            historyList.innerHTML = history
+                                .map(
+                                    (item: any) => `
+                                <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 hover:shadow-md transition-shadow group">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div class="flex flex-col">
+                                             <span class="text-[10px] text-gray-500 uppercase font-bold mb-1">
+                                                Cita #${item.numberappointment}
+                                            </span>
+                                            <h4 class="font-bold text-gray-800 text-sm flex items-center gap-1">
+                                                <i class="fa-solid fa-user-doctor text-[#2F5D50] text-xs"></i>
+                                                ${item.employedname}
+                                            </h4>
+                                        </div>
+                                        <span class="text-xs font-bold text-[#2F5D50] bg-[#2F5D50]/10 px-2 py-1 rounded-lg">
+                                            ${new Date(item.appointment_date).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="mt-2 pt-2 border-t border-gray-200">
+                                        <p class="text-[10px] text-gray-500 font-bold uppercase mb-1 flex items-center gap-1">
+                                            <i class="fa-regular fa-clipboard text-xs"></i> Nota Terapéutica
+                                        </p>
+                                        <p class="text-xs text-gray-700 leading-relaxed font-medium ${!item.therapeutic_copy ? "italic text-gray-400" : ""}">
+                                            ${item.therapeutic_copy || "Sin nota registrada"}
+                                        </p>
+                                    </div>
+                                </div>
+                            `,
+                                )
+                                .join("");
+                        } else {
+                            historyList.innerHTML = `
+                                <div class="flex flex-col items-center justify-center h-48 text-gray-400">
+                                    <i class="fa-regular fa-folder-open text-3xl mb-2 opacity-50"></i>
+                                    <p class="text-sm">No hay historial disponible</p>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        throw new Error("Error fetching history");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    historyList.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full text-red-300">
+                            <i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i>
+                            <p class="text-sm">Error al cargar historial</p>
+                        </div>
+                    `;
+                }
+            }
         });
     </script>
 </Layout>

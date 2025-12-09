@@ -35,8 +35,7 @@ declare global {
         endhour: string;
         status: 'wait' | 'confirmed' | 'canceled' | 'concluded';
         reason: string;
-        patient_firstname?: string;
-        patient_lastname?: string;
+        patientname?: string;
         service_name?: string;
         price?: string;
     }

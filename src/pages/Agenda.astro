@@ -446,7 +446,6 @@ try {
                         id="agregarReason"
                         rows="3"
                         class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all resize-none"
-                        required
                         placeholder="Escriba el motivo de la consulta..."
                     ></textarea>
                 </div>
@@ -951,6 +950,18 @@ try {
         return `${year}-${m}-${d}`;
     }
 
+    function calcularEdad(fechaNacimiento: string): number | string {
+        if (!fechaNacimiento) return "?";
+        const hoy = new Date();
+        const nacimiento = new Date(fechaNacimiento);
+        let edad = hoy.getFullYear() - nacimiento.getFullYear();
+        const mes = hoy.getMonth() - nacimiento.getMonth();
+        if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+            edad--;
+        }
+        return edad;
+    }
+
     // --- Funciones de Calendario ---
     function renderCalendario() {
         // Actualizar título del mes
@@ -1189,6 +1200,22 @@ try {
                 ? cita.endhour.substring(0, 5)
                 : "--:--";
 
+            // Resolver Paciente (Nombre y Edad)
+            let patientName = cita.patientname || "Paciente";
+            let patientAge = "";
+
+            if (window.pacientesData && cita.idpatient) {
+                const p = window.pacientesData.find(
+                    (px: any) => px.id == cita.idpatient,
+                );
+                if (p) {
+                    if (!cita.patientname)
+                        patientName = `${p.firstname} ${p.lastname}`;
+                    const edad = calcularEdad(p.birthday);
+                    patientAge = `<span class="text-xs text-gray-400 font-normal ml-2">(${edad} años)</span>`;
+                }
+            }
+
             card.innerHTML = `
                     <div class="flex justify-between items-start mb-2">
                         <span class="font-bold text-[#2F5D50] text-sm bg-[#2F5D50]/10 px-2 py-0.5 rounded">
@@ -1198,7 +1225,9 @@ try {
                             ${cita.status}
                         </span>
                     </div>
-                    <h4 class="font-bold text-gray-800 text-base mb-1">${cita.patient_firstname || "Paciente"} ${cita.patient_lastname || ""}</h4>
+                    <h4 class="font-bold text-gray-800 text-base mb-1 flex items-center">
+                        ${patientName} ${patientAge}
+                    </h4>
                     <p class="text-xs text-gray-500 line-clamp-2">${cita.reason || "Sin motivo"}</p>
                 `;
 
@@ -1290,7 +1319,7 @@ try {
                             ${patient.photo ? `<img src="${patient.photo}" class="w-full h-full object-cover">` : '<i class="fa-solid fa-user"></i>'}
                         </div>
                         <h3 class="text-xl font-bold text-gray-800">${patient.firstname} ${patient.lastname}</h3>
-                        <p class="text-sm text-gray-500">Paciente</p>
+                        <p class="text-sm text-gray-500">Paciente • ${calcularEdad(patient.birthday)} años</p>
                     </div>
 
                     <!-- Info Grid -->
