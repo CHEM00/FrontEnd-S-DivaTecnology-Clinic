@@ -243,8 +243,9 @@ const userId = currentUser?.id;
                                 >, declaro que he solicitado servicios de
                                 fisioterapia en JessTherapy. Entiendo que la
                                 fisioterapia implica el uso de medios físicos,
-                                terapia manual, ejercicio terapéutico y/o
-                                agentes electrofísicos.
+                                terapia manual, terapia invasiva, ondas de
+                                choque, ejercicio terapéutico y/o agentes
+                                electrofísicos.
                             </p>
 
                             <h3 class="font-bold mt-4 mb-1">
@@ -252,10 +253,10 @@ const userId = currentUser?.id;
                             </h3>
                             <p class="mb-3 text-justify">
                                 Se me ha informado que, tras una valoración
-                                inicial, se diseñará un plan de tratamiento que
                                 puede incluir: movilizaciones, masoterapia,
-                                electroterapia, ultrasonido, láser, termoterapia
-                                y ejercicio terapéutico.
+                                electroterapia, ultrasonido, láser, terapia
+                                invasiva, ondas de choque, termoterapia y
+                                ejercicio terapéutico.
                             </p>
 
                             <h3 class="font-bold mt-4 mb-1">
@@ -294,7 +295,16 @@ const userId = currentUser?.id;
                                 <strong>A) Intransferibilidad:</strong> Los paquetes
                                 son personales e intransferibles.<br />
                                 <strong>B) No Reembolso:</strong> No se realizarán
-                                reembolsos por abandono de tratamiento.
+                                reembolsos por abandono de tratamiento.<br />
+                                <strong>C) Política de Asistencia:</strong> En caso
+                                de faltar o no cancelar con 3h de anticipación, se
+                                cobrará multa de $150 MXN.<br />
+                                <strong>D) Costos Adicionales:</strong> Se informará
+                                y pedirá autorización previa para cualquier insumo
+                                extra.<br />
+                                <strong>E) Duración:</strong> Sesión de 50 min. El
+                                retraso reduce el tiempo efectivo, no se extiende
+                                la hora.
                             </p>
 
                             <h3 class="font-bold mt-4 mb-1">
@@ -1028,7 +1038,7 @@ const userId = currentUser?.id;
                     // Generate PDF Blob
                     const pdfBytes = await generateConsentPDF(
                         currentAppointment.nombre_paciente,
-                        "Fisioterapeuta",
+                        userName || "Fisioterapeuta",
                         signatureData,
                         initials,
                     );

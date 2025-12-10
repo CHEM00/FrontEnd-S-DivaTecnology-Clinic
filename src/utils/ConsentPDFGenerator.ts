@@ -7,8 +7,8 @@ export async function generateConsentPDF(
     initials: string
 ): Promise<Uint8Array> {
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage();
-    const { width, height } = page.getSize();
+    let currentPage = pdfDoc.addPage();
+    const { width, height } = currentPage.getSize();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
@@ -39,16 +39,31 @@ export async function generateConsentPDF(
                 const testLine = line + word + ' ';
                 const testWidth = currentFont.widthOfTextAtSize(testLine, size);
                 if (testWidth > maxWidth) {
-                    page.drawText(line, { x: getX(line), y: yPosition, size, font: currentFont, color: rgb(0, 0, 0) });
+                    // Check page break for text lines
+                    if (yPosition < margin) {
+                        currentPage = pdfDoc.addPage();
+                        yPosition = currentPage.getSize().height - margin;
+                    }
+                    currentPage.drawText(line, { x: getX(line), y: yPosition, size, font: currentFont, color: rgb(0, 0, 0) });
                     yPosition -= (size + 4);
                     line = word + ' ';
                 } else {
                     line = testLine;
                 }
             }
-            page.drawText(line, { x: getX(line), y: yPosition, size, font: currentFont, color: rgb(0, 0, 0) });
+            // Check page break for last line
+            if (yPosition < margin) {
+                currentPage = pdfDoc.addPage();
+                yPosition = currentPage.getSize().height - margin;
+            }
+            currentPage.drawText(line, { x: getX(line), y: yPosition, size, font: currentFont, color: rgb(0, 0, 0) });
         } else {
-            page.drawText(text, { x: getX(text), y: yPosition, size, font: currentFont, color: rgb(0, 0, 0) });
+            // Check page break for single line
+            if (yPosition < margin) {
+                currentPage = pdfDoc.addPage();
+                yPosition = currentPage.getSize().height - margin;
+            }
+            currentPage.drawText(text, { x: getX(text), y: yPosition, size, font: currentFont, color: rgb(0, 0, 0) });
         }
         yPosition -= (size + 6);
     };
@@ -60,18 +75,18 @@ export async function generateConsentPDF(
     // --- Header ---
     drawText('DOCUMENTO DE CONSENTIMIENTO INFORMADO Y TÉRMINOS DEL SERVICIO', titleSize, true, 'center');
     addVerticalSpace(10);
-    drawText(`CLÍNICA: JessTherapy`, fontSize, true); // Hardcoded based on context, or pass as arg
-    drawText(`RESPONSABLE SANITARIO: ${localStorage.getItem('firstname') + ' ' + localStorage.getItem('lastname')}`, fontSize, true);
+    drawText(`CLÍNICA: JessTherapy`, fontSize, true);
+    drawText(`RESPONSABLE SANITARIO: ${therapistName}`, fontSize, true);
     // drawText(`CÉDULA PROFESIONAL: [Número]`, fontSize, true); // Optional if not provided
     addVerticalSpace(10);
 
     // --- Content ---
     drawText('1. DECLARACIÓN DEL PACIENTE', fontSize, true);
-    drawText(`Yo, ${patientName}, declaro que he solicitado servicios de fisioterapia en JessTherapy. Entiendo que la fisioterapia implica el uso de medios físicos, terapia manual, ejercicio terapéutico y/o agentes electrofísicos.`);
+    drawText(`Yo, ${patientName}, declaro que he solicitado servicios de fisioterapia en JessTherapy. Entiendo que la fisioterapia implica el uso de medios físicos, terapia manual, terapia invasiva, ondas de choque, ejercicio terapéutico y/o agentes electrofísicos.`);
     addVerticalSpace(5);
 
     drawText('2. EXPLICACIÓN DEL PROCEDIMIENTO', fontSize, true);
-    drawText('Se me ha informado que, tras una valoración inicial, se diseñará un plan de tratamiento que puede incluir: movilizaciones, masoterapia, electroterapia, ultrasonido, láser, termoterapia y ejercicio terapéutico.');
+    drawText('Se me ha informado que, tras una valoración inicial, se diseñará un plan de tratamiento que puede incluir: movilizaciones, masoterapia, electroterapia, ultrasonido, láser, terapia invasiva, ondas de choque, termoterapia y ejercicio terapéutico.');
     addVerticalSpace(5);
 
     drawText('3. RIESGOS Y BENEFICIOS', fontSize, true);
@@ -90,6 +105,9 @@ export async function generateConsentPDF(
     drawText('En caso de que el paciente decida adquirir un paquete o bono de sesiones de tratamiento por adelantado para obtener un precio preferencial, acepta expresamente las siguientes condiciones:');
     drawText('• A) Intransferibilidad: Los paquetes de sesiones son personales e intransferibles. Bajo ningún concepto podrán ser cedidos, donados, ni utilizados por familiares, amigos o terceras personas distintas al paciente firmante.');
     drawText('• B) No Reembolso por Abandono: Si el paciente decide unilateralmente no concluir su tratamiento o abandona las sesiones restantes del paquete adquirido, no se realizarán reembolsos económicos (ni totales ni parciales) por las sesiones no consumidas.');
+    drawText('• C) Política de Asistencia: En caso de faltar a la cita o no cancelar con al menos 3 horas de anticipación, se cobrará una multa de $150.00 MXN en la próxima sesión.');
+    drawText('• D) Costos Adicionales: Si durante la terapia fuera necesaria la aplicación de insumos o servicios con costo extra adicionales, se consultará y solicitará la conformidad del paciente antes de su aplicación.');
+    drawText('• E) Duración y Puntualidad: Las sesiones tienen una duración de 50 minutos. Cualquier retraso por parte del paciente no extenderá el horario programado, recibiendo tratamiento solo por el tiempo restante.');
     addVerticalSpace(5);
 
     drawText('7. VERACIDAD Y VALIDEZ DE FIRMA', fontSize, true);
@@ -112,11 +130,11 @@ export async function generateConsentPDF(
 
             // Check if we have space, if not add page
             if (yPosition < 150) {
-                const newPage = pdfDoc.addPage();
-                yPosition = newPage.getSize().height - margin;
+                currentPage = pdfDoc.addPage();
+                yPosition = currentPage.getSize().height - margin;
             }
 
-            page.drawImage(pngImage, {
+            currentPage.drawImage(pngImage, {
                 x: signatureX,
                 y: yPosition - 60,
                 width: signatureWidth,
@@ -129,7 +147,7 @@ export async function generateConsentPDF(
     }
 
     // Draw lines and text for signature
-    page.drawLine({
+    currentPage.drawLine({
         start: { x: signatureX, y: yPosition - 60 },
         end: { x: signatureX + signatureWidth, y: yPosition - 60 },
         thickness: 1,
