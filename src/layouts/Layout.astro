@@ -4,7 +4,10 @@ interface Props {
 }
 
 const { title } = Astro.props;
+
 import "../styles/global.css";
+
+import SpeedDial from "../components/SpeedDial.astro";
 ---
 
 <!doctype html>
@@ -46,5 +49,7 @@ import "../styles/global.css";
 		</div>
 
 		<slot />
+
+		<SpeedDial />
 	</body>
 </html>
