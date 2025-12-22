@@ -183,10 +183,10 @@ try {
         >
         </div>
         <div
-            class="fixed inset-0 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+            class="fixed inset-0 flex items-center justify-center p-4 sm:p-6 z-[60]"
         >
             <div
-                class="bg-white rounded-3xl shadow-2xl w-full max-w-lg transform transition-all scale-95 opacity-0 flex flex-col max-h-[90vh]"
+                class="bg-white rounded-3xl shadow-2xl w-[95%] sm:w-full sm:max-w-lg transform transition-all scale-95 opacity-0 flex flex-col max-h-[90vh] overflow-hidden"
                 id="modalContent"
             >
                 <!-- Modal Header -->
@@ -195,13 +195,13 @@ try {
                 >
                     <div>
                         <h3
-                            class="text-xl font-bold text-[#2F5D50]"
+                            class="text-lg font-bold text-[#2F5D50]"
                             id="modalPatientName"
                         >
                             Nombre del Paciente
                         </h3>
                         <p
-                            class="text-sm text-gray-500 flex items-center gap-2 mt-1"
+                            class="text-xs text-gray-500 flex items-center gap-2 mt-1"
                         >
                             <i class="fa-regular fa-clock"></i>
                             <span id="modalTimeRange">00:00 - 00:00</span>
@@ -225,7 +225,9 @@ try {
                 </div>
 
                 <!-- Modal Body -->
-                <div class="p-6 overflow-y-auto space-y-6">
+                <div
+                    class="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6 flex-1 min-h-0 custom-scrollbar"
+                >
                     <!-- Info Cards -->
                     <div class="grid grid-cols-2 gap-4">
                         <div
@@ -597,7 +599,7 @@ try {
                             class="font-bold text-[#2F5D50] flex items-center gap-2"
                         >
                             <i class="fa-solid fa-clock-rotate-left"></i> Historial
-                            ClÃ­nico
+                            clinico
                         </h3>
                         <button
                             id="closeHistoryBtn"
@@ -619,382 +621,6 @@ try {
                             ></i>
                             <p>Cargando historial...</p>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Appointment Modal -->
-    <div
-        id="appointmentModal"
-        class="relative z-50 hidden"
-        aria-labelledby="modal-title"
-        role="dialog"
-        aria-modal="true"
-    >
-        <div
-            id="modalOverlay"
-            class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity opacity-100"
-        >
-        </div>
-
-        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-            <div
-                class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0"
-            >
-                <div
-                    id="modalContent"
-                    class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl scale-100 opacity-100"
-                >
-                    <!-- Header -->
-                    <div
-                        class="bg-[#2F5D50] px-4 py-4 sm:px-6 flex justify-between items-center"
-                    >
-                        <div>
-                            <h3
-                                class="text-base font-semibold leading-6 text-white"
-                                id="modal-title"
-                            >
-                                <i class="fa-solid fa-user-doctor mr-2"
-                                ></i>Consulta Médica
-                            </h3>
-                            <p class="text-xs text-green-100 mt-1">
-                                Paciente: <span
-                                    id="modalPatientName"
-                                    class="font-bold"></span>
-                            </p>
-                        </div>
-                        <div class="flex items-center">
-                            <button
-                                id="editAppointmentBtn"
-                                type="button"
-                                class="mr-2 text-white/70 hover:text-white transition-colors focus:outline-none"
-                                title="Editar Cita"
-                            >
-                                <i class="fa-solid fa-pen-to-square text-xl"
-                                ></i>
-                            </button>
-                            <button
-                                id="closeModalBtn"
-                                type="button"
-                                class="text-white/70 hover:text-white transition-colors focus:outline-none"
-                            >
-                                <i class="fa-solid fa-xmark text-xl"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Body -->
-                    <div
-                        class="px-4 py-5 sm:p-6 max-h-[80vh] overflow-y-auto custom-scrollbar bg-gray-50/50"
-                    >
-                        <!-- View/Edit Section -->
-                        <div class="mb-6 border-b border-gray-100 pb-4">
-                            <!-- View Mode -->
-                            <div
-                                id="viewModeContainer"
-                                class="flex flex-wrap gap-4"
-                            >
-                                <div
-                                    class="bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100"
-                                >
-                                    <span
-                                        class="text-xs text-blue-500 font-bold uppercase block"
-                                        >Horario</span
-                                    >
-                                    <span
-                                        id="modalTimeRange"
-                                        class="text-sm font-semibold text-blue-700"
-                                    ></span>
-                                </div>
-                                <div
-                                    class="bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-100"
-                                >
-                                    <span
-                                        class="text-xs text-purple-500 font-bold uppercase block"
-                                        >Servicio</span
-                                    >
-                                    <span
-                                        id="modalService"
-                                        class="text-sm font-semibold text-purple-700"
-                                    ></span>
-                                </div>
-                                <div
-                                    class="bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100"
-                                >
-                                    <span
-                                        class="text-xs text-orange-500 font-bold uppercase block"
-                                        >Estado</span
-                                    >
-                                    <span
-                                        class="text-sm font-semibold text-orange-700 capitalize"
-                                    ></span>
-                                </div>
-                            </div>
-
-                            <!-- Edit Mode -->
-                            <div
-                                id="editModeContainer"
-                                class="hidden mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
-                            >
-                                <h4
-                                    class="text-sm font-bold text-[#2F5D50] mb-3"
-                                >
-                                    Editar Cita
-                                </h4>
-                                <div
-                                    class="grid grid-cols-1 gap-4 sm:grid-cols-2"
-                                >
-                                    <div>
-                                        <label
-                                            class="block text-xs font-medium text-gray-700 mb-1"
-                                            >Fecha</label
-                                        >
-                                        <input
-                                            type="date"
-                                            id="editDateInput"
-                                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#2F5D50] focus:ring-[#2F5D50] sm:text-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label
-                                            class="block text-xs font-medium text-gray-700 mb-1"
-                                            >Hora</label
-                                        >
-                                        <input
-                                            type="time"
-                                            id="editTimeInput"
-                                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#2F5D50] focus:ring-[#2F5D50] sm:text-sm"
-                                        />
-                                    </div>
-                                    <div class="col-span-1 sm:col-span-2">
-                                        <label
-                                            class="block text-xs font-medium text-gray-700 mb-1"
-                                            >Servicio</label
-                                        >
-                                        <select
-                                            id="editServiceInput"
-                                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#2F5D50] focus:ring-[#2F5D50] sm:text-sm"
-                                        >
-                                            <option value=""
-                                                >Seleccionar Servicio</option
-                                            >
-                                            {
-                                                servicios.map((s: any) => (
-                                                    <option value={s.id}>
-                                                        {s.name} ({s.duration}{" "}
-                                                        min)
-                                                    </option>
-                                                ))
-                                            }
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="mt-4 flex justify-end gap-2">
-                                    <button
-                                        id="cancelEditBtn"
-                                        class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        id="saveEditBtn"
-                                        class="px-3 py-1.5 text-sm font-medium text-white bg-[#2F5D50] rounded-lg hover:bg-[#234D20] transition-colors shadow-sm"
-                                    >
-                                        Guardar Cambios
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Error/Status Message -->
-                        <div
-                            id="timeValidationError"
-                            class="hidden mb-4 bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2"
-                        >
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                            <span></span>
-                        </div>
-
-                        <!-- Reason -->
-                        <div
-                            class="mb-6 bg-white p-4 rounded-xl border border-gray-100 shadow-sm"
-                        >
-                            <h4
-                                class="text-xs font-bold text-gray-500 uppercase mb-2"
-                            >
-                                Motivo de Consulta
-                            </h4>
-                            <p
-                                id="modalReason"
-                                class="text-gray-700 text-sm leading-relaxed"
-                            >
-                            </p>
-                        </div>
-
-                        <!-- 1. Consent Section (Signature) -->
-                        <div
-                            id="consentSection"
-                            class="hidden flex flex-col items-center justify-center space-y-6 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
-                        >
-                            <div class="text-center max-w-lg mx-auto">
-                                <div
-                                    class="w-16 h-16 bg-yellow-50 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600 border border-yellow-100"
-                                >
-                                    <i
-                                        class="fa-solid fa-file-signature text-2xl"
-                                    ></i>
-                                </div>
-                                <h4
-                                    class="text-xl font-bold text-gray-800 mb-2"
-                                >
-                                    Firma Requerida
-                                </h4>
-                                <p class="text-sm text-gray-500">
-                                    Para iniciar la consulta de valoraciÃ³n, el
-                                    paciente debe firmar el consentimiento
-                                    informado.
-                                </p>
-                            </div>
-
-                            <!-- Signature Pad -->
-                            <div
-                                class="w-full max-w-md bg-white rounded-xl border border-gray-200 shadow-sm p-1 relative"
-                            >
-                                <div
-                                    id="signaturePlaceholder"
-                                    class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/50 backdrop-blur-[1px] z-10 pointer-events-none text-gray-400"
-                                >
-                                    <i
-                                        class="fa-solid fa-signature text-3xl mb-2 opacity-50"
-                                    ></i>
-                                    <span class="text-xs">Firme aquí</span>
-                                </div>
-                                <canvas
-                                    id="signatureCanvas"
-                                    class="w-full h-48 bg-white cursor-crosshair touch-none rounded-lg border border-dashed border-gray-200"
-                                ></canvas>
-                                <button
-                                    id="clearSignatureBtn"
-                                    class="absolute bottom-3 right-3 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded transition-colors"
-                                    title="Limpiar firma"
-                                >
-                                    <i class="fa-solid fa-eraser"></i>
-                                </button>
-                            </div>
-
-                            <div class="w-full max-w-xs">
-                                <label
-                                    class="block text-xs font-bold text-gray-500 uppercase mb-1"
-                                    >Iniciales del Paciente *</label
-                                >
-                                <input
-                                    type="text"
-                                    id="patientInitials"
-                                    class="glass-input w-full rounded-lg px-3 py-2 text-center font-bold tracking-widest uppercase focus:ring-2 focus:ring-[#2F5D50]/20 outline-none"
-                                    placeholder="E.J."
-                                    maxlength="4"
-                                />
-                            </div>
-
-                            <button
-                                id="confirmSignatureBtn"
-                                class="w-full max-w-xs bg-[#2F5D50] hover:bg-[#254a40] text-white py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                            >
-                                <i class="fa-solid fa-pen-nib mr-2"></i> Confirmar
-                                Firma e Iniciar
-                            </button>
-
-                            <!-- Legal Text Hidden/Preview -->
-                            <div class="hidden">
-                                <span id="docPatientName"></span>
-                                <span id="docDate"></span>
-                            </div>
-                        </div>
-
-                        <!-- 2. Consultation Fields -->
-                        <div
-                            id="consultationFields"
-                            class="hidden space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500"
-                        >
-                            <!-- PDF Generated Success -->
-                            <div
-                                id="pdfPreview"
-                                class="hidden bg-green-50 border border-green-100 rounded-xl p-4 flex items-center gap-3"
-                            >
-                                <div
-                                    class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 flex-shrink-0"
-                                >
-                                    <i class="fa-regular fa-file-pdf"></i>
-                                </div>
-                                <div>
-                                    <h5
-                                        class="text-sm font-bold text-green-800"
-                                    >
-                                        Consentimiento Generado
-                                    </h5>
-                                    <p class="text-xs text-green-600">
-                                        El documento se adjuntarÃ¡ al finalizar
-                                        la consulta.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <div>
-                                    <label
-                                        class="block text-xs font-bold text-gray-500 uppercase mb-2"
-                                    >
-                                        <i class="fa-solid fa-stethoscope mr-1"
-                                        ></i> Diagnóstico
-                                    </label>
-                                    <textarea
-                                        id="consultationDiagnosis"
-                                        rows="6"
-                                        class="glass-input w-full rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all resize-none shadow-sm"
-                                        placeholder="Ingrese el diagnÃ³stico médico..."
-                                    ></textarea>
-                                </div>
-
-                                <div>
-                                    <label
-                                        class="block text-xs font-bold text-gray-500 uppercase mb-2"
-                                    >
-                                        <i class="fa-regular fa-clipboard mr-1"
-                                        ></i> Nota Terapéutica
-                                    </label>
-                                    <textarea
-                                        id="consultationNote"
-                                        rows="6"
-                                        class="glass-input w-full rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all resize-none shadow-sm"
-                                        placeholder="Describa el tratamiento realizado..."
-                                    ></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Footer -->
-                    <div
-                        class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-3 rounded-b-2xl border-t border-gray-100"
-                    >
-                        <button
-                            id="finishConsultationBtn"
-                            type="button"
-                            class="hidden w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-[#2F5D50] text-base font-medium text-white hover:bg-[#254a40] focus:outline-none sm:w-auto sm:text-sm transition-all items-center gap-2"
-                        >
-                            <i class="fa-solid fa-clipboard-check"></i> Finalizar
-                            Consulta
-                        </button>
-
-                        <button
-                            id="startConsultationBtn"
-                            type="button"
-                            class="hidden mt-3 w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-[#2F5D50] text-base font-medium text-white hover:bg-[#254a40] focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm items-center gap-2"
-                        >
-                            <span>Iniciar</span>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -1447,6 +1073,53 @@ try {
                             idpatient,
                             idemployed,
                         };
+
+                        // Logic: Consume Existing Package Session
+                        const usePackageCheckbox = document.getElementById(
+                            "usePackageCheckbox",
+                        ) as HTMLInputElement;
+                        if (
+                            !editId &&
+                            usePackageCheckbox &&
+                            usePackageCheckbox.checked
+                        ) {
+                            if (idPackage) {
+                                alert(
+                                    "No puedes comprar un paquete nuevo y usar uno existente al mismo tiempo.",
+                                );
+                                return;
+                            }
+                            try {
+                                const consumeRes = await fetch(
+                                    `/api/v1/Pacientes/${idpatient}/paquete/consumir`,
+                                    {
+                                        method: "POST",
+                                        headers: {
+                                            "Content-Type": "application/json",
+                                        },
+                                    },
+                                );
+                                if (consumeRes.ok) {
+                                    const consumeData = await consumeRes.json();
+                                    if (consumeData.packageId) {
+                                        payload.idpatientpackage =
+                                            consumeData.packageId;
+                                    }
+                                } else {
+                                    const errTxt = await consumeRes.text();
+                                    throw new Error(
+                                        errTxt || "Error al consumir sesión",
+                                    );
+                                }
+                            } catch (err) {
+                                console.error(err);
+                                alert(
+                                    "Error al procesar el paquete del paciente: " +
+                                        err,
+                                );
+                                return;
+                            }
+                        }
 
                         // Handle Package Assignment FIRST (if new appointment and package selected)
                         if (!editId && idPackage) {
@@ -1903,13 +1576,6 @@ try {
                         <div class="relative w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden cursor-pointer"
                              onclick="event.stopPropagation(); window.openPhoto('${app.photo || "default.png"}', '${app.patient_name}')">
                              <img src="${photoUrl}" alt="${app.patient_name}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='${backendUrl}/uploads/images/default.png'">
-                             ${
-                                 missingNotes
-                                     ? `<div class="absolute -top-1 -right-1 bg-amber-500 text-white w-5 h-5 flex items-center justify-center rounded-full shadow-md animate-pulse z-10" title="Falta Nota Terapéutica">
-                                        <i class="fa-solid fa-exclamation text-xs"></i>
-                                    </div>`
-                                     : ""
-                             }
                         </div>
                         <div>
                              <h4 class="font-bold text-gray-800 text-base group-hover:text-[#2F5D50] transition-colors">${app.patient_name || "Sin Nombre"} <span class="text-xs text-gray-500 font-normal">(${app.birthday ? calcularEdad(app.birthday) : "?"} años)</span></h4>
@@ -1926,6 +1592,13 @@ try {
                         </div>
                     </div>
                     <div class="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 border-gray-100 pt-3 sm:pt-0 mt-3 sm:mt-0 pl-3 sm:pl-0">
+                          ${
+                              missingNotes
+                                  ? `<div class="flex items-center" title="Falta Nota Terapéutica">
+                                        <i class="fa-solid fa-circle-exclamation text-red-500 text-xl animate-pulse"></i>
+                                      </div>`
+                                  : ""
+                          }
                          <div class="flex flex-col items-end">
                               <span class="text-sm font-bold text-gray-700 bg-white/50 px-3 py-1 rounded-lg border border-gray-100 shadow-sm">
                                   ${app.inithour?.substring(0, 5) || "--:--"}
@@ -2676,7 +2349,7 @@ try {
                                         currentAppointment.inithour || "00:00",
                                     idpatient: currentAppointment.idpatient,
                                     idemployed:
-                                        currentAppointment.idemployed || "1",
+                                        userId || currentAppointment.idemployed,
                                     idappointment: currentAppointment.id,
                                     iddetailappointment: detailId || "",
                                 };
@@ -3316,6 +2989,11 @@ try {
                     const formData = new FormData(
                         formPaciente as HTMLFormElement,
                     );
+
+                    // Separate file from JSON data
+                    const photoFile = formData.get("photo") as File;
+                    formData.delete("photo"); // Remove from initial POST data if API doesn't expect it
+
                     const data: any = Object.fromEntries(formData.entries());
                     data.is_active = true;
 
@@ -3328,8 +3006,68 @@ try {
                         });
 
                         if (res.ok) {
+                            const result = await res.json();
+                            // Logic: Upload Photo if exists
+                            if (photoFile && photoFile.size > 0 && result.id) {
+                                try {
+                                    const photoData = new FormData();
+                                    photoData.append("photo", photoFile);
+
+                                    await fetch(
+                                        `/api/v1/Pacientes/${result.id}`,
+                                        {
+                                            method: "PATCH", // Endpoint provided by user
+                                            body: photoData,
+                                        },
+                                    );
+                                } catch (photoErr) {
+                                    console.error(
+                                        "Error uploading photo:",
+                                        photoErr,
+                                    );
+                                    // Non-critical, continue
+                                }
+                            }
+
                             alert("Paciente registrado correctamente");
-                            hideFormModal("modalCrearPaciente"); // Updated to use helper
+                            hideFormModal("modalCrearPaciente");
+                            (formPaciente as HTMLFormElement).reset();
+
+                            // Auto-select and Open Appointment Modal
+                            const newPatient = {
+                                ...data,
+                                id: result.id,
+                                havepackage: false, // Default
+                            };
+
+                            // Update local cache
+                            const localPacientes = (window as any)
+                                .pacientesData;
+                            if (
+                                localPacientes &&
+                                Array.isArray(localPacientes)
+                            ) {
+                                localPacientes.push(newPatient);
+                            }
+
+                            // Open Appointment Modal
+                            setTimeout(() => {
+                                showFormModal("modalAgregarCita");
+
+                                // Auto-select Patient
+                                const fullName =
+                                    `${data.firstname} ${data.lastname} ${data.motherlastname || ""}`.trim();
+                                if (
+                                    typeof (window as any).selectPatient ===
+                                    "function"
+                                ) {
+                                    (window as any).selectPatient(
+                                        result.id,
+                                        fullName,
+                                        false,
+                                    );
+                                }
+                            }, 500);
                         } else {
                             alert("Error al registrar paciente");
                         }
@@ -3622,6 +3360,35 @@ try {
         size="lg"
     >
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
+            <div
+                class="col-span-1 md:col-span-2 flex flex-col items-center justify-center mb-2"
+            >
+                <label class="relative cursor-pointer group">
+                    <div
+                        class="w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden group-hover:border-[#2F5D50] transition-colors"
+                    >
+                        <img
+                            id="previewNewPatientPhoto"
+                            src=""
+                            class="w-full h-full object-cover hidden"
+                        />
+                        <div
+                            id="placeholderNewPatientPhoto"
+                            class="text-center text-gray-400 p-2"
+                        >
+                            <i class="fa-solid fa-camera text-2xl mb-1"></i>
+                            <span class="text-[10px] block">Subir Foto</span>
+                        </div>
+                    </div>
+                    <input
+                        type="file"
+                        name="photo"
+                        accept="image/*"
+                        class="hidden"
+                        onchange="const file = this.files[0]; if(file){ const reader = new FileReader(); reader.onload = (e) => { document.getElementById('previewNewPatientPhoto').src = e.target.result; document.getElementById('previewNewPatientPhoto').classList.remove('hidden'); document.getElementById('placeholderNewPatientPhoto').classList.add('hidden'); }; reader.readAsDataURL(file); }"
+                    />
+                </label>
+            </div>
             <div class="flex flex-col">
                 <label class="text-sm font-bold text-gray-700 mb-1 ml-1"
                     >Nombre *</label

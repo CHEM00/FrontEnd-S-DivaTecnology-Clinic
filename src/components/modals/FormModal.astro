@@ -42,13 +42,13 @@ const positionClasses = {
 
   <!-- Modal Container -->
   <div
-    class={`flex min-h-full ${positionClasses[position]} pointer-events-none`}
+    class={`flex min-h-full ${positionClasses[position]} pointer-events-none p-4`}
   >
     <div
       class={`
-            relative w-full ${sizeClasses[size]} 
+            relative w-[95%] sm:w-full ${sizeClasses[size]} 
             glass-panel pointer-events-auto
-            ${position === "right" ? "h-full rounded-l-2xl border-r-0 my-0" : "rounded-2xl shadow-2xl my-8"}
+            ${position === "right" ? "h-full rounded-l-2xl border-r-0 my-0" : "rounded-2xl shadow-2xl my-4 sm:my-8"}
             flex flex-col overflow-hidden transition-all duration-300 transform scale-95 opacity-0
             modal-content-wrapper
         `}
@@ -56,21 +56,23 @@ const positionClasses = {
     >
       <!-- Header -->
       <div
-        class="flex justify-between items-center px-6 py-4 border-b border-[#2F5D50]/10 flex-shrink-0 bg-white/40"
+        class="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-[#2F5D50]/10 flex-shrink-0 bg-white/40"
       >
-        <h3 class="text-[#2F5D50] text-xl font-bold m-0 tracking-tight">
+        <h3
+          class="text-[#2F5D50] text-lg sm:text-xl font-bold m-0 tracking-tight"
+        >
           {title}
         </h3>
         <button
           class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-[#2F5D50]/10 transition-colors"
           onclick={`cerrarModal('${id}')`}
         >
-          <i class="fa-solid fa-xmark text-xl"></i>
+          <i class="fa-solid fa-xmark text-lg"></i>
         </button>
       </div>
 
       <!-- Body -->
-      <div class="p-6 overflow-y-auto flex-1 min-h-0 custom-scrollbar">
+      <div class="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0 custom-scrollbar">
         <form id={formId} class="h-full space-y-4">
           <slot />
         </form>
@@ -78,11 +80,11 @@ const positionClasses = {
 
       <!-- Footer -->
       <div
-        class="flex justify-end gap-3 px-6 py-4 border-t border-[#2F5D50]/10 bg-white/40 flex-shrink-0"
+        class="flex justify-end gap-2 sm:gap-3 px-4 sm:px-6 py-4 border-t border-[#2F5D50]/10 bg-white/40 flex-shrink-0"
       >
         <button
           type="button"
-          class="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-all"
+          class="px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl border border-gray-300 text-gray-700 text-sm sm:text-base font-medium hover:bg-gray-50 transition-all"
           onclick={`cerrarModal('${id}')`}
         >
           {cancelText}
@@ -90,7 +92,7 @@ const positionClasses = {
         <button
           type="submit"
           form={formId}
-          class="px-6 py-2.5 rounded-xl bg-[#2F5D50] text-white font-medium hover:bg-[#234D20] shadow-lg hover:shadow-[#2F5D50]/30 transition-all transform hover:-translate-y-0.5"
+          class="px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-[#2F5D50] text-white text-sm sm:text-base font-medium hover:bg-[#234D20] shadow-lg hover:shadow-[#2F5D50]/30 transition-all transform hover:-translate-y-0.5"
         >
           {submitText}
         </button>
