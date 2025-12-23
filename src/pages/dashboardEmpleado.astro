@@ -1144,7 +1144,6 @@ try {
                                         },
                                         body: JSON.stringify({
                                             idpackage: idPackage,
-                                            sessionsTotal: totalSessions,
                                         }),
                                     },
                                 );
@@ -2996,6 +2995,7 @@ try {
 
                     const data: any = Object.fromEntries(formData.entries());
                     data.is_active = true;
+                    if (!data.photo) data.photo = "uploads/images/default.png";
 
                     // ... fetch logic ...
                     try {

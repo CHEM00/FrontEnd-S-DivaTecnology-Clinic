@@ -1304,6 +1304,7 @@ try {
 
 					const data = Object.fromEntries(formData.entries());
 					data.is_active = true;
+					if (!data.photo) data.photo = "uploads/images/default.png";
 
 					try {
 						const res = await fetch("/api/v1/Pacientes", {
@@ -1469,7 +1470,6 @@ try {
 										},
 										body: JSON.stringify({
 											idpackage,
-											sessionsTotal: total,
 										}),
 									},
 								);
@@ -1633,12 +1633,16 @@ try {
 				const img = document.getElementById("photoModalImg");
 				const title = document.getElementById("photoModalTitle");
 				if (modal && img) {
-					img.src =
-						!photo || photo.includes("default")
-							? "/default.png"
-							: photo.startsWith("http")
-								? photo
-								: `/uploads/images/${photo}`;
+					!photo || photo.includes("default")
+						? "/default.png"
+						: photo.startsWith("http")
+							? photo
+							: photo.startsWith("uploads") ||
+								  photo.startsWith("/uploads")
+								? photo.startsWith("/")
+									? photo
+									: "/" + photo
+								: `/images/${photo}`;
 					if (title) title.textContent = name;
 					modal.classList.remove("hidden");
 				}

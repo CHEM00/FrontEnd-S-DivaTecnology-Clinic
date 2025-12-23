@@ -589,7 +589,14 @@ try {
 			// Photo Logic
 			let photoHtml;
 			if (p.photo && p.photo !== "default.png") {
-				photoHtml = `<img src="/uploads/${p.photo}" alt="${p.firstname}" class="w-full h-full object-cover" />`;
+				const photoSrc =
+					p.photo.startsWith("uploads") ||
+					p.photo.startsWith("/uploads")
+						? p.photo.startsWith("/")
+							? p.photo
+							: "/" + p.photo
+						: `/uploads/${p.photo}`;
+				photoHtml = `<img src="${photoSrc}" alt="${p.firstname}" class="w-full h-full object-cover" />`;
 			} else {
 				photoHtml = p.firstname.charAt(0);
 			}
@@ -841,7 +848,13 @@ try {
 			if (p.photo && p.photo !== "default.png") {
 				const preview = document.getElementById("photoPreview");
 				const placeholder = document.getElementById("photoPlaceholder");
-				preview.src = `/uploads/${p.photo}`;
+				preview.src =
+					p.photo.startsWith("uploads") ||
+					p.photo.startsWith("/uploads")
+						? p.photo.startsWith("/")
+							? p.photo
+							: "/" + p.photo
+						: `/uploads/${p.photo}`;
 				preview.classList.remove("hidden");
 				placeholder.classList.add("hidden");
 			} else {
@@ -935,6 +948,9 @@ try {
 			const id = formData.get("id");
 			const isEdit = !!id;
 
+			// Extract photo file specifically
+			const photoFile = formData.get("photo");
+
 			const data = {
 				firstname: formData.get("firstname"),
 				lastname: formData.get("lastname"),
@@ -942,11 +958,14 @@ try {
 				birthday: formData.get("birthdate"),
 				phone: formData.get("phone"),
 				email: formData.get("email"),
-				photo: "default.png", // Placeholder
+				// photo: "default.png", // REMOVE HARDCODED DEFAULT
+				// Don't send 'photo' field here to avoid overwriting with text "default.png" if editing
+				// However, for CREATE, we might need a default? Usually backend handles default.
 				idemployed: formData.get("idEmpleado") || null,
 				sanction: formData.get("sanction") === "on",
 				havepackage: formData.get("havepackage") === "on",
 				is_active: true,
+				photo: "uploads/images/default.png",
 			};
 
 			const url = isEdit
@@ -963,6 +982,39 @@ try {
 				});
 
 				if (response.ok) {
+					// Check if we have a photo to upload
+					let targetId = id;
+					if (!isEdit) {
+						// For create, get ID from response
+						const result = await response.json();
+						targetId = result.id || result.insertId;
+					}
+
+					if (
+						photoFile &&
+						photoFile instanceof File &&
+						photoFile.size > 0 &&
+						targetId
+					) {
+						try {
+							const photoFormData = new FormData();
+							photoFormData.append("photo", photoFile);
+
+							await fetch(`/api/v1/Pacientes/${targetId}`, {
+								method: "PATCH",
+								body: photoFormData,
+							});
+						} catch (photoError) {
+							console.error(
+								"Error subiendo la foto:",
+								photoError,
+							);
+							alert(
+								"Paciente guardado, pero error al subir la foto.",
+							);
+						}
+					}
+
 					alert(isEdit ? "Paciente actualizado" : "Paciente creado");
 					window.location.reload();
 				} else {
