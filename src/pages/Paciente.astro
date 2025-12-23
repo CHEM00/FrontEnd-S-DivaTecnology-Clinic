@@ -21,8 +21,7 @@ interface Paciente {
 let pacientes: Paciente[] = [];
 let error = "";
 
-const backendUrl =
-	import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
+const backendUrl = "https://api.jesstherapy.cloud";
 const token = Astro.cookies.get("auth_token")?.value;
 const headers = {
 	"Content-Type": "application/json",
@@ -596,7 +595,7 @@ try {
 							? p.photo
 							: "/" + p.photo
 						: `/uploads/${p.photo}`;
-				photoHtml = `<img src="${photoSrc}" alt="${p.firstname}" class="w-full h-full object-cover" />`;
+				photoHtml = `<img src="${backendUrl}${photoSrc}" alt="${p.firstname}" class="w-full h-full object-cover" />`;
 			} else {
 				photoHtml = p.firstname.charAt(0);
 			}
@@ -1050,6 +1049,8 @@ try {
 		}
 	};
 
+	// Init
+	renderTable();
 	// Init
 	renderTable();
 </script>
