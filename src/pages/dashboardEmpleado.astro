@@ -1793,7 +1793,8 @@ try {
                 }
 
                 // Auto-Start
-                const serviceName = app.servicio || app.name || "";
+                const serviceName =
+                    app.service_name || app.servicio || app.name || "";
                 const isValoracion = serviceName
                     .normalize("NFD")
                     .replace(/[\u0300-\u036f]/g, "")
