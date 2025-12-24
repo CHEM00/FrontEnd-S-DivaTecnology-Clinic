@@ -2068,20 +2068,112 @@ try {
 
             async function loadHistory(patientId: number | string) {
                 if (!historyList) return;
-                historyList.innerHTML = `<div class="flex justify-center p-4"><i class="fa-solid fa-spinner fa-spin text-[#2F5D50]"></i></div>`;
+                historyList.innerHTML = `<div class="flex flex-col items-center justify-center py-8"><i class="fa-solid fa-spinner fa-spin text-[#2F5D50] text-2xl mb-2"></i><span class="text-xs text-gray-500">Cargando historial...</span></div>`;
 
                 try {
-                    // Assuming endpoint exists or using Appointments with filter?
-                    // Or re-using the AppointmentStatus/History endpoint if available.
-                    // Let's try to fetch all appointments for this patient
-                    // Note: You might need a specific endpoint like /api/v1/History/{patientId} or filtered appointments.
-                    // For now, I'll use a placeholder or generic query if known.
-                    // Looking at code, there isn't a clear history endpoint. I'll disable it for now or use a mock.
-                    // Actually, I can try /api/v1/Pacientes/{id}/historial if it exists.
-                    // Let's just show a "Not implemented" or try to fetch appointments.
-                    historyList.innerHTML = `<p class="text-center text-gray-500 text-sm">Historial no disponible por el momento</p>`;
+                    // Use backendUrl if using external backend, or relative if proxied.
+                    // The dashboard-data element provides backendUrl.
+                    // Safety check for URL construction
+                    const url = backendUrl.startsWith("http")
+                        ? `${backendUrl}/api/v1/HistorialClinico/${patientId}`
+                        : `/api/v1/HistorialClinico/${patientId}`;
+
+                    const res = await fetch(url);
+
+                    if (!res.ok) {
+                        // If 404, maybe no history
+                        if (res.status === 404) {
+                            historyList.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm"><p>No se encontró historial clínico.</p></div>`;
+                            return;
+                        }
+                        throw new Error("Error al obtener el historial");
+                    }
+
+                    const json = await res.json();
+                    const history = Array.isArray(json)
+                        ? json
+                        : json.data || [];
+
+                    if (history.length === 0) {
+                        historyList.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm flex flex-col items-center gap-2"><i class="fa-regular fa-folder-open text-2xl opacity-50"></i><p>Este paciente no tiene historial registrado.</p></div>`;
+                        return;
+                    }
+
+                    // Render Cards
+                    historyList.innerHTML = history
+                        .map((item: any) => {
+                            // Date Formatting
+                            const dateStr =
+                                item.created_at || item.date || item.fecha;
+                            const dateObj = dateStr
+                                ? new Date(dateStr)
+                                : new Date();
+                            const formattedDate = dateObj.toLocaleDateString(
+                                "es-ES",
+                                {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                },
+                            );
+                            const formattedTime = dateObj.toLocaleTimeString(
+                                "es-ES",
+                                { hour: "2-digit", minute: "2-digit" },
+                            );
+
+                            return `
+                        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                            <div class="flex justify-between items-start mb-3 pb-2 border-b border-gray-50">
+                                <div>
+                                    <h4 class="font-bold text-[#2F5D50] text-sm leading-tight">${item.service_name || "Consulta General"}</h4>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-md"><i class="fa-regular fa-calendar mr-1"></i>${formattedDate}</span>
+                                        <span class="text-[10px] text-gray-500"><i class="fa-regular fa-clock mr-1"></i>${formattedTime}</span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">${item.employed_name || "Fisioterapeuta"}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                ${
+                                    item.diagnostic
+                                        ? `
+                                    <div class="bg-amber-50 rounded-lg p-2.5 border border-amber-100/50">
+                                        <p class="text-[10px] font-bold text-amber-700 uppercase mb-1 tracking-wide flex items-center gap-1"><i class="fa-solid fa-stethoscope"></i> Diagnóstico</p>
+                                        <p class="text-xs text-gray-700 leading-relaxed">${item.diagnostic}</p>
+                                    </div>
+                                `
+                                        : ""
+                                }
+
+                                ${
+                                    item.therapeuticnote
+                                        ? `
+                                    <div class="bg-emerald-50 rounded-lg p-2.5 border border-emerald-100/50">
+                                        <p class="text-[10px] font-bold text-emerald-700 uppercase mb-1 tracking-wide flex items-center gap-1"><i class="fa-solid fa-notes-medical"></i> Nota Terapéutica</p>
+                                        <p class="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap">${item.therapeuticnote}</p>
+                                    </div>
+                                `
+                                        : ""
+                                }
+                                
+                                ${
+                                    !item.diagnostic && !item.therapeuticnote
+                                        ? `
+                                    <p class="text-xs text-gray-400 italic text-center">Sin notas adicionales.</p>
+                                `
+                                        : ""
+                                }
+                            </div>
+                        </div>
+                        `;
+                        })
+                        .join("");
                 } catch (e) {
-                    historyList.innerHTML = `<p class="text-red-500 text-center text-sm">Error cargar historial</p>`;
+                    console.error("Load History Error:", e);
+                    historyList.innerHTML = `<div class="text-center py-4 px-2"><p class="text-red-500 text-xs font-medium bg-red-50 p-2 rounded-lg border border-red-100">Error al cargar el historial. Intente nuevamente.</p></div>`;
                 }
             }
 
