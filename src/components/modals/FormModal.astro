@@ -50,9 +50,9 @@ const positionClasses = {
             glass-panel pointer-events-auto
             ${position === "right" ? "h-full rounded-l-2xl border-r-0 my-0" : "rounded-2xl shadow-2xl my-4 sm:my-8"}
             flex flex-col overflow-hidden transition-all duration-300 transform scale-95 opacity-0
-            modal-content-wrapper
+      modal-content-wrapper
         `}
-      style="max-height: 90vh;"
+      style="max-height: 95dvh;"
     >
       <!-- Header -->
       <div
@@ -101,11 +101,53 @@ const positionClasses = {
   </div>
 </div>
 
+<script define:vars={{ id }}>
+  // Scroll Lock Logic
+  const modal = document.getElementById(id);
+  if (modal) {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (
+          mutation.type === "attributes" &&
+          mutation.attributeName === "class"
+        ) {
+          if (!modal.classList.contains("hidden")) {
+            document.body.style.overflow = "hidden";
+          } else {
+            // Only remove if no other modals are open (simple check)
+            const openModals = document.querySelectorAll(
+              '[role="dialog"]:not(.hidden)',
+            );
+            if (openModals.length === 0) {
+              document.body.style.overflow = "";
+            }
+          }
+        }
+      });
+    });
+    observer.observe(modal, { attributes: true });
+  }
+</script>
+
 <style>
   .glass-panel {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(
+      255,
+      255,
+      255,
+      0.95
+    ); /* More opaque for better readability */
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+  /* Mobile optimize */
+  @media (max-width: 640px) {
+    .glass-panel {
+      max-height: 95dvh !important; /* Dynamic Viewport Height */
+      width: 100% !important;
+      border-radius: 1rem 1rem 0 0; /* Sheet-like appearance if bottom aligned, or just rounded */
+      margin: 0 !important;
+    }
   }
 </style>

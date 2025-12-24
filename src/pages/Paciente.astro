@@ -523,6 +523,7 @@ try {
 </div>
 
 <script define:vars={{ pacientes }}>
+	const backendUrl = "https://api.jesstherapy.cloud";
 	// --- Estado Global ---
 	let allData = pacientes || [];
 	let filteredData = [...allData];
@@ -595,9 +596,15 @@ try {
 							? p.photo
 							: "/" + p.photo
 						: `/uploads/${p.photo}`;
-				photoHtml = `<img src="${backendUrl}${photoSrc}" alt="${p.firstname}" class="w-full h-full object-cover" />`;
+				photoHtml = `
+                    <div class="w-10 h-10 rounded-full overflow-hidden shrink-0 bg-gray-100 border border-gray-200 shadow-sm">
+                        <img src="${backendUrl}${photoSrc}" alt="${p.firstname}" class="w-full h-full object-cover" />
+                    </div>`;
 			} else {
-				photoHtml = p.firstname.charAt(0);
+				photoHtml = `
+                    <div class="w-10 h-10 rounded-full overflow-hidden shrink-0 bg-[#2F5D50]/10 flex items-center justify-center text-[#2F5D50] font-bold border border-[#2F5D50]/20 shadow-sm">
+                        ${p.firstname.charAt(0).toUpperCase()}
+                    </div>`;
 			}
 
 			// Dropdown ID

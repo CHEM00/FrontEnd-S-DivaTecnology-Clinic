@@ -1,9 +1,10 @@
 ---
 interface Props {
 	title: string;
+	showSpeedDial?: boolean;
 }
 
-const { title } = Astro.props;
+const { title, showSpeedDial = true } = Astro.props;
 
 import "../styles/global.css";
 
@@ -49,7 +50,6 @@ import SpeedDial from "../components/SpeedDial.astro";
 		</div>
 
 		<slot />
-
-		<SpeedDial />
+		{showSpeedDial && <SpeedDial />}
 	</body>
 </html>
