@@ -28,36 +28,17 @@ export const ALL = async ({ request, url }) => {
     const { Agent } = await import("node:https");
     const agent = new Agent({ rejectUnauthorized: false });
 
-    // Read body
-    let body = null;
-    if (request.method !== "GET" && request.method !== "HEAD") {
-        const contentType = request.headers.get("content-type") || "";
-        try {
-            if (contentType.includes("application/json")) {
-                body = await request.text();
-                // Ensure we send valid JSON
-                if (!body) body = "{}";
-            } else {
-                body = await request.arrayBuffer();
-            }
-        } catch (e) {
-            console.error("[Proxy] Error reading body:", e);
-        }
-    }
+    // Stream body directly
+    const body = request.body;
 
-    // Debug
+    // Debug content type only
     console.log(`[API Route] ${request.method} ${targetUrl}`);
-    if (body && typeof body === 'string') console.log(`[API Route] Body: ${body.substring(0, 100)}...`);
-
-    // Ensure Content-Type
-    if (body && typeof body === 'string' && !headers.has("content-type")) {
-        headers.set("content-type", "application/json");
-    }
 
     const proxyRequest = new Request(targetUrl, {
         method: request.method,
         headers: headers,
         body: body,
+        duplex: 'half',
         // @ts-ignore
         agent: agent
     });
