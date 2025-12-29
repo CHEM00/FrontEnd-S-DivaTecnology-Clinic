@@ -38,10 +38,10 @@ export const getImageUrl = (path: string) => {
 
     // Handle paths that might already contain 'uploads/'
     if (normalizedPath.startsWith("uploads/")) {
-        return `${IMAGE_BASE_URL}/${normalizedPath}`;
+        return `${PUBLIC_IMAGE_BASE_URL}/${normalizedPath}`;
     }
 
-    return `${IMAGE_BASE_URL}/uploads/${normalizedPath}`;
+    return `${PUBLIC_IMAGE_BASE_URL}/uploads/${normalizedPath}`;
 };
 
 // Export backend URL constant for cases where raw access is strictly needed server-side
