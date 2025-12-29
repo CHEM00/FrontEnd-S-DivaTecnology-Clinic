@@ -3449,7 +3449,7 @@ try {
 
                     const data: any = Object.fromEntries(formData.entries());
                     data.is_active = true;
-                    if (!data.photo) data.photo = "uploads/images/default.png";
+                    // if (!data.photo) data.photo = "uploads/images/default.png"; // Removed per user request
 
                     // ... fetch logic ...
                     try {

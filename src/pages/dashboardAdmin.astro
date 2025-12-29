@@ -1316,7 +1316,7 @@ try {
 
 					const data = Object.fromEntries(formData.entries());
 					data.is_active = true;
-					if (!data.photo) data.photo = "uploads/images/default.png";
+					// if (!data.photo) data.photo = "uploads/images/default.png"; // Removed per user request
 
 					try {
 						const res = await fetch("/api/v1/Pacientes", {
