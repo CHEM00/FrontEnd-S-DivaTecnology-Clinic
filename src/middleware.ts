@@ -48,14 +48,26 @@ export const onRequest = defineMiddleware(async (context, next) => {
         const adminRoutes = ["/dashboardAdmin", "/configuracion", "/Empleado", "/Agenda", "/HistorialCita", "/Pago", "/Paciente", "/ProductoServicio", "/Roles", "/RolesPermiso"];
 
         // Rutas de Empleado (Rol 3)
-        const empleadoRoutes = ["/dashboardEmpleado", "/Paciente", "/Agenda", "/ProductoServicio"];
+        const empleadoRoutes = [
+            "/dashboardEmpleado",
+            "/Paciente",
+            "/Agenda",
+            "/ProductoServicio",
+            "/HistorialCita",
+            "/Pago",
+            "/Roles",
+            "/Empleado",
+            "/configuracion",
+            "/RolesPermiso"
+        ];
 
         // 1. Validar acceso a rutas exclusivas de Admin
         if (adminRoutes.some(route => path.startsWith(route)) && !empleadoRoutes.some(route => path.startsWith(route))) {
-            // Permitir acceso si es Admin (Rol 1 o 2 - Ajustar según tu lógica final)
-            // El log indica que tu usuario Admin tiene rol 1.
+            // Permitir acceso si es Admin (Rol 1 o 2)
             if (userRole !== 1 && userRole !== 2) {
                 console.log(`Acceso denegado a ruta Admin ${path}. Rol usuario: ${userRole}`);
+                // Si es empleado intentando entrar a ruta admin, mandar a su dashboard
+                if (userRole === 3) return redirect("/dashboardEmpleado");
                 return redirect("/");
             }
         }
