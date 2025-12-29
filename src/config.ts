@@ -1,7 +1,7 @@
 export const IS_SERVER = import.meta.env.SSR;
 export const IS_DEV = import.meta.env.DEV;
 
-const PRODUCTION_API_URL = "https://api.jesstherapy.cloud";
+const PRODUCTION_API_URL = import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
 
 /**
  * Returns the base URL for API requests.
@@ -25,6 +25,8 @@ export const getApiUrl = () => {
  * - Always uses absolute production URL because images don't suffer from CORS
  *   and should be loaded directly from the source.
  */
+export const PUBLIC_IMAGE_BASE_URL = import.meta.env.PUBLIC_IMAGES_URL || "https://api.jesstherapy.cloud";
+
 export const getImageUrl = (path: string) => {
     if (!path) return "";
 
@@ -36,10 +38,10 @@ export const getImageUrl = (path: string) => {
 
     // Handle paths that might already contain 'uploads/'
     if (normalizedPath.startsWith("uploads/")) {
-        return `${PRODUCTION_API_URL}/${normalizedPath}`;
+        return `${IMAGE_BASE_URL}/${normalizedPath}`;
     }
 
-    return `${PRODUCTION_API_URL}/uploads/${normalizedPath}`;
+    return `${IMAGE_BASE_URL}/uploads/${normalizedPath}`;
 };
 
 // Export backend URL constant for cases where raw access is strictly needed server-side

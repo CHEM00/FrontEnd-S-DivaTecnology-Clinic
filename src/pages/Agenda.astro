@@ -17,7 +17,9 @@ interface Paquete {
     value: string;
 }
 
-const backendUrl = import.meta.env.BACKEND_URL;
+import { SERVER_BACKEND_URL } from "../config";
+
+const backendUrl = SERVER_BACKEND_URL;
 const token = Astro.cookies.get("auth_token")?.value;
 const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -475,6 +477,7 @@ try {
     </script>
     <script>
         import { io } from "socket.io-client";
+        import { SERVER_BACKEND_URL } from "../config";
 
         declare global {
             interface Window {
@@ -518,7 +521,7 @@ try {
             // En producción, si el backend está en otro dominio, usar la URL completa.
             // Si está proxied por Nginx en el mismo dominio, usar "/" o path relativo.
             // Asumimos que api.jesstherapy.cloud maneja los websockets.
-            const socketUrl = import.meta.env.PUBLIC_BACKEND_URL;
+            const socketUrl = SERVER_BACKEND_URL;
             socket = io(socketUrl);
 
             socket.on("connect", () => {

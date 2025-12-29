@@ -3,7 +3,8 @@ export const ALL = async ({ request, url }) => {
     // The path parameter captures everything after /api/
     // But we can just use the request URL to reconstruct the target
 
-    const backendUrl = import.meta.env.BACKEND_URL;
+    const { SERVER_BACKEND_URL } = await import("../../config");
+    const backendUrl = SERVER_BACKEND_URL;
     if (!backendUrl) {
         return new Response("BACKEND_URL not defined in environment variables", { status: 500 });
     }

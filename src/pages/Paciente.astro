@@ -21,7 +21,8 @@ interface Paciente {
 let pacientes: Paciente[] = [];
 let error = "";
 
-const backendUrl = "https://api.jesstherapy.cloud";
+import { SERVER_BACKEND_URL, PUBLIC_IMAGE_BASE_URL } from "../config";
+const backendUrl = SERVER_BACKEND_URL;
 const token = Astro.cookies.get("auth_token")?.value;
 const headers = {
 	"Content-Type": "application/json",
@@ -522,8 +523,9 @@ try {
 	</div>
 </div>
 
-<script define:vars={{ pacientes }}>
-	const backendUrl = "https://api.jesstherapy.cloud";
+<script define:vars={{ pacientes, SERVER_BACKEND_URL, PUBLIC_IMAGE_BASE_URL }}>
+	const backendUrl = SERVER_BACKEND_URL;
+	const imageBaseUrl = PUBLIC_IMAGE_BASE_URL;
 	// --- Estado Global ---
 	let allData = pacientes || [];
 	let filteredData = [...allData];
@@ -544,6 +546,16 @@ try {
 	const pageNumbers = document.getElementById("pageNumbers");
 
 	// --- Helpers ---
+	const getImageUrl = (path) => {
+		if (!path) return "";
+		const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+		const normalizedPath = cleanPath.replace(/\\/g, "/");
+		if (normalizedPath.startsWith("uploads/")) {
+			return `${imageBaseUrl}/${normalizedPath}`;
+		}
+		return `${imageBaseUrl}/uploads/${normalizedPath}`;
+	};
+
 	const formatDate = (dateString) => {
 		if (!dateString) return "";
 		// Ajustar la fecha para evitar problemas de zona horaria al mostrar solo la fecha
@@ -589,11 +601,6 @@ try {
 			// Photo Logic
 			let photoHtml;
 			if (p.photo && p.photo !== "default.png") {
-				let photoSrc = p.photo.startsWith("http")
-					? p.photo
-					: p.photo.startsWith("uploads") ||
-						  p.photo.startsWith("/uploads")
-						? p.photo.startsWith("/")
 				const finalUrl = getImageUrl(p.photo);
 
 				photoHtml = `
@@ -854,18 +861,7 @@ try {
 			if (p.photo && p.photo !== "default.png") {
 				const preview = document.getElementById("photoPreview");
 				const placeholder = document.getElementById("photoPlaceholder");
-				const photoSrc = p.photo.startsWith("http")
-					? p.photo
-					: p.photo.startsWith("uploads") ||
-						  p.photo.startsWith("/uploads")
-						? p.photo.startsWith("/")
-							? p.photo
-							: "/" + p.photo
-						: `/uploads/${p.photo}`;
-
-				const finalUrl = photoSrc.startsWith("http")
-					? photoSrc
-					: `${backendUrl}${photoSrc}`;
+				const finalUrl = getImageUrl(p.photo);
 
 				preview.src = finalUrl;
 				preview.classList.remove("hidden");

@@ -7,8 +7,8 @@ import FormModal from "../components/modals/FormModal.astro";
 let table = [];
 let error = "";
 
-const backendUrl =
-	import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
+import { SERVER_BACKEND_URL } from "../config";
+const backendUrl = SERVER_BACKEND_URL;
 const token = Astro.cookies.get("auth_token")?.value;
 const headers = {
 	"Content-Type": "application/json",
