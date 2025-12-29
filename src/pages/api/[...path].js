@@ -31,6 +31,10 @@ export const ALL = async ({ request, url }) => {
     // Buffer body to ensure full reception before proxying (Fixes 500 on Uploads)
     const bodyBuffer = request.body ? await request.arrayBuffer() : null;
 
+    if (bodyBuffer) {
+        headers.set("Content-Length", bodyBuffer.byteLength.toString());
+    }
+
     // Debug content type only
     console.log(`[API Route] ${request.method} ${targetUrl}`);
 
@@ -38,8 +42,6 @@ export const ALL = async ({ request, url }) => {
         method: request.method,
         headers: headers,
         body: bodyBuffer,
-        // @ts-ignore
-        agent: agent
     });
 
     try {
