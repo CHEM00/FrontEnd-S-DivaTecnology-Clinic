@@ -589,16 +589,16 @@ try {
 			// Photo Logic
 			let photoHtml;
 			if (p.photo && p.photo !== "default.png") {
-				const photoSrc =
-					p.photo.startsWith("uploads") ||
-					p.photo.startsWith("/uploads")
+				let photoSrc = p.photo.startsWith("http")
+					? p.photo
+					: p.photo.startsWith("uploads") ||
+						  p.photo.startsWith("/uploads")
 						? p.photo.startsWith("/")
-							? p.photo
-							: "/" + p.photo
-						: `/uploads/${p.photo}`;
+				const finalUrl = getImageUrl(p.photo);
+
 				photoHtml = `
                     <div class="w-10 h-10 rounded-full overflow-hidden shrink-0 bg-gray-100 border border-gray-200 shadow-sm">
-                        <img src="${backendUrl}${photoSrc}" alt="${p.firstname}" class="w-full h-full object-cover" />
+                        <img src="${finalUrl}" alt="${p.firstname}" class="w-full h-full object-cover" />
                     </div>`;
 			} else {
 				photoHtml = `
@@ -854,13 +854,20 @@ try {
 			if (p.photo && p.photo !== "default.png") {
 				const preview = document.getElementById("photoPreview");
 				const placeholder = document.getElementById("photoPlaceholder");
-				preview.src =
-					p.photo.startsWith("uploads") ||
-					p.photo.startsWith("/uploads")
+				const photoSrc = p.photo.startsWith("http")
+					? p.photo
+					: p.photo.startsWith("uploads") ||
+						  p.photo.startsWith("/uploads")
 						? p.photo.startsWith("/")
 							? p.photo
 							: "/" + p.photo
 						: `/uploads/${p.photo}`;
+
+				const finalUrl = photoSrc.startsWith("http")
+					? photoSrc
+					: `${backendUrl}${photoSrc}`;
+
+				preview.src = finalUrl;
 				preview.classList.remove("hidden");
 				placeholder.classList.add("hidden");
 			} else {
@@ -927,7 +934,7 @@ try {
 		if (select.children.length > 1) return; // Ya cargados
 
 		try {
-			const response = await fetch("/api/v1/Agenda/fisio");
+			const response = await fetch(`/api/v1/Agenda/fisio`);
 			if (response.ok) {
 				const data = await response.json();
 				const empleados = Array.isArray(data) ? data : data.body || [];
@@ -954,78 +961,57 @@ try {
 			const id = formData.get("id");
 			const isEdit = !!id;
 
-			// Extract photo file specifically
-			const photoFile = formData.get("photo");
+			// Prepare FormData for backend
+			const payload = new FormData();
+			payload.append("firstname", formData.get("firstname"));
+			payload.append("lastname", formData.get("lastname"));
+			payload.append("motherlastname", formData.get("motherlastname"));
+			payload.append("birthdate", formData.get("birthdate"));
+			payload.append("phone", formData.get("phone"));
+			payload.append("email", formData.get("email"));
+			payload.append("idemployed", formData.get("idEmpleado") || "");
 
-			const data = {
-				firstname: formData.get("firstname"),
-				lastname: formData.get("lastname"),
-				motherlastname: formData.get("motherlastname"),
-				birthday: formData.get("birthdate"),
-				phone: formData.get("phone"),
-				email: formData.get("email"),
-				// photo: "default.png", // REMOVE HARDCODED DEFAULT
-				// Don't send 'photo' field here to avoid overwriting with text "default.png" if editing
-				// However, for CREATE, we might need a default? Usually backend handles default.
-				idemployed: formData.get("idEmpleado") || null,
-				sanction: formData.get("sanction") === "on",
-				havepackage: formData.get("havepackage") === "on",
-				is_active: true,
-				photo: "uploads/images/default.png",
-			};
+			// Handle booleans for FormData (send as string "true"/"false" or just presence?
+			// Previous JSON sent booleans. Let's send string "true" if checked, like standard form behavior but explicit)
+			payload.append(
+				"sanction",
+				formData.get("sanction") === "on" ? "true" : "false",
+			);
+			payload.append(
+				"havepackage",
+				formData.get("havepackage") === "on" ? "true" : "false",
+			);
+			payload.append("is_active", "true");
+
+			// Handle photo
+			const photoFile = formData.get("photo");
+			if (photoFile && photoFile instanceof File && photoFile.size > 0) {
+				payload.append("photo", photoFile);
+			}
 
 			const url = isEdit
 				? `/api/v1/Pacientes/${id}`
-				: "/api/v1/Pacientes";
+				: `/api/v1/Pacientes`;
 
 			const method = isEdit ? "PATCH" : "POST";
 
 			try {
 				const response = await fetch(url, {
 					method: method,
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(data),
+					// headers: { "Content-Type": "multipart/form-data" }, // Browser sets this automatically with boundary
+					body: payload,
 				});
 
 				if (response.ok) {
-					// Check if we have a photo to upload
-					let targetId = id;
-					if (!isEdit) {
-						// For create, get ID from response
-						const result = await response.json();
-						targetId = result.id || result.insertId;
-					}
-
-					if (
-						photoFile &&
-						photoFile instanceof File &&
-						photoFile.size > 0 &&
-						targetId
-					) {
-						try {
-							const photoFormData = new FormData();
-							photoFormData.append("photo", photoFile);
-
-							await fetch(`/api/v1/Pacientes/${targetId}`, {
-								method: "PATCH",
-								body: photoFormData,
-							});
-						} catch (photoError) {
-							console.error(
-								"Error subiendo la foto:",
-								photoError,
-							);
-							alert(
-								"Paciente guardado, pero error al subir la foto.",
-							);
-						}
-					}
-
 					alert(isEdit ? "Paciente actualizado" : "Paciente creado");
 					window.location.reload();
 				} else {
-					console.log(data);
-					alert("Error al guardar");
+					const err = await response.json();
+					console.log(err);
+					alert(
+						"Error al guardar: " +
+							(err.message || JSON.stringify(err)),
+					);
 				}
 			} catch (error) {
 				console.error("Error:", error);

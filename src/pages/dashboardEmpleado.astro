@@ -27,10 +27,10 @@ if (token) {
 const userName = currentUser
     ? `${currentUser.firstname} ${currentUser.lastname}`
     : "Empleado";
+import { SERVER_BACKEND_URL } from "../config";
 const userId = currentUser?.id;
 
-const backendUrl =
-    import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
+const backendUrl = SERVER_BACKEND_URL;
 // Re-use headers logic if possible, or create new headers
 const headers = {
     "Content-Type": "application/json",
@@ -475,16 +475,115 @@ try {
                             id="diagnosisContainer"
                             class="bg-yellow-50 p-4 rounded-2xl border border-yellow-100 hidden"
                         >
-                            <label
-                                class="block text-xs font-bold text-yellow-700 uppercase mb-2"
-                                >Diagnóstico</label
-                            >
-                            <input
-                                type="text"
-                                id="consultationDiagnosis"
-                                class="w-full bg-white border border-yellow-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500/20 outline-none"
-                                placeholder="Diagnóstico del paciente..."
-                            />
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="md:col-span-2">
+                                    <label
+                                        class="block text-xs font-bold text-yellow-700 uppercase mb-2"
+                                        >Diagnóstico Detallado</label
+                                    >
+                                    <textarea
+                                        id="evalDiagnostic"
+                                        rows="2"
+                                        class="w-full bg-white border border-yellow-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500/20 outline-none"
+                                        placeholder="Diagnóstico detallado..."
+                                    ></textarea>
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="block text-xs font-bold text-yellow-700 uppercase mb-2"
+                                        >Mecanismo de Lesión</label
+                                    >
+                                    <input
+                                        type="text"
+                                        id="evalInjuryMechanism"
+                                        class="w-full bg-white border border-yellow-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500/20 outline-none"
+                                        placeholder="¿Cómo ocurrió?"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="block text-xs font-bold text-yellow-700 uppercase mb-2"
+                                        >Inicio del Dolor</label
+                                    >
+                                    <input
+                                        type="text"
+                                        id="evalPainOnset"
+                                        class="w-full bg-white border border-yellow-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500/20 outline-none"
+                                        placeholder="¿Cuándo empezó?"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="block text-xs font-bold text-yellow-700 uppercase mb-2"
+                                        >Intensidad del Dolor (1-10)</label
+                                    >
+                                    <input
+                                        type="number"
+                                        id="evalPainIntensity"
+                                        min="1"
+                                        max="10"
+                                        class="w-full bg-white border border-yellow-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500/20 outline-none"
+                                        placeholder="1-10"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="block text-xs font-bold text-yellow-700 uppercase mb-2"
+                                        >Factores Agravantes</label
+                                    >
+                                    <input
+                                        type="text"
+                                        id="evalAggravating"
+                                        class="w-full bg-white border border-yellow-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500/20 outline-none"
+                                        placeholder="¿Qué lo empeora?"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="block text-xs font-bold text-yellow-700 uppercase mb-2"
+                                        >Factores de Alivio</label
+                                    >
+                                    <input
+                                        type="text"
+                                        id="evalRelief"
+                                        class="w-full bg-white border border-yellow-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500/20 outline-none"
+                                        placeholder="¿Qué lo mejora?"
+                                    />
+                                </div>
+
+                                <div class="flex items-center gap-2 pt-6">
+                                    <input
+                                        type="checkbox"
+                                        id="evalPreviousTherapy"
+                                        class="w-4 h-4 text-yellow-600 rounded focus:ring-yellow-500 border-gray-300"
+                                    />
+                                    <label
+                                        for="evalPreviousTherapy"
+                                        class="text-sm font-bold text-yellow-700 select-none cursor-pointer"
+                                        >¿Terapia Previa?</label
+                                    >
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <label
+                                        class="block text-xs font-bold text-yellow-700 uppercase mb-2"
+                                        >Razón de Terapia Previa</label
+                                    >
+                                    <input
+                                        type="text"
+                                        id="evalPreviousReason"
+                                        class="w-full bg-white border border-yellow-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500/20 outline-none"
+                                        placeholder="Si hubo terapia, ¿por qué? (Opcional)"
+                                    />
+                                </div>
+                            </div>
+                            <!-- Hidden Legacy Input to prevent JS errors if referenced elsewhere (optional, but safe) -->
+                            <input type="hidden" id="consultationDiagnosis" />
                         </div>
                         <div
                             class="bg-green-50 p-4 rounded-2xl border border-green-100"
@@ -768,7 +867,7 @@ try {
             // --- INICIAR EDICIÓN (Full Modal) ---
             function iniciarEdicion(app: Appointment) {
                 isEditMode = true;
-                editingAppointmentId = app.id;
+                editingAppointmentId = String(app.idappointment || app.id);
 
                 // 1. Update Modal Title & Button
                 const modalTitle = document.querySelector(
@@ -963,7 +1062,10 @@ try {
                 // Store Edit ID on form for robustness
                 const form = document.getElementById("formAgregarCita");
                 if (form) {
-                    form.setAttribute("data-edit-id", String(app.id));
+                    form.setAttribute(
+                        "data-edit-id",
+                        String(app.idappointment || app.id),
+                    );
                     form.setAttribute(
                         "data-original-service-id",
                         String(sId || ""),
@@ -1052,7 +1154,7 @@ try {
                         !currentday ||
                         !inithour ||
                         !idpatient ||
-                        !idemployed ||
+                        // !idemployed || // Physio optional
                         !status
                     ) {
                         alert("Por favor complete los campos obligatorios");
@@ -1064,6 +1166,23 @@ try {
                         const editId =
                             formAgregarCita.getAttribute("data-edit-id");
 
+                        // Auto-assign Random Physio if missing
+                        let finalPhysioId = idemployed;
+                        if (!finalPhysioId) {
+                            // Try to find in cached slots
+                            const matchingSlot = latestSlots.find(
+                                (s: any) =>
+                                    s.inithour.substring(0, 5) === inithour,
+                            );
+                            if (matchingSlot && matchingSlot.random_physio_id) {
+                                finalPhysioId = matchingSlot.random_physio_id;
+                            } else {
+                                // Fallback? Or maybe user is using extended hours where no slots are fetched?
+                                // If extended hours, we don't have random physio logic defined by user.
+                                // But if standard flow, we should have it.
+                            }
+                        }
+
                         const payload: any = {
                             currentday,
                             inithour,
@@ -1071,7 +1190,7 @@ try {
                             reason,
                             status,
                             idpatient,
-                            idemployed,
+                            idemployed: finalPhysioId,
                         };
 
                         // Logic: Consume Existing Package Session
@@ -1089,35 +1208,39 @@ try {
                                 );
                                 return;
                             }
+                            // Fix: Fetch patient details to get package ID without consuming
                             try {
-                                const consumeRes = await fetch(
-                                    `/api/v1/Pacientes/${idpatient}/paquete/consumir`,
-                                    {
-                                        method: "POST",
-                                        headers: {
-                                            "Content-Type": "application/json",
-                                        },
-                                    },
+                                const patRes = await fetch(
+                                    `${backendUrl}/api/v1/Pacientes/${idpatient}`,
                                 );
-                                if (consumeRes.ok) {
-                                    const consumeData = await consumeRes.json();
-                                    if (consumeData.packageId) {
-                                        payload.idpatientpackage =
-                                            consumeData.packageId;
+                                if (patRes.ok) {
+                                    const patDataRaw = await patRes.json();
+                                    const patData = Array.isArray(patDataRaw)
+                                        ? patDataRaw[0]
+                                        : patDataRaw;
+
+                                    // Try to find the package ID in common fields
+                                    const pkgId =
+                                        patData.idpackage ||
+                                        patData.package_id ||
+                                        patData.active_package_id ||
+                                        patData.current_package_id;
+
+                                    if (pkgId) {
+                                        payload.idpatientpackage = pkgId;
+                                    } else {
+                                        // If user claimed to have package but no ID found, we just proceed.
+                                        // Backend might handle it, or there is no package to link.
+                                        console.log(
+                                            "Patient has package flag but no ID found in details",
+                                        );
                                     }
-                                } else {
-                                    const errTxt = await consumeRes.text();
-                                    throw new Error(
-                                        errTxt || "Error al consumir sesión",
-                                    );
                                 }
-                            } catch (err) {
-                                console.error(err);
-                                alert(
-                                    "Error al procesar el paquete del paciente: " +
-                                        err,
+                            } catch (e) {
+                                console.error(
+                                    "Error fetching patient details for package linking",
+                                    e,
                                 );
-                                return;
                             }
                         }
 
@@ -1170,28 +1293,24 @@ try {
                             }
                         }
 
-                        let res;
-
                         // Also check global vars as backup or sync
-                        if (editId) {
-                            // EDIT (PATCH)
-                            res = await fetch(`/api/v1/Citas/${editId}`, {
-                                method: "PATCH",
+                        const res = await fetch(
+                            `${backendUrl}/api/v1/Citas${editId ? "/" + editId : ""}`,
+                            {
+                                method: editId ? "PATCH" : "POST",
                                 headers: {
                                     "Content-Type": "application/json",
                                 },
                                 body: JSON.stringify(payload),
-                            });
-                        } else {
-                            // CREATE (POST)
-                            res = await fetch("/api/v1/Citas", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify(payload),
-                            });
-                        }
+                            },
+                        );
 
                         if (res.ok) {
+                            alert(
+                                editId
+                                    ? "Cita actualizada correctamente."
+                                    : "Cita creada correctamente.",
+                            );
                             // Update Patient Status (havepackage: true) if new package assigned
                             if (!editId && idPackage) {
                                 try {
@@ -1220,16 +1339,41 @@ try {
                             const result = await res.json();
 
                             // Extract ID exactly like Agenda.astro
-                            let citaId = null;
-                            if (result && result.id) {
-                                citaId = result.id;
-                            } else if (result && result.insertId) {
-                                citaId = result.insertId;
-                            } else if (
-                                result &&
-                                result.data &&
-                                result.data.id
-                            ) {
+                            let citaId = editId ? editId : null;
+
+                            if (!citaId && result) {
+                                if (result.id) {
+                                    citaId = result.id;
+                                } else if (result.insertId) {
+                                    citaId = result.insertId;
+                                }
+                            }
+
+                            // Update Service (Separate Endpoint)
+                            if (citaId && idservice) {
+                                try {
+                                    await fetch(
+                                        `${backendUrl}/api/v1/Agenda/${citaId}/services`,
+                                        {
+                                            method: editId ? "PATCH" : "POST",
+                                            headers: {
+                                                "Content-Type":
+                                                    "application/json",
+                                            },
+                                            body: JSON.stringify({
+                                                serviceId: idservice,
+                                            }),
+                                        },
+                                    );
+                                } catch (svcErr) {
+                                    console.error(
+                                        "Error updating service:",
+                                        svcErr,
+                                    );
+                                }
+                            }
+
+                            if (result && result.data && result.data.id) {
                                 citaId = result.data.id;
                             } else if (
                                 Array.isArray(result) &&
@@ -1238,84 +1382,6 @@ try {
                             ) {
                                 citaId = result[0].id;
                             }
-
-                            if (idservice && citaId) {
-                                const originalServiceId =
-                                    formAgregarCita.getAttribute(
-                                        "data-original-service-id",
-                                    );
-                                const isNew = !editId;
-                                const isServiceChanged =
-                                    editId &&
-                                    originalServiceId &&
-                                    String(originalServiceId) !==
-                                        String(idservice);
-                                // Note: If originalServiceId was null/empty but now we have idservice, that counts as change.
-                                const isServiceAdded =
-                                    editId && !originalServiceId && idservice;
-
-                                if (
-                                    isNew ||
-                                    isServiceChanged ||
-                                    isServiceAdded
-                                ) {
-                                    const serviceSelect =
-                                        document.getElementById(
-                                            "agregarIdService",
-                                        ) as HTMLSelectElement;
-                                    const selectedOption =
-                                        serviceSelect.options[
-                                            serviceSelect.selectedIndex
-                                        ];
-                                    let servicePrice =
-                                        selectedOption.getAttribute(
-                                            "data-price",
-                                        ) || "0.00";
-
-                                    // Check Package Logic
-                                    const usePackageCheckbox =
-                                        document.getElementById(
-                                            "usePackageCheckbox",
-                                        ) as HTMLInputElement;
-                                    if (
-                                        usePackageCheckbox &&
-                                        usePackageCheckbox.checked
-                                    ) {
-                                        servicePrice = "0.00";
-                                        console.log(
-                                            "Applying Package: Price set to $0.00",
-                                        );
-                                        // TODO: Send flag to backend if API supports it (e.g., is_package=true)
-                                    }
-
-                                    const serviceData = {
-                                        serviceId: idservice,
-                                        amount: "1",
-                                        unit_price: servicePrice,
-                                    };
-
-                                    await fetch(
-                                        `/api/v1/Agenda/${citaId}/services`,
-                                        {
-                                            method: "POST",
-                                            headers: {
-                                                "Content-Type":
-                                                    "application/json",
-                                            },
-                                            body: JSON.stringify(serviceData),
-                                        },
-                                    );
-                                }
-                            }
-
-                            alert(
-                                isEditMode
-                                    ? "Cita actualizada correctamente"
-                                    : "Cita creada correctamente",
-                            );
-                            hideFormModal("modalAgregarCita");
-                            (formAgregarCita as HTMLFormElement).reset(); // This triggers the reset listener to clear EditMode
-                            if (dateInput) fetchAppointments(dateInput.value);
 
                             // Close details modal if open
                             const detailsModal =
@@ -1405,7 +1471,7 @@ try {
                         // Using PATCH to maintain consistency with status update if possible, or PUT.
                         // Assuming PATCH /api/v1/Citas/${id} handles these fields.
                         const res = await fetch(
-                            `/api/v1/Citas/${currentAppointment.id}`,
+                            `/api/v1/Citas/${currentAppointment.idappointment || currentAppointment.id}`,
                             {
                                 method: "PATCH",
                                 headers,
@@ -1499,7 +1565,7 @@ try {
             function createAppointmentCard(app: Appointment) {
                 const div = document.createElement("div");
                 div.className =
-                    "bg-white/60 hover:bg-white/90 backdrop-blur-sm p-4 sm:p-5 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0";
+                    "bg-white/60 hover:bg-white/90 backdrop-blur-sm p-4 sm:p-5 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-start gap-4 sm:gap-0";
 
                 const statusConfig: any = {
                     confirmed: {
@@ -1535,19 +1601,18 @@ try {
                 };
                 const status =
                     statusConfig[app.status?.toLowerCase()] ||
-                    statusConfig.wait; // Fallback to 'wait' if unknown, or maybe 'pending' was intended as default. User didn't specify default. I'll use wait or keep existing fallback logic if safer.
-                // Actually, let's look at the fallback in existing code. It was `statusConfig.pending`.
-                // But 'pending' is NOT in the enum.
-                // Let's change fallback to 'wait' (naranja) which seems safer or keep a generic gray.
-                // But for now, just fixing the key.
+                    statusConfig.wait;
 
                 // Check for missing notes (Visual Indicator)
-                // We check flat fields 'diagnostic'/'therapeuticnote' OR nested 'notes' object if available
                 const notes = app.notes || {};
                 const diag = app.diagnostic || notes.diagnostic || "";
                 const note = app.therapeuticnote || notes.therapeuticnote || "";
                 const isConcluded = app.status?.toLowerCase() === "concluded";
-                const missingNotes = isConcluded && (!diag || !note);
+
+                const missingNotes =
+                    typeof app.has_therapeutic_note === "boolean"
+                        ? isConcluded && !app.has_therapeutic_note
+                        : isConcluded && (!diag || !note);
 
                 const getPhotoUrl = (photo: any) => {
                     const defaultImg = `${backendUrl}/uploads/images/default.png`;
@@ -1558,7 +1623,6 @@ try {
                         photo.startsWith("uploads") ||
                         photo.startsWith("/uploads")
                     ) {
-                        // Ensure no double slash if backendUrl ends with / (though usually it doesn't)
                         const cleanPhoto = photo.startsWith("/")
                             ? photo.substring(1)
                             : photo;
@@ -1571,48 +1635,60 @@ try {
 
                 div.innerHTML = `
                    <div class="absolute left-0 top-0 bottom-0 w-1.5 ${status.bgClass}"></div>
-                    <div class="flex items-center gap-4 pl-3">
-                        <div class="relative w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden cursor-pointer"
+                    <div class="flex items-start gap-4 pl-3 flex-1 min-w-0 pr-4">
+                        <div class="relative w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden cursor-pointer flex-shrink-0"
                              onclick="event.stopPropagation(); window.openPhoto('${app.photo || "default.png"}', '${app.patient_name}')">
                              <img src="${photoUrl}" alt="${app.patient_name}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='${backendUrl}/uploads/images/default.png'">
                         </div>
-                        <div>
-                             <h4 class="font-bold text-gray-800 text-base group-hover:text-[#2F5D50] transition-colors">${app.patient_name || "Sin Nombre"} <span class="text-xs text-gray-500 font-normal">(${app.birthday ? calcularEdad(app.birthday) : "?"} años)</span></h4>
+                        <div class="flex-1 min-w-0">
+                             <h4 class="font-bold text-gray-800 text-base group-hover:text-[#2F5D50] transition-colors truncate">${app.patient_name || "Sin Nombre"} <span class="text-xs text-gray-500 font-normal">(${app.birthday ? calcularEdad(app.birthday) : "?"} años)</span></h4>
                              <div class="flex flex-col gap-1 text-xs text-gray-500 mt-0.5">
                                  <div class="flex items-center gap-2">
-                                    <i class="fa-solid fa-notes-medical text-[#2F5D50]/60"></i>
-                                    <span>${app.service_name || app.servicio || app.name || "Consulta"}</span>
+                                    <i class="fa-solid fa-notes-medical text-[#2F5D50]/60 min-w-[14px]"></i>
+                                    <span class="truncate">${app.service_name || app.servicio || app.name || "Consulta"}</span>
                                  </div>
                                  <div class="flex items-center gap-2">
-                                    <i class="fa-solid fa-user-doctor text-[#2F5D50]/60"></i>
-                                    <span>${app.employed_name || "Fisio"}</span>
+                                    <i class="fa-solid fa-user-doctor text-[#2F5D50]/60 min-w-[14px]"></i>
+                                    <span class="truncate">${app.employed_name || "Fisio"}</span>
                                  </div>
+                                 ${
+                                     app.last_diagnostic
+                                         ? `<div class="mt-2 p-2 bg-amber-50 border border-amber-100/50 rounded-lg text-xs text-gray-700 whitespace-normal break-words shadow-sm" title="Diagnóstico">
+                                              <p class="font-bold text-amber-600 text-[10px] uppercase tracking-wider mb-0.5 flex items-center gap-1"><i class="fa-solid fa-stethoscope"></i> Diagnóstico</p>
+                                              ${app.last_diagnostic}
+                                            </div>`
+                                         : ""
+                                 }
                              </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 border-gray-100 pt-3 sm:pt-0 mt-3 sm:mt-0 pl-3 sm:pl-0">
+                     <div class="flex items-center justify-end gap-2 pr-1 w-full sm:w-auto border-t sm:border-t-0 border-gray-100 pt-2 sm:pt-0 mt-2 sm:mt-0 flex-shrink-0 flex-wrap">
+                          <!-- Time -->
+                          <span class="text-base font-bold text-gray-700 font-mono tracking-tight mr-1">${app.inithour?.substring(0, 5) || "--:--"}</span>
+                          
+                          <!-- Note Alert -->
                           ${
                               missingNotes
-                                  ? `<div class="flex items-center" title="Falta Nota Terapéutica">
-                                        <i class="fa-solid fa-circle-exclamation text-red-500 text-xl animate-pulse"></i>
-                                      </div>`
+                                  ? `<span class="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-full border border-red-200 shadow-sm flex items-center gap-1 animate-pulse" title="Falta Nota">
+                                        <i class="fa-solid fa-circle-exclamation"></i> Nota
+                                     </span>`
                                   : ""
                           }
-                         <div class="flex flex-col items-end">
-                              <span class="text-sm font-bold text-gray-700 bg-white/50 px-3 py-1 rounded-lg border border-gray-100 shadow-sm">
-                                  ${app.inithour?.substring(0, 5) || "--:--"}
-                              </span>
-                              <span class="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-wider">${status.label}</span>
-                         </div>
-                         <div class="flex items-center gap-2">
-                            <button class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-[#2F5D50]/10 transition-all shadow-sm quick-edit-btn" title="Editar / Reprogramar">
-                                <i class="fa-solid fa-pencil text-xs"></i>
-                            </button>
-                            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-gray-300 group-hover:text-[#2F5D50] group-hover:bg-[#2F5D50]/10 transition-all shadow-sm">
-                                <i class="fa-solid fa-chevron-right text-xs"></i>
-                            </div>
-                         </div>
-                    </div>
+
+                          <!-- Session Pkg -->
+                          ${
+                              app.session_label
+                                  ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 shadow-sm" title="Sesión">
+                                       <i class="fa-solid fa-layer-group text-[9px] text-purple-500"></i> ${app.session_label}
+                                     </span>`
+                                  : ""
+                          }
+                          
+                          <!-- Edit Icon -->
+                          <button class="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-gray-100 transition-all quick-edit-btn ml-1" title="Editar">
+                              <i class="fa-solid fa-pen-to-square text-sm"></i>
+                          </button>
+                     </div>
                 `;
 
                 // Click listener for the CARD (opens details)
@@ -1807,7 +1883,7 @@ try {
                 // Usually only if not signed. I'll stick to !hasPDF for now but ensure the Name check is robust.
                 const hasPDF = patientDetails?.pdf_path;
 
-                await loadDraft(app.id);
+                await loadDraft(app.idappointment || app.id);
 
                 if (isValoracion && !hasPDF) {
                     if (consentSection)
@@ -1911,6 +1987,78 @@ try {
                             if (note) note.value = "";
                         }
 
+                        // Load Evaluation Data
+                        const evaluation =
+                            appData.get_appointment_detail?.evaluation;
+                        if (evaluation) {
+                            const setVal = (id: string, val: any) => {
+                                const el = document.getElementById(id) as
+                                    | HTMLInputElement
+                                    | HTMLTextAreaElement;
+                                if (el) el.value = val;
+                            };
+                            const setCheck = (id: string, val: boolean) => {
+                                const el = document.getElementById(
+                                    id,
+                                ) as HTMLInputElement;
+                                if (el) el.checked = val;
+                            };
+
+                            setVal(
+                                "evalDiagnostic",
+                                evaluation.diagnostic || "",
+                            );
+                            setVal(
+                                "evalInjuryMechanism",
+                                evaluation.injury_mechanism || "",
+                            );
+                            setVal(
+                                "evalPainOnset",
+                                evaluation.pain_onset || "",
+                            );
+                            setVal(
+                                "evalPainIntensity",
+                                evaluation.pain_intensity || 0,
+                            );
+                            setVal(
+                                "evalAggravating",
+                                evaluation.pain_aggravating_factors || "",
+                            );
+                            setVal(
+                                "evalRelief",
+                                evaluation.pain_relief_factors || "",
+                            );
+                            setCheck(
+                                "evalPreviousTherapy",
+                                evaluation.previous_therapy || false,
+                            );
+                            setVal(
+                                "evalPreviousReason",
+                                evaluation.previous_therapy_reason || "",
+                            );
+                        } else {
+                            // Clear inputs
+                            const ids = [
+                                "evalDiagnostic",
+                                "evalInjuryMechanism",
+                                "evalPainOnset",
+                                "evalPainIntensity",
+                                "evalAggravating",
+                                "evalRelief",
+                                "evalPreviousReason",
+                            ];
+                            ids.forEach((id) => {
+                                const el = document.getElementById(
+                                    id,
+                                ) as HTMLInputElement;
+                                if (el) el.value = "";
+                            });
+                            const chk = document.getElementById(
+                                "evalPreviousTherapy",
+                            ) as HTMLInputElement;
+                            if (chk) chk.checked = false;
+                        }
+
                         // Load Additionals (Services)
                         // Corrected path based on user payload
                         const detail = appData.get_appointment_detail;
@@ -1963,13 +2111,13 @@ try {
                 try {
                     if (hasDetails) {
                         const res = await fetch(
-                            `/api/v1/Citas/detalle/${currentAppointment.id}`,
+                            `/api/v1/Citas/detalle/${currentAppointment.idappointment || currentAppointment.id}`,
                             {
                                 method: "PATCH",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({
                                     therapeuticnote: noteElem?.value || "",
-                                    diagnostic: diagElem?.value || "",
+                                    // Diagnóstico removed (handled by Evaluation endpoint)
                                 }),
                             },
                         );
@@ -1982,11 +2130,11 @@ try {
                     } else {
                         const payload = {
                             therapeuticnote: noteElem?.value || "",
-                            diagnostic: diagElem?.value || "",
+                            // Diagnóstico removed (handled by Evaluation endpoint)
                         };
 
                         let res = await fetch(
-                            `/api/v1/Citas/detalle/${currentAppointment.id}`,
+                            `/api/v1/Citas/detalle/${currentAppointment.idappointment || currentAppointment.id}`,
                             {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
@@ -2012,7 +2160,7 @@ try {
 
                                 // Retry as PATCH
                                 res = await fetch(
-                                    `/api/v1/Citas/detalle/${currentAppointment.id}`,
+                                    `/api/v1/Citas/detalle/${currentAppointment.idappointment || currentAppointment.id}`,
                                     {
                                         method: "PATCH",
                                         headers: {
@@ -2047,6 +2195,90 @@ try {
                                     errText,
                             );
                         }
+                    }
+
+                    // --- Auto-Save Evaluation (PATCH) if Valoración ---
+                    try {
+                        const serviceNameNorm = (
+                            currentAppointment.service_name ||
+                            currentAppointment.servicio ||
+                            currentAppointment.name ||
+                            ""
+                        )
+                            .normalize("NFD")
+                            .replace(/[\u0300-\u036f]/g, "")
+                            .toLowerCase();
+
+                        if (serviceNameNorm.includes("valoracion")) {
+                            const evalPayload = {
+                                diagnostic:
+                                    (
+                                        document.getElementById(
+                                            "evalDiagnostic",
+                                        ) as HTMLTextAreaElement
+                                    )?.value || "",
+                                injury_mechanism:
+                                    (
+                                        document.getElementById(
+                                            "evalInjuryMechanism",
+                                        ) as HTMLInputElement
+                                    )?.value || "",
+                                pain_onset:
+                                    (
+                                        document.getElementById(
+                                            "evalPainOnset",
+                                        ) as HTMLInputElement
+                                    )?.value || "",
+                                pain_intensity: parseInt(
+                                    (
+                                        document.getElementById(
+                                            "evalPainIntensity",
+                                        ) as HTMLInputElement
+                                    )?.value || "0",
+                                ),
+                                pain_aggravating_factors:
+                                    (
+                                        document.getElementById(
+                                            "evalAggravating",
+                                        ) as HTMLInputElement
+                                    )?.value || "",
+                                pain_relief_factors:
+                                    (
+                                        document.getElementById(
+                                            "evalRelief",
+                                        ) as HTMLInputElement
+                                    )?.value || "",
+                                previous_therapy:
+                                    (
+                                        document.getElementById(
+                                            "evalPreviousTherapy",
+                                        ) as HTMLInputElement
+                                    )?.checked || false,
+                                previous_therapy_reason:
+                                    (
+                                        document.getElementById(
+                                            "evalPreviousReason",
+                                        ) as HTMLInputElement
+                                    )?.value || "",
+                            };
+
+                            // Use ID Logic consistent with endpoints
+                            const apptId =
+                                currentAppointment.idappointment ||
+                                currentAppointment.id;
+
+                            await fetch(`/api/v1/Agenda/${apptId}/evaluation`, {
+                                method: "PATCH",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify(evalPayload),
+                            });
+                            // console.log("Evaluation Auto-Saved");
+                        }
+                    } catch (evalErr) {
+                        console.error("Error auto-saving evaluation:", evalErr);
+                        // Don't fail the whole save operation if evaluation fails
                     }
 
                     // Visual feedback (optional)
@@ -2327,8 +2559,8 @@ try {
 
                             // History Sync on Update
                             // History Sync on Update
+                            // History Sync on Update
                             try {
-                                // User Requirement: Use detailId (from notes) to update History
                                 const existingDetailId =
                                     currentAppointment.detailId;
 
@@ -2336,12 +2568,10 @@ try {
                                     const noteElem = document.getElementById(
                                         "consultationNote",
                                     ) as HTMLTextAreaElement;
-                                    const diagElem = document.getElementById(
-                                        "consultationDiagnosis",
-                                    ) as HTMLInputElement;
+                                    // Removed diagElem (Evaluation handled separately)
 
                                     const updatePayload = {
-                                        diagnostic_copy: diagElem?.value || "",
+                                        // diagnostic_copy removed
                                         therapeutic_copy: noteElem?.value || "",
                                     };
 
@@ -2415,14 +2645,101 @@ try {
                                 );
                             }
 
-                            // Create Medical History
+                            // 1. EVALUATION POST (If Valoración)
+                            try {
+                                const serviceNameNorm = (
+                                    currentAppointment.service_name ||
+                                    currentAppointment.servicio ||
+                                    ""
+                                )
+                                    .normalize("NFD")
+                                    .replace(/[\u0300-\u036f]/g, "")
+                                    .toLowerCase();
+
+                                if (serviceNameNorm.includes("valoracion")) {
+                                    const evalPayload = {
+                                        diagnostic:
+                                            (
+                                                document.getElementById(
+                                                    "evalDiagnostic",
+                                                ) as HTMLTextAreaElement
+                                            )?.value || "",
+                                        injury_mechanism:
+                                            (
+                                                document.getElementById(
+                                                    "evalInjuryMechanism",
+                                                ) as HTMLInputElement
+                                            )?.value || "",
+                                        pain_onset:
+                                            (
+                                                document.getElementById(
+                                                    "evalPainOnset",
+                                                ) as HTMLInputElement
+                                            )?.value || "",
+                                        pain_intensity: parseInt(
+                                            (
+                                                document.getElementById(
+                                                    "evalPainIntensity",
+                                                ) as HTMLInputElement
+                                            )?.value || "0",
+                                        ),
+                                        pain_aggravating_factors:
+                                            (
+                                                document.getElementById(
+                                                    "evalAggravating",
+                                                ) as HTMLInputElement
+                                            )?.value || "",
+                                        pain_relief_factors:
+                                            (
+                                                document.getElementById(
+                                                    "evalRelief",
+                                                ) as HTMLInputElement
+                                            )?.value || "",
+                                        previous_therapy:
+                                            (
+                                                document.getElementById(
+                                                    "evalPreviousTherapy",
+                                                ) as HTMLInputElement
+                                            )?.checked || false,
+                                        previous_therapy_reason:
+                                            (
+                                                document.getElementById(
+                                                    "evalPreviousReason",
+                                                ) as HTMLInputElement
+                                            )?.value || "",
+                                    };
+
+                                    await fetch(
+                                        `/api/v1/Agenda/${currentAppointment.idappointment || currentAppointment.id}/evaluation`,
+                                        {
+                                            method: "POST",
+                                            headers: {
+                                                "Content-Type":
+                                                    "application/json",
+                                            },
+                                            body: JSON.stringify(evalPayload),
+                                        },
+                                    );
+                                    console.log(
+                                        "Evaluación guardada correctamente (Valoración)",
+                                    );
+                                }
+                            } catch (evalErr) {
+                                console.error(
+                                    "Error saving evaluation:",
+                                    evalErr,
+                                );
+                                alert(
+                                    "Advertencia: Error al guardar la evaluación. La cita continuará finalizándose.",
+                                );
+                            }
+
+                            // 2. Create Medical History
                             try {
                                 const noteElem = document.getElementById(
                                     "consultationNote",
                                 ) as HTMLTextAreaElement;
-                                const diagElem = document.getElementById(
-                                    "consultationDiagnosis",
-                                ) as HTMLInputElement;
+                                // Removed diagElem
 
                                 const historyPayload = {
                                     patientname:
@@ -2430,7 +2747,7 @@ try {
                                         currentAppointment.nombre_paciente ||
                                         "",
                                     employedname: userName || "Fisioterapeuta",
-                                    diagnostic_copy: diagElem?.value || "",
+                                    // diagnostic_copy removed
                                     therapeutic_copy: noteElem?.value || "",
                                     numberappointment:
                                         currentAppointment.numsession || "1",
@@ -2498,7 +2815,7 @@ try {
                             }
 
                             await fetch(
-                                `/api/v1/Citas/${currentAppointment.id}`,
+                                `/api/v1/Citas/${currentAppointment.idappointment || currentAppointment.id}`,
                                 {
                                     method: "PATCH",
                                     headers: {
@@ -2554,7 +2871,7 @@ try {
                                 // Add Service
                                 try {
                                     const serviceResponse = await fetch(
-                                        `/api/v1/Agenda/${currentAppointment.id}/services`,
+                                        `/api/v1/Agenda/${currentAppointment.idappointment || currentAppointment.id}/services`,
                                         {
                                             method: "POST",
                                             headers: {
@@ -2612,7 +2929,7 @@ try {
                                 try {
                                     // User confirmed behavior: "si lo quito entonces lo elimine con el nuevo endpoint"
                                     const delRes = await fetch(
-                                        `/api/v1/Agenda/${currentAppointment.id}/services/${id}`,
+                                        `/api/v1/Agenda/${currentAppointment.idappointment || currentAppointment.id}/services/${id}`,
                                         {
                                             method: "DELETE",
                                             headers: {
@@ -2897,8 +3214,31 @@ try {
                 if (modal) modal.classList.add("hidden");
             };
 
+            let latestSlots: any[] = []; // Cache for available slots
+
             async function updateHours() {
                 if (!agendaDate || !agendaHour) return;
+
+                const checkExtendido = document.getElementById(
+                    "checkHorarioExtendido",
+                ) as HTMLInputElement;
+
+                if (checkExtendido && checkExtendido.checked) {
+                    agendaHour.innerHTML =
+                        '<option value="">Seleccionar hora</option>';
+                    agendaHour.disabled = false;
+
+                    for (let i = 1; i <= 23; i++) {
+                        const h = String(i).padStart(2, "0");
+                        const t1 = `${h}:00`;
+
+                        const opt1 = document.createElement("option");
+                        opt1.value = t1;
+                        opt1.textContent = t1;
+                        agendaHour.appendChild(opt1);
+                    }
+                    return;
+                }
 
                 const date = agendaDate.value;
                 const physioId = agendaPhysio?.value || "";
@@ -2928,6 +3268,7 @@ try {
 
                     if (res.ok) {
                         const horarios = await res.json();
+                        latestSlots = Array.isArray(horarios) ? horarios : []; // Update cache
                         agendaHour.innerHTML =
                             '<option value="">Seleccionar hora</option>';
 
@@ -3031,6 +3372,13 @@ try {
                 agendaPhysio.addEventListener("change", updateHours);
             }
 
+            const checkExtendido = document.getElementById(
+                "checkHorarioExtendido",
+            );
+            if (checkExtendido) {
+                checkExtendido.addEventListener("change", updateHours);
+            }
+
             // Auto update end hour based on service duration
             if (agendaHour && agendaService) {
                 const updateEndHour = () => {
@@ -3092,11 +3440,14 @@ try {
 
                     // ... fetch logic ...
                     try {
-                        const res = await fetch("/api/v1/Pacientes", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(data),
-                        });
+                        const res = await fetch(
+                            `${backendUrl}/api/v1/Pacientes`,
+                            {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(data),
+                            },
+                        );
 
                         if (res.ok) {
                             const result = await res.json();
@@ -3107,7 +3458,7 @@ try {
                                     photoData.append("photo", photoFile);
 
                                     await fetch(
-                                        `/api/v1/Pacientes/${result.id}`,
+                                        `${backendUrl}/api/v1/Pacientes/${result.id}`,
                                         {
                                             method: "PATCH", // Endpoint provided by user
                                             body: photoData,
@@ -3280,12 +3631,11 @@ try {
                 <div>
                     <label
                         class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1"
-                        >Fisioterapeuta *</label
+                        >Fisioterapeuta</label
                     >
                     <select
                         id="agregarIdEmployed"
                         class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                        required
                     >
                         <option value="">Seleccionar fisio...</option>
                         {
@@ -3299,33 +3649,48 @@ try {
                 </div>
 
                 <!-- 4. Hora -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label
-                            class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1"
-                            >Hora Inicio *</label
-                        >
-                        <select
-                            id="agregarInitHour"
-                            class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all cursor-pointer"
-                            required
-                            disabled
-                        >
-                            <option value="">--:--</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label
-                            class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1"
-                            >Hora Fin</label
-                        >
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
                         <input
-                            type="text"
-                            id="agregarEndHour"
-                            class="glass-input w-full rounded-xl px-4 py-2.5 bg-gray-50/50 text-gray-500 cursor-not-allowed outline-none transition-all"
-                            readonly
-                            placeholder="--:--"
+                            type="checkbox"
+                            id="checkHorarioExtendido"
+                            class="w-4 h-4 text-[#2F5D50] rounded focus:ring-[#2F5D50] border-gray-300 transition-all"
                         />
+                        <label
+                            for="checkHorarioExtendido"
+                            class="text-xs font-bold text-[#2F5D50] select-none cursor-pointer"
+                        >
+                            Habilitar horario extendido (01:00 - 23:00)
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1"
+                                >Hora Inicio *</label
+                            >
+                            <select
+                                id="agregarInitHour"
+                                class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all cursor-pointer"
+                                required
+                                disabled
+                            >
+                                <option value="">--:--</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1"
+                                >Hora Fin</label
+                            >
+                            <input
+                                type="text"
+                                id="agregarEndHour"
+                                class="glass-input w-full rounded-xl px-4 py-2.5 bg-gray-50/50 text-gray-500 cursor-not-allowed outline-none transition-all"
+                                readonly
+                                placeholder="--:--"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3412,8 +3777,7 @@ try {
                             class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all appearance-none"
                             required
                         >
-                            <option value="">Selecciona un estado</option>
-                            <option value="wait">En espera</option>
+                            <option value="wait" selected>En espera</option>
                             <option value="confirmed">Confirmada</option>
                             <option value="canceled">Cancelada</option>
                             <option value="no assisted">No Asistió</option>

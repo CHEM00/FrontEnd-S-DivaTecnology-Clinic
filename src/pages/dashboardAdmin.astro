@@ -4,9 +4,9 @@ import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
+import { SERVER_BACKEND_URL } from "../config";
 const today = new Date().toISOString().split("T")[0];
-const backendUrl =
-	import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
+const backendUrl = SERVER_BACKEND_URL;
 const token = Astro.cookies.get("auth_token")?.value;
 
 const headers = {
@@ -752,6 +752,19 @@ try {
 				</div>
 
 				<!-- 4. Hora -->
+				<div class="flex items-center gap-2 mb-2">
+					<input
+						type="checkbox"
+						id="checkHorarioExtendido"
+						class="w-4 h-4 text-[#2F5D50] rounded focus:ring-[#2F5D50] border-gray-300 transition-all"
+					/>
+					<label
+						for="checkHorarioExtendido"
+						class="text-xs font-bold text-[#2F5D50] select-none cursor-pointer"
+					>
+						Habilitar horario extendido (01:00 - 23:00)
+					</label>
+				</div>
 				<div class="grid grid-cols-2 gap-4">
 					<div>
 						<label
@@ -865,8 +878,7 @@ try {
 							class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all appearance-none"
 							required
 						>
-							<option value="">Selecciona un estado</option>
-							<option value="wait">En espera</option>
+							<option value="wait" selected>En espera</option>
 							<option value="confirmed">Confirmada</option>
 							<option value="canceled">Cancelada</option>
 							<option value="no assisted">No Asistió</option>
@@ -1660,6 +1672,34 @@ try {
 			// Modified to accept an optional selectedTime to preserve/set value after load
 			async function updateHours(selectedTime = null) {
 				if (!agendaPhysio || !agendaCurrentDay || !agendaHour) return;
+
+				const checkExtendido = document.getElementById(
+					"checkHorarioExtendido",
+				);
+				if (checkExtendido && checkExtendido.checked) {
+					agendaHour.innerHTML =
+						'<option value="">Seleccionar hora</option>';
+					agendaHour.disabled = false;
+
+					for (let i = 1; i <= 23; i++) {
+						const h = String(i).padStart(2, "0");
+						const t1 = `${h}:00`;
+						const t2 = `${h}:30`;
+
+						const opt1 = document.createElement("option");
+						opt1.value = t1;
+						opt1.textContent = t1;
+						agendaHour.appendChild(opt1);
+
+						const opt2 = document.createElement("option");
+						opt2.value = t2;
+						opt2.textContent = t2;
+						agendaHour.appendChild(opt2);
+					}
+					if (selectedTime) agendaHour.value = selectedTime;
+					return;
+				}
+
 				const date = agendaCurrentDay.value;
 				const physioId = agendaPhysio.value;
 				if (!date) return;
@@ -1729,6 +1769,12 @@ try {
 				agendaCurrentDay.addEventListener("change", () =>
 					updateHours(),
 				);
+
+			const checkExtendido = document.getElementById(
+				"checkHorarioExtendido",
+			);
+			if (checkExtendido)
+				checkExtendido.addEventListener("change", () => updateHours());
 
 			// --- NEW: Edit Appointment Logic reusing Main Modal ---
 			window.openEditModal = (app) => {
