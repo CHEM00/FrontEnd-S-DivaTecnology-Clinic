@@ -7,7 +7,7 @@ import FormModal from "../components/modals/FormModal.astro";
 
 let table = [];
 
-import { SERVER_BACKEND_URL } from "../config";
+import { SERVER_BACKEND_URL, PUBLIC_IMAGE_BASE_URL } from "../config";
 const backendUrl = SERVER_BACKEND_URL;
 const token = Astro.cookies.get("auth_token")?.value;
 const headers = {
@@ -460,9 +460,11 @@ try {
 		</div>
 	</div>
 
-	<script define:vars={{ table }}>
+	<script
+		define:vars={{ empleados, SERVER_BACKEND_URL, PUBLIC_IMAGE_BASE_URL }}
+	>
 		// Datos y Estado
-		let allData = table || [];
+		let allData = empleados || [];
 		let filteredData = [...allData];
 		let currentPage = 1;
 		let rowsPerPage = 10;
@@ -517,7 +519,7 @@ try {
 					"hover:bg-white/60 transition-colors group border-b border-transparent hover:border-[#2F5D50]/5";
 
 				const photoHtml = empleado.Photo
-					? `<img src="${empleado.Photo}" alt="Foto" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />`
+					? `<img src="${PUBLIC_IMAGE_BASE_URL}/uploads/${empleado.Photo}" alt="Foto" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />`
 					: `<div class="w-10 h-10 rounded-full bg-[#2F5D50]/10 flex items-center justify-center text-[#2F5D50] shadow-sm"><i class="fa-solid fa-user"></i></div>`;
 
 				row.innerHTML = `
