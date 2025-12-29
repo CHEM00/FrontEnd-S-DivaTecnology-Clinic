@@ -28,8 +28,8 @@ export const ALL = async ({ request, url }) => {
     const { Agent } = await import("node:https");
     const agent = new Agent({ rejectUnauthorized: false });
 
-    // Stream body directly
-    const body = request.body;
+    // Buffer body to ensure full reception before proxying (Fixes 500 on Uploads)
+    const bodyBuffer = request.body ? await request.arrayBuffer() : null;
 
     // Debug content type only
     console.log(`[API Route] ${request.method} ${targetUrl}`);
@@ -37,8 +37,7 @@ export const ALL = async ({ request, url }) => {
     const proxyRequest = new Request(targetUrl, {
         method: request.method,
         headers: headers,
-        body: body,
-        duplex: 'half',
+        body: bodyBuffer,
         // @ts-ignore
         agent: agent
     });
