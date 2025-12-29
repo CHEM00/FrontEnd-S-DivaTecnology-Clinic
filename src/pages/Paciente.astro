@@ -957,19 +957,33 @@ try {
 			const id = formData.get("id");
 			const isEdit = !!id;
 
-			// Construct JSON payload for text data to preserve types
-			const data = {
-				firstname: formData.get("firstname"),
-				lastname: formData.get("lastname"),
-				motherlastname: formData.get("motherlastname"),
-				birthdate: formData.get("birthdate"),
-				phone: formData.get("phone"),
-				email: formData.get("email"),
-				idemployed: formData.get("idEmpleado") || null,
-				sanction: formData.get("sanction") === "on",
-				havepackage: formData.get("havepackage") === "on",
-				is_active: true,
-			};
+			// Prepare FormData for backend
+			const payload = new FormData();
+			payload.append("firstname", formData.get("firstname"));
+			payload.append("lastname", formData.get("lastname"));
+			payload.append("motherlastname", formData.get("motherlastname"));
+			payload.append("birthdate", formData.get("birthdate"));
+			payload.append("phone", formData.get("phone"));
+			payload.append("email", formData.get("email"));
+			payload.append("idemployed", formData.get("idEmpleado") || "");
+
+			// Handle booleans for FormData (send as string "true"/"false" or just presence?
+			// Previous JSON sent booleans. Let's send string "true" if checked, like standard form behavior but explicit)
+			payload.append(
+				"sanction",
+				formData.get("sanction") === "on" ? "true" : "false",
+			);
+			payload.append(
+				"havepackage",
+				formData.get("havepackage") === "on" ? "true" : "false",
+			);
+			payload.append("is_active", "true");
+
+			// Handle photo
+			const photoFile = formData.get("photo");
+			if (photoFile && photoFile instanceof File && photoFile.size > 0) {
+				payload.append("photo", photoFile);
+			}
 
 			const url = isEdit
 				? `/api/v1/Pacientes/${id}`
@@ -978,38 +992,13 @@ try {
 			const method = isEdit ? "PATCH" : "POST";
 
 			try {
-				// Step 1: Send Text Data as JSON
 				const response = await fetch(url, {
 					method: method,
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(data),
+					// headers: { "Content-Type": "multipart/form-data" }, // Browser sets this automatically with boundary
+					body: payload,
 				});
 
 				if (response.ok) {
-					const result = await response.json();
-					const patientId = isEdit ? id : result.id;
-
-					// Step 2: Upload Photo if exists (as separate PATCH)
-					const photoFile = formData.get("photo");
-					if (
-						photoFile &&
-						photoFile instanceof File &&
-						photoFile.size > 0
-					) {
-						try {
-							const photoData = new FormData();
-							photoData.append("photo", photoFile);
-
-							await fetch(`/api/v1/Pacientes/${patientId}`, {
-								method: "PATCH",
-								body: photoData,
-							});
-						} catch (photoErr) {
-							console.error("Error updating photo:", photoErr);
-							// Don't block success alert if only photo fails, but maybe warn?
-						}
-					}
-
 					alert(isEdit ? "Paciente actualizado" : "Paciente creado");
 					window.location.reload();
 				} else {
