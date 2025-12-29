@@ -85,7 +85,7 @@ try {
 }
 ---
 
-<Layout title="Dashboard Empleado">
+<Layout title="Dashboard Empleado" showSpeedDial={true}>
     <div
         class="flex h-[100dvh] overflow-hidden bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8]"
     >
@@ -1311,6 +1311,10 @@ try {
                                     ? "Cita actualizada correctamente."
                                     : "Cita creada correctamente.",
                             );
+
+                            // Auto-close Modal
+                            hideFormModal("modalAgregarCita");
+
                             // Update Patient Status (havepackage: true) if new package assigned
                             if (!editId && idPackage) {
                                 try {
@@ -1392,6 +1396,15 @@ try {
                             ) {
                                 closeModalBtn?.click();
                             }
+
+                            // Refresh Appointments
+                            const currentdayInput = document.getElementById(
+                                "agregarCurrentday",
+                            ) as HTMLInputElement;
+                            const dateToFetch =
+                                currentdayInput?.value ||
+                                new Date().toLocaleDateString("en-CA");
+                            fetchAppointments(dateToFetch);
                         } else {
                             const err = await res.text();
                             console.error(err);
