@@ -1627,31 +1627,39 @@ try {
                         ? isConcluded && !app.has_therapeutic_note
                         : isConcluded && (!diag || !note);
 
-                const getPhotoUrl = (photo: any) => {
-                    const defaultImg = `${backendUrl}/uploads/images/default.png`;
-                    if (!photo || String(photo).includes("default"))
-                        return defaultImg;
-                    if (photo.startsWith("http")) return photo;
-                    if (
-                        photo.startsWith("uploads") ||
-                        photo.startsWith("/uploads")
-                    ) {
-                        const cleanPhoto = photo.startsWith("/")
-                            ? photo.substring(1)
-                            : photo;
-                        return `${backendUrl}/${cleanPhoto}`;
-                    }
-                    return `${backendUrl}/uploads/images/${photo}`;
-                };
+                const hasPhoto =
+                    app.photo &&
+                    app.photo !== "default.png" &&
+                    !String(app.photo).includes("default.png");
+                let photoContent;
 
-                const photoUrl = getPhotoUrl(app.photo);
+                if (hasPhoto) {
+                    let finalUrl = app.photo;
+                    if (!finalUrl.startsWith("http")) {
+                        if (
+                            finalUrl.startsWith("uploads") ||
+                            finalUrl.startsWith("/uploads")
+                        ) {
+                            finalUrl = `${backendUrl}/${finalUrl.startsWith("/") ? finalUrl.slice(1) : finalUrl}`;
+                        } else {
+                            finalUrl = `${backendUrl}/uploads/images/${finalUrl}`;
+                        }
+                    }
+                    // On error fallback to initials
+                    const fallbackHtml = `<div class='w-full h-full flex items-center justify-center text-[#2F5D50] font-bold text-xl bg-[#2F5D50]/10'>${(app.patient_name || "?").charAt(0).toUpperCase()}</div>`;
+                    photoContent = `<img src="${finalUrl}" alt="${app.patient_name}" class="w-full h-full object-cover" onerror="this.parentNode.innerHTML=\`${fallbackHtml}\`">`;
+                } else {
+                    photoContent = `<div class="w-full h-full flex items-center justify-center text-[#2F5D50] font-bold text-xl bg-[#2F5D50]/10">
+                                        ${(app.patient_name || "?").charAt(0).toUpperCase()}
+                                     </div>`;
+                }
 
                 div.innerHTML = `
                    <div class="absolute left-0 top-0 bottom-0 w-1.5 ${status.bgClass}"></div>
                     <div class="flex items-start gap-4 pl-3 flex-1 min-w-0 pr-4">
-                        <div class="relative w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden cursor-pointer flex-shrink-0"
-                             onclick="event.stopPropagation(); window.openPhoto('${app.photo || "default.png"}', '${app.patient_name}')">
-                             <img src="${photoUrl}" alt="${app.patient_name}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='${backendUrl}/uploads/images/default.png'">
+                        <div class="relative w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden cursor-pointer flex-shrink-0 border border-gray-100"
+                             onclick="event.stopPropagation(); window.openPhoto('${hasPhoto ? app.photo : ""}', '${app.patient_name}')">
+                             ${photoContent}
                         </div>
                         <div class="flex-1 min-w-0">
                              <h4 class="font-bold text-gray-800 text-base group-hover:text-[#2F5D50] transition-colors truncate">${app.patient_name || "Sin Nombre"} <span class="text-xs text-gray-500 font-normal">(${app.birthday ? calcularEdad(app.birthday) : "?"} años)</span></h4>
@@ -1977,7 +1985,9 @@ try {
                     const res = await fetch(`/api/v1/Agenda/${appointmentId}`);
                     if (res.ok) {
                         const data = await res.json();
-                        const appData = Array.isArray(data) ? data[0] : data;
+                        let appData = data;
+                        if (appData.body) appData = appData.body;
+                        if (Array.isArray(appData)) appData = appData[0];
 
                         const diag = document.getElementById(
                             "consultationDiagnosis",

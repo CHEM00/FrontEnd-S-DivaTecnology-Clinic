@@ -8,6 +8,12 @@ import { SERVER_BACKEND_URL } from "../config";
 const today = new Date().toISOString().split("T")[0];
 const backendUrl = SERVER_BACKEND_URL;
 const token = Astro.cookies.get("auth_token")?.value;
+const userRole = Astro.cookies.get("user_role")?.value;
+
+// RBAC: If Employee (3) tries to access Admin Dashboard, redirect to their dashboard
+if (userRole === "3") {
+	return Astro.redirect("/dashboardEmpleado");
+}
 
 const headers = {
 	"Content-Type": "application/json",
@@ -1232,16 +1238,32 @@ try {
 					statusConfig[app.status?.toLowerCase()] ||
 					statusConfig.wait;
 
-				const getPhotoUrl = (photo) => {
-					if (!photo || String(photo).includes("default"))
-						return `/default.png`;
-					if (photo.startsWith("http")) return photo;
-					const cleanPhoto = photo.startsWith("/")
-						? photo.substring(1)
-						: photo;
-					return `/${cleanPhoto.startsWith("uploads") ? cleanPhoto : "uploads/images/" + cleanPhoto}`;
-				};
-				const photoUrl = getPhotoUrl(app.photo);
+				const hasPhoto =
+					app.photo &&
+					app.photo !== "default.png" &&
+					!String(app.photo).includes("default.png");
+				let photoContent;
+
+				if (hasPhoto) {
+					let finalUrl = app.photo;
+					if (!finalUrl.startsWith("http")) {
+						if (
+							finalUrl.startsWith("uploads") ||
+							finalUrl.startsWith("/uploads")
+						) {
+							finalUrl = `${backendUrl}/${finalUrl.startsWith("/") ? finalUrl.slice(1) : finalUrl}`;
+						} else {
+							finalUrl = `${backendUrl}/uploads/images/${finalUrl}`;
+						}
+					}
+					// On error fallback to initials
+					const fallbackHtml = `<div class='w-full h-full flex items-center justify-center text-[#2F5D50] font-bold text-xl bg-[#2F5D50]/10'>${(app.patient_name || "?").charAt(0).toUpperCase()}</div>`;
+					photoContent = `<img src="${finalUrl}" alt="${app.patient_name}" class="w-full h-full object-cover" onerror="this.parentNode.innerHTML=\`${fallbackHtml}\`">`;
+				} else {
+					photoContent = `<div class="w-full h-full flex items-center justify-center text-[#2F5D50] font-bold text-xl bg-[#2F5D50]/10">
+                                        ${(app.patient_name || "?").charAt(0).toUpperCase()}
+                                     </div>`;
+				}
 
 				// Calcular Edad
 				const calcularEdad = (fechaNacimiento) => {
@@ -1264,9 +1286,9 @@ try {
 				div.innerHTML = `
                     <div class="absolute left-0 top-0 bottom-0 w-1.5 ${status.bgClass}"></div>
                     <div class="flex items-center gap-4 pl-3">
-                         <div class="relative w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden cursor-pointer"
-                              onclick="event.stopPropagation(); window.openPhoto('${app.photo || ""}', '${app.patient_name}')">
-                              <img src="${photoUrl}" alt="${app.patient_name}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='/default.png'">
+                         <div class="relative w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden cursor-pointer border border-gray-100"
+                              onclick="event.stopPropagation(); window.openPhoto('${hasPhoto ? app.photo : ""}', '${app.patient_name}')">
+                              ${photoContent}
                          </div>
                         <div>
                              <h4 class="font-bold text-gray-800 text-base group-hover:text-[#2F5D50] transition-colors">

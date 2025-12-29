@@ -105,6 +105,10 @@ import Layout from "../layouts/Layout.astro";
           // Usamos path=/ para que esté disponible en toda la app
           // Max-age 86400 = 1 día
           document.cookie = `auth_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+          if (data.user?.idrol) {
+            console.log("Setting role cookie:", data.user.idrol);
+            document.cookie = `user_role=${data.user.idrol}; path=/; max-age=86400; SameSite=Lax`;
+          }
 
           // 2. Guardar datos en localStorage (Opcional, para uso cliente)
           localStorage.setItem("token", data.token);
