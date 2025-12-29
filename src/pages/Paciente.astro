@@ -962,16 +962,10 @@ try {
 				firstname: formData.get("firstname"),
 				lastname: formData.get("lastname"),
 				motherlastname: formData.get("motherlastname"),
-				birthdate: formData.get("birthdate"),
+				birthday: formData.get("birthdate"), // Backend expects 'birthday'
 				phone: formData.get("phone"),
 				email: formData.get("email"),
 				idemployed: formData.get("idEmpleado") || null,
-				sanction: formData.get("sanction") === "true", // FormData was appended as "true"/"false" string in previous step, but here we read from form directly?
-				// Wait, formData comes from new FormData(form). Checkbox value is "on" if checked, missing if not?
-				// Actually safer to check input element directly, but here we only have formData.
-				// Standard checkbox in FormData: present = "on", absent = null.
-				// But previously I manually appended strings.
-				// Let's assume standard form behavior:
 				sanction: formData.get("sanction") === "on",
 				havepackage: formData.get("havepackage") === "on",
 				is_active: true,
