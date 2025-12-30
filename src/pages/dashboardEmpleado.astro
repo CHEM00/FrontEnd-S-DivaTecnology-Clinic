@@ -1209,36 +1209,37 @@ try {
                                 return;
                             }
                             // Fix: Fetch patient details to get package ID without consuming
+                            // Fix: Fetch active package details to get ID
                             try {
-                                const patRes = await fetch(
-                                    `${backendUrl}/api/v1/Pacientes/${idpatient}`,
+                                const pkgRes = await fetch(
+                                    `${backendUrl}/api/v1/Pacientes/${idpatient}/paquete/activo`,
                                 );
-                                if (patRes.ok) {
-                                    const patDataRaw = await patRes.json();
-                                    const patData = Array.isArray(patDataRaw)
-                                        ? patDataRaw[0]
-                                        : patDataRaw;
-
-                                    // Try to find the package ID in common fields
-                                    const pkgId =
-                                        patData.idpackage ||
-                                        patData.package_id ||
-                                        patData.active_package_id ||
-                                        patData.current_package_id;
-
-                                    if (pkgId) {
-                                        payload.idpatientpackage = pkgId;
-                                    } else {
-                                        // If user claimed to have package but no ID found, we just proceed.
-                                        // Backend might handle it, or there is no package to link.
+                                if (pkgRes.ok) {
+                                    const pkgData = await pkgRes.json();
+                                    // User confirmed: "se toma el id solamente y es el que se manda en el payload"
+                                    if (pkgData && pkgData.id) {
+                                        payload.idpatientpackage = pkgData.id;
                                         console.log(
-                                            "Patient has package flag but no ID found in details",
+                                            "Paquete activo encontrado, ID asignado:",
+                                            pkgData.id,
+                                        );
+                                    } else {
+                                        console.warn(
+                                            "El endpoint retornó OK pero sin ID válido:",
+                                            pkgData,
                                         );
                                     }
+                                } else {
+                                    console.error(
+                                        "Error fetching active package:",
+                                        pkgRes.status,
+                                    );
+                                    // Optional: Alert user if package was expected but not found?
+                                    // For now, logging error.
                                 }
                             } catch (e) {
                                 console.error(
-                                    "Error fetching patient details for package linking",
+                                    "Error fetching active package details",
                                     e,
                                 );
                             }
@@ -2008,6 +2009,21 @@ try {
                             hasDetails = false; // Mark as new
                             if (diag) diag.value = "";
                             if (note) note.value = "";
+                        }
+
+                        // Fix: Update Reason from Detail Payload (as requested)
+                        if (
+                            appData &&
+                            appData.get_appointment_detail &&
+                            appData.get_appointment_detail.appointment &&
+                            appData.get_appointment_detail.appointment.reason
+                        ) {
+                            const detailReason =
+                                appData.get_appointment_detail.appointment
+                                    .reason;
+                            const reasonEl =
+                                document.getElementById("modalReason");
+                            if (reasonEl) reasonEl.textContent = detailReason;
                         }
 
                         // Load Evaluation Data
