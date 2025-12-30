@@ -648,10 +648,11 @@ try {
 		});
 	</script>
 	<!-- Injection Script -->
-	<script define:vars={{ pacientes, empleados, paquetes }}>
+	<script define:vars={{ pacientes, empleados, paquetes, servicios }}>
 		window.pacientesData = pacientes;
 		window.empleadosData = empleados;
 		window.paquetesData = paquetes;
+		window.serviciosData = servicios;
 	</script>
 
 	<!-- Modal Agregar Cita (Importado y adaptado) -->
@@ -687,16 +688,11 @@ try {
 						</span>
 					</label>
 					<div class="relative group" id="patient-search-container">
-						<div
-							class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none text-[#2F5D50]"
-						>
-							<i class="fa-solid fa-user"></i>
-						</div>
 						<input
 							type="text"
 							id="patientSearchInput"
 							placeholder="Buscar paciente (nombre)..."
-							class="glass-input w-full rounded-xl pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+							class="bg-white w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
 							autocomplete="off"
 						/>
 						<input
@@ -721,15 +717,10 @@ try {
 						>Fecha *</label
 					>
 					<div class="relative">
-						<div
-							class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none text-[#2F5D50]"
-						>
-							<i class="fa-regular fa-calendar"></i>
-						</div>
 						<input
 							type="date"
 							id="agregarCurrentday"
-							class="glass-input w-full rounded-xl pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all cursor-pointer"
+							class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all cursor-pointer"
 							required
 						/>
 					</div>
@@ -1754,6 +1745,13 @@ try {
 								const opt = document.createElement("option");
 								opt.value = time;
 								opt.textContent = time;
+								// Asignar el empleado aleatorio si existe (Para cuando no se selecciona fisio)
+								if (slot.random_physio_id) {
+									opt.setAttribute(
+										"data-random-physio",
+										slot.random_physio_id,
+									);
+								}
 								agendaHour.appendChild(opt);
 							}
 						});
@@ -1798,6 +1796,25 @@ try {
 			if (checkExtendido)
 				checkExtendido.addEventListener("change", () => updateHours());
 
+			// Listener para asignar automaticamente el fisio cuando se selecciona una hora
+			// (Solo si la opcion tiene un data-random-physio y estamos en el contexto adecuado)
+			if (agendaHour) {
+				agendaHour.addEventListener("change", function () {
+					const selectedOption = this.options[this.selectedIndex];
+					const randomPhysioId =
+						selectedOption.getAttribute("data-random-physio");
+
+					if (randomPhysioId) {
+						// Asignar el valor al select de fisio
+						if (agendaPhysio) {
+							agendaPhysio.value = randomPhysioId;
+							// Nota: No disparar updateHours() aqui para evitar recargar la lista de horas
+							// y perder la selección actual. El usuario ya eligió una hora válida.
+						}
+					}
+				});
+			}
+
 			// --- NEW: Edit Appointment Logic reusing Main Modal ---
 			window.openEditModal = (app) => {
 				const modal = document.getElementById("modalAgregarCita");
@@ -1832,6 +1849,21 @@ try {
 				if (app.idemployed) {
 					document.getElementById("agregarIdEmployed").value =
 						app.idemployed;
+				} else if (app.employed_name && window.empleadosData) {
+					// Fallback: Buscar por nombre completo
+					// Nota: la comparación de strings es sensible.
+					// Intentamos match con el formato "{firstname} {lastname}"
+					const found = window.empleadosData.find(
+						(e) =>
+							`${e.firstname} ${e.lastname}`
+								.toLowerCase()
+								.trim() ===
+							app.employed_name.toLowerCase().trim(),
+					);
+					if (found) {
+						document.getElementById("agregarIdEmployed").value =
+							found.id;
+					}
 				}
 
 				// Status
@@ -1847,6 +1879,17 @@ try {
 				if (app.idservice) {
 					document.getElementById("agregarIdService").value =
 						app.idservice;
+				} else if (app.service_name && window.serviciosData) {
+					// Fallback: Buscar por nombre
+					const found = window.serviciosData.find(
+						(s) =>
+							s.name.toLowerCase().trim() ===
+							app.service_name.toLowerCase().trim(),
+					);
+					if (found) {
+						document.getElementById("agregarIdService").value =
+							found.id;
+					}
 				}
 
 				// Package UI (Assume no package logic change for edit currently, simplified)
