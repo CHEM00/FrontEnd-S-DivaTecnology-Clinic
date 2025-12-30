@@ -1390,6 +1390,10 @@ try {
 			}
 
 			// --- Lógica de Formulario Agregar/Editar Cita ---
+			// --- Lógica de Formulario Agregar/Editar Cita ---
+			// Cache for available slots (Moved here for scope access)
+			let latestSlots = [];
+
 			if (formAgregar) {
 				formAgregar.addEventListener("submit", async (e) => {
 					e.preventDefault();
@@ -1419,25 +1423,62 @@ try {
 					const usePackage =
 						document.getElementById("usePackageCheckbox")?.checked;
 
-					if (
-						!idpatient ||
-						!currentday ||
-						!inithour ||
-						!idemployed ||
-						!status
-					) {
+					if (!idpatient || !currentday || !inithour || !status) {
 						alert("Complete los campos obligatorios");
 						return;
 					}
+
+					// Auto-assign Random Physio if missing (Logic from Empleado)
+					let finalPhysioId = idemployed;
+
+					if (!finalPhysioId) {
+						// 1. Try Cache
+						const matchingSlot = latestSlots.find(
+							(s) =>
+								s.inithour?.substring(0, 5) === inithour ||
+								s.hora_disponible?.substring(0, 5) === inithour,
+						);
+
+						if (matchingSlot && matchingSlot.random_physio_id) {
+							finalPhysioId = matchingSlot.random_physio_id;
+						}
+
+						// 2. Try DOM Attribute Fallback
+						if (!finalPhysioId) {
+							const hourSelect =
+								document.getElementById("agregarInitHour");
+							if (
+								hourSelect &&
+								hourSelect.selectedOptions.length > 0
+							) {
+								finalPhysioId =
+									hourSelect.selectedOptions[0].getAttribute(
+										"data-random-physio",
+									);
+							}
+						}
+					}
+
+					if (!finalPhysioId) {
+						alert(
+							"Error: No se puede agendar. Por favor selecciona un fisioterapeuta manualmente o verifica que la hora tenga cupo.",
+						);
+						return;
+					}
+					// If still no physio in Admin, it might represent "Any" or backend handles it,
+					// or we should alert. Admin allows manual selection, so if they leave it blank
+					// and no random slot, maybe we send null? Backend likely requires it.
+					// But we proceed as is.
 
 					const payload = {
 						idpatient,
 						currentday,
 						inithour,
-						endhour: endhour || inithour, // Idealmente calcular endhour basado en servicio, pero dejamos igual si no hay lÃ³gica
-						idemployed,
+						endhour: endhour || inithour,
+						idemployed: finalPhysioId,
 						status,
 						reason,
+						idservice, // Send service ID if available
 					};
 
 					try {
@@ -1453,39 +1494,79 @@ try {
 
 							if (!res.ok)
 								throw new Error("Error al actualizar cita");
+							citaId = editId;
 
-							// Update Service if changed (Optional logic mostly for creation, but good to have)
+							// Update Service if changed
 							if (idservice) {
-								// For simplicity in Edit, we might just update main data.
-								// To update service properly we'd need to know previous logic.
-								// For now, let's assume standard update.
-								const serv = window.services?.find(
-									(s) => s.id == idservice,
+								// For updates, we usually PATCH service separate
+								let price = "0.00";
+								if (!usePackage) {
+									const sel =
+										document.getElementById(
+											"agregarIdService",
+										);
+									if (sel && sel.selectedIndex >= 0) {
+										price =
+											sel.options[
+												sel.selectedIndex
+											].getAttribute("data-price") || "0";
+									}
+								}
+								await fetch(
+									`/api/v1/Agenda/${citaId}/services`,
+									{
+										method: "PATCH",
+										headers: {
+											"Content-Type": "application/json",
+										},
+										body: JSON.stringify({
+											serviceId: idservice,
+											amount: 1,
+											unit_price: price,
+										}),
+									},
+								).catch((e) =>
+									console.error("Service update warn:", e),
 								);
-								// Recalculate price/update detailed logic could go here if needed
 							}
 
 							alert("Cita actualizada correctamente");
 						} else {
 							// --- CREATE MODE (POST) ---
-							// Lógica Paquete ( simplificada )
+
+							// Lógica Paquete (Synced with Empleado)
 							if (usePackage) {
-								// Consumir sesión
-								const resCons = await fetch(
-									`/api/v1/Pacientes/${idpatient}/paquete/consumir`,
-									{ method: "POST" },
-								);
-								if (resCons.ok) {
-									const d = await resCons.json();
-									if (d.packageId)
-										payload.idpatientpackage = d.packageId;
+								if (idpackage) {
+									alert(
+										"No puedes comprar un paquete nuevo y usar uno existente al mismo tiempo.",
+									);
+									return;
+								}
+								// Retrieve Active Package ID instead of consuming logic
+								try {
+									const pkgRes = await fetch(
+										`/api/v1/Pacientes/${idpatient}/paquete/activo`,
+									);
+									if (pkgRes.ok) {
+										const pkgData = await pkgRes.json();
+										if (pkgData && pkgData.id) {
+											payload.idpatientpackage =
+												pkgData.id;
+											console.log(
+												"Paquete activo encontrado (Admin), ID:",
+												pkgData.id,
+											);
+										}
+									} else {
+										console.warn(
+											"No se encontró paquete activo o error",
+										);
+									}
+								} catch (err) {
+									console.error(err);
 								}
 							} else if (idpackage) {
-								// Asignar nuevo select
-								const pkg = window.paquetesData?.find(
-									(p) => p.id == idpackage,
-								);
-								const total = pkg ? pkg.numsession : 1;
+								// Asignar nuevo paquete (Compra)
 								const resAsig = await fetch(
 									`/api/v1/Pacientes/${idpatient}/paquete`,
 									{
@@ -1525,7 +1606,12 @@ try {
 								body: JSON.stringify(payload),
 							});
 
-							if (!res.ok) throw new Error("Error al crear cita");
+							if (!res.ok) {
+								const errText = await res.text();
+								throw new Error(
+									errText || "Error al crear cita",
+								);
+							}
 
 							const data = await res.json();
 							citaId =
@@ -1569,7 +1655,11 @@ try {
 						window.hideFormModal("modalAgregarCita");
 						formAgregar.reset();
 						// Refrescar Agenda
-						fetchAgenda(agendaDateInput.value);
+						if (typeof fetchAgenda === "function") {
+							fetchAgenda(agendaDateInput.value);
+						} else {
+							window.location.reload();
+						}
 					} catch (e) {
 						console.error(e);
 						alert("Error: " + e.message);
@@ -1730,11 +1820,12 @@ try {
 					const res = await fetch(url);
 					if (res.ok) {
 						const slots = await res.json();
+						latestSlots = Array.isArray(slots) ? slots : []; // Update cache
 						agendaHour.innerHTML =
 							'<option value="">Seleccionar hora</option>';
 
 						// Add options
-						slots.forEach((slot) => {
+						latestSlots.forEach((slot) => {
 							const time = slot.hora_disponible
 								? slot.hora_disponible.substring(0, 5)
 								: slot.inithour
@@ -1745,13 +1836,15 @@ try {
 								const opt = document.createElement("option");
 								opt.value = time;
 								opt.textContent = time;
-								// Asignar el empleado aleatorio si existe (Para cuando no se selecciona fisio)
+								// Restore fallback attribute
 								if (slot.random_physio_id) {
 									opt.setAttribute(
 										"data-random-physio",
 										slot.random_physio_id,
 									);
 								}
+
+								// Unlike before, we rely on latestSlots cache for random physio ID
 								agendaHour.appendChild(opt);
 							}
 						});
@@ -1815,7 +1908,6 @@ try {
 				});
 			}
 
-			// --- NEW: Edit Appointment Logic reusing Main Modal ---
 			window.openEditModal = (app) => {
 				const modal = document.getElementById("modalAgregarCita");
 				const form = document.getElementById("formAgregarCita");
@@ -1827,7 +1919,8 @@ try {
 				// Reset Form
 				form.reset();
 				form.dataset.mode = "edit";
-				form.dataset.editId = app.id;
+				// Fix: Use correct ID property from app object (id or idappointment)
+				form.dataset.editId = app.id || app.idappointment;
 
 				// UI Updates
 				if (title) title.innerText = "Editar Cita";
