@@ -399,7 +399,7 @@ try {
 										<i class="fa-solid fa-filter"></i>
 									</button>
 								</div>
-								<div class="relative group">
+								<div class="relative group flex-1">
 									<input
 										type="date"
 										id="appointment-date-calendar"
@@ -409,6 +409,21 @@ try {
 										class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2F5D50] group-hover:scale-110 transition-transform"
 									>
 										<i class="fa-regular fa-calendar"></i>
+									</div>
+								</div>
+								<!-- Buscador de Pacientes -->
+								<div class="relative group mt-3 flex-1">
+									<input
+										type="text"
+										id="appointment-search-client"
+										placeholder="Buscar paciente..."
+										class="w-full glass-input rounded-xl px-4 py-3 text-sm font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#2F5D50]/20 transition-all"
+									/>
+									<div
+										class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2F5D50] group-hover:scale-110 transition-transform"
+									>
+										<i class="fa-solid fa-magnifying-glass"
+										></i>
 									</div>
 								</div>
 							</div>
@@ -1063,7 +1078,32 @@ try {
 			const agendaContainer = document.getElementById(
 				"agenda-list-container",
 			);
+			const clientSearchInput = document.getElementById(
+				"appointment-search-client",
+			);
 			const backendUrl = window.location.origin; // O usar variable de entorno si está expuesta
+
+			// Globals
+			let currentAppointments = [];
+			const physioColors = [
+				"#ef4444", // red-500
+				"#3b82f6", // blue-500
+				"#22c55e", // green-500
+				"#a855f7", // purple-500
+				"#f97316", // orange-500
+				"#14b8a6", // teal-500
+				"#ec4899", // pink-500
+				"#6366f1", // indigo-500
+				"#84cc16", // lime-500
+				"#06b6d4", // cyan-500
+			];
+
+			const getPhysioColor = (id) => {
+				if (!id) return "#9ca3af"; // gray-400 fallback
+				const numId = parseInt(id, 10);
+				if (isNaN(numId)) return "#9ca3af";
+				return physioColors[numId % physioColors.length];
+			};
 
 			// --- Modales ---
 			const modalAgregar = document.getElementById("modalAgregarCita");
@@ -1133,6 +1173,22 @@ try {
 				agendaDateInput.addEventListener("change", (e) => {
 					fetchAgenda(e.target.value);
 				});
+
+				if (clientSearchInput) {
+					clientSearchInput.addEventListener("input", (e) => {
+						const term = e.target.value.toLowerCase();
+						filterAgenda(term);
+					});
+				}
+			}
+
+			function filterAgenda(term) {
+				if (!currentAppointments) return;
+				const filtered = currentAppointments.filter((app) => {
+					const name = (app.patient_name || "").toLowerCase();
+					return name.includes(term);
+				});
+				renderAgenda(filtered);
 			}
 
 			async function fetchAgenda(date) {
@@ -1145,8 +1201,13 @@ try {
 						`/api/v1/Appointments?date=${date}`,
 					);
 					if (!res.ok) throw new Error("Failed to fetch agenda");
-					const appointments = await res.json();
-					renderAgenda(appointments);
+					currentAppointments = await res.json();
+					// Si hay filtro activo, aplicar
+					if (clientSearchInput && clientSearchInput.value) {
+						filterAgenda(clientSearchInput.value.toLowerCase());
+					} else {
+						renderAgenda(currentAppointments);
+					}
 				} catch (error) {
 					console.error("Error loading agenda:", error);
 					agendaContainer.innerHTML = `<div class="p-4 text-red-500 text-center">Error al cargar citas</div>`;
@@ -1274,8 +1335,12 @@ try {
 				// Encode app object safely for function call
 				const appData = JSON.stringify(app).replace(/"/g, "&quot;");
 
+				// Physio Color
+				const pColor = getPhysioColor(app.idemployed);
+
 				div.innerHTML = `
-                    <div class="absolute left-0 top-0 bottom-0 w-1.5 ${status.bgClass}"></div>
+					<!-- Color Strip based on Physio ID -->
+                    <div class="absolute left-0 top-0 bottom-0 w-1.5" style="background-color: ${pColor};"></div>
                     <div class="flex items-center gap-4 pl-3">
                          <div class="relative w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden cursor-pointer border border-gray-100"
                               onclick="event.stopPropagation(); window.openPhoto('${hasPhoto ? app.photo : ""}', '${app.patient_name}')">
@@ -1291,9 +1356,9 @@ try {
                                     <i class="fa-solid fa-notes-medical text-[#2F5D50]/60"></i>
                                     <span>${app.service_name || app.servicio || "Consulta"}</span>
                                  </div>
-                                 <div class="flex items-center gap-2">
-                                    <i class="fa-solid fa-user-doctor text-[#2F5D50]/60"></i>
-                                    <span>${app.employed_name || "Fiosioterapeuta"}</span>
+                                 <div class="flex items-center gap-2" style="color: ${pColor}">
+                                    <i class="fa-solid fa-user-doctor"></i>
+                                    <span class="font-bold">${app.employed_name || "Fiosioterapeuta"}</span>
                                  </div>
                              </div>
                         </div>
@@ -1316,6 +1381,11 @@ try {
                          </div>
                     </div>
                 `;
+
+				// Apply subtle background tint
+				div.style.backgroundColor = `${pColor}08`; // Very light tint (hex alpha)
+				div.style.borderLeftColor = pColor;
+
 				return div;
 			}
 

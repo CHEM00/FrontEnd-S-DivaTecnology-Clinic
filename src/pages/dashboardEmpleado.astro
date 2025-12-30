@@ -138,7 +138,7 @@ try {
                                         <i class="fa-solid fa-filter"></i>
                                     </button>
                                 </div>
-                                <div class="relative group">
+                                <div class="relative group flex-1">
                                     <input
                                         type="date"
                                         id="dateFilter"
@@ -148,6 +148,21 @@ try {
                                         class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2F5D50] group-hover:scale-110 transition-transform"
                                     >
                                         <i class="fa-regular fa-calendar"></i>
+                                    </div>
+                                </div>
+                                <!-- Buscador de Pacientes -->
+                                <div class="relative group mt-3 flex-1">
+                                    <input
+                                        type="text"
+                                        id="appointment-search-client"
+                                        placeholder="Buscar paciente..."
+                                        class="w-full glass-input rounded-xl px-4 py-3 text-sm font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#2F5D50]/20 transition-all"
+                                    />
+                                    <div
+                                        class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2F5D50] group-hover:scale-110 transition-transform"
+                                    >
+                                        <i class="fa-solid fa-magnifying-glass"
+                                        ></i>
                                     </div>
                                 </div>
                             </div>
@@ -1534,6 +1549,49 @@ try {
                     const target = e.target as HTMLInputElement;
                     fetchAppointments(target.value);
                 });
+
+                const clientSearchInput = document.getElementById(
+                    "appointment-search-client",
+                );
+                if (clientSearchInput) {
+                    clientSearchInput.addEventListener("input", (e) => {
+                        const term = (
+                            e.target as HTMLInputElement
+                        ).value.toLowerCase();
+                        filterAppointments(term);
+                    });
+                }
+            }
+
+            // Globals
+            let currentAppointments: Appointment[] = [];
+            const physioColors = [
+                "#ef4444", // red-500
+                "#3b82f6", // blue-500
+                "#22c55e", // green-500
+                "#a855f7", // purple-500
+                "#f97316", // orange-500
+                "#14b8a6", // teal-500
+                "#ec4899", // pink-500
+                "#6366f1", // indigo-500
+                "#84cc16", // lime-500
+                "#06b6d4", // cyan-500
+            ];
+
+            const getPhysioColor = (id: string | number) => {
+                if (!id) return "#9ca3af"; // gray-400 fallback
+                const numId = typeof id === "string" ? parseInt(id, 10) : id;
+                if (isNaN(numId)) return "#9ca3af";
+                return physioColors[numId % physioColors.length];
+            };
+
+            function filterAppointments(term: string) {
+                if (!currentAppointments) return;
+                const filtered = currentAppointments.filter((app) => {
+                    const name = (app.patient_name || "").toLowerCase();
+                    return name.includes(term);
+                });
+                renderAppointments(filtered);
             }
 
             // --- History Events ---
@@ -1554,8 +1612,18 @@ try {
                         `/api/v1/Appointments?date=${date}`,
                     );
                     if (!res.ok) throw new Error("Error fetching");
-                    const data = await res.json();
-                    renderAppointments(data);
+                    currentAppointments = await res.json();
+
+                    const clientSearchInput = document.getElementById(
+                        "appointment-search-client",
+                    ) as HTMLInputElement;
+                    if (clientSearchInput && clientSearchInput.value) {
+                        filterAppointments(
+                            clientSearchInput.value.toLowerCase(),
+                        );
+                    } else {
+                        renderAppointments(currentAppointments);
+                    }
                 } catch (error) {
                     console.error(error);
                     grid.innerHTML = `<div class="p-4 text-red-500 text-center">Error al cargar citas</div>`;
@@ -1655,8 +1723,20 @@ try {
                                      </div>`;
                 }
 
+                // Physio Color
+                const pColor = getPhysioColor(app.idemployed);
+
+                // Apply styles directly
+                div.style.backgroundColor = `${pColor}08`; // Light tint
+                div.style.borderLeftColor = pColor;
+                // Since base class has border-white/50, we might need to override left border width/color specifically?
+                // The base class has border. We want a prominent left strip.
+                // The admin dashboard used a separate div for the strip. I will simulate that or check if I should replace content.
+                // In Admin I replaced the entire innerHTML. Here I should probably do the same to ensure structure matches.
+                // But I see I am replacing lines 1658-1686 which corresponds to the innerHTML assignment.
+
                 div.innerHTML = `
-                   <div class="absolute left-0 top-0 bottom-0 w-1.5 ${status.bgClass}"></div>
+                   <div class="absolute left-0 top-0 bottom-0 w-1.5" style="background-color: ${pColor};"></div>
                     <div class="flex items-start gap-4 pl-3 flex-1 min-w-0 pr-4">
                         <div class="relative w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden cursor-pointer flex-shrink-0 border border-gray-100"
                              onclick="event.stopPropagation(); window.openPhoto('${hasPhoto ? app.photo : ""}', '${app.patient_name}')">
@@ -1669,9 +1749,9 @@ try {
                                     <i class="fa-solid fa-notes-medical text-[#2F5D50]/60 min-w-[14px]"></i>
                                     <span class="truncate">${app.service_name || app.servicio || app.name || "Consulta"}</span>
                                  </div>
-                                 <div class="flex items-center gap-2">
-                                    <i class="fa-solid fa-user-doctor text-[#2F5D50]/60 min-w-[14px]"></i>
-                                    <span class="truncate">${app.employed_name || "Fisio"}</span>
+                                 <div class="flex items-center gap-2" style="color: ${pColor}">
+                                    <i class="fa-solid fa-user-doctor min-w-[14px]"></i>
+                                    <span class="truncate font-bold">${app.employed_name || "Fisio"}</span>
                                  </div>
                                  ${
                                      app.last_diagnostic
