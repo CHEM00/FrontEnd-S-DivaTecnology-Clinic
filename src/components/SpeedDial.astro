@@ -3,13 +3,13 @@
 ---
 
 <div
-    class="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3 group"
+    class="fixed bottom-6 right-6 z-[9999] flex flex-col items-end group"
     id="speed-dial-container"
 >
     <!-- Options (Hidden by default) -->
     <div
         id="speed-dial-options"
-        class="flex flex-col gap-3 items-end transition-all duration-300 opacity-0 translate-y-4 pointer-events-none scale-90 origin-bottom-right"
+        class="absolute bottom-full mb-4 flex flex-col gap-3 items-end transition-all duration-300 opacity-0 translate-y-4 pointer-events-none scale-90 origin-bottom-right"
     >
         <!-- Nuevo Paciente -->
         <div class="flex items-center gap-2">
@@ -19,10 +19,10 @@
             >
             <button
                 onclick="window.openNewPatientModal()"
-                class="w-12 h-12 rounded-full bg-white text-[#2F5D50] border border-[#2F5D50]/20 shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all flex items-center justify-center transform hover:scale-110 active:scale-95"
+                class="w-10 h-10 rounded-full bg-white text-[#2F5D50] border border-[#2F5D50]/20 shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all flex items-center justify-center transform hover:scale-110 active:scale-95"
                 title="Nuevo Paciente"
             >
-                <i class="fa-solid fa-user-plus text-lg"></i>
+                <i class="fa-solid fa-user-plus text-sm"></i>
             </button>
         </div>
 
@@ -34,21 +34,22 @@
             >
             <button
                 onclick="window.openAppointmentModal()"
-                class="w-12 h-12 rounded-full bg-white text-[#2F5D50] border border-[#2F5D50]/20 shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all flex items-center justify-center transform hover:scale-110 active:scale-95"
+                class="w-10 h-10 rounded-full bg-white text-[#2F5D50] border border-[#2F5D50]/20 shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all flex items-center justify-center transform hover:scale-110 active:scale-95"
                 title="Agendar Cita"
             >
-                <i class="fa-regular fa-calendar-plus text-lg"></i>
+                <i class="fa-regular fa-calendar-plus text-sm"></i>
             </button>
         </div>
     </div>
 
     <!-- Main Button -->
+    <!-- Main Button -->
     <button
         id="speed-dial-toggle"
-        class="w-14 h-14 rounded-full bg-[#2F5D50] text-white shadow-lg shadow-[#2F5D50]/40 hover:shadow-2xl hover:bg-[#234D20] transition-all flex items-center justify-center transform hover:scale-105 active:scale-95"
+        class="w-12 h-12 rounded-full bg-[#2F5D50] text-white shadow-lg shadow-[#2F5D50]/40 hover:shadow-2xl hover:bg-[#234D20] transition-all flex items-center justify-center transform hover:scale-105 active:scale-95 cursor-grab active:cursor-grabbing touch-none select-none"
     >
         <i
-            class="fa-solid fa-plus text-2xl transition-transform duration-300"
+            class="fa-solid fa-plus text-xl transition-transform duration-300 pointer-events-none"
             id="speed-dial-icon"></i>
     </button>
 </div>
@@ -61,19 +62,190 @@
     const icon = document.getElementById("speed-dial-icon");
     let isOpen = false;
 
-    if (toggleBtn && options && icon) {
+    // Drag Logic Variables
+    let isDragging = false; // True if element is currently moving
+    let hasMoved = false; // True if movement exceeded threshold
+    let startX, startY; // Pointer start position (screen coords)
+
+    // Interaction State
+    let isInteractionStarted = false; // Gatekeeper for global events
+    let wasDragging = false; // Flag to block click after drag
+
+    // Position State
+    let currentXOffset = 0;
+    let currentYOffset = 0;
+
+    if (toggleBtn && options && icon && container) {
+        // Drag Events (container-scoped for start)
+        container.addEventListener("mousedown", dragStart);
+        container.addEventListener("touchstart", dragStart, { passive: false });
+
+        // Global events for move/end to handle dragging outside container
+        document.addEventListener("mouseup", dragEnd);
+        document.addEventListener("touchend", dragEnd);
+
+        document.addEventListener("mousemove", drag);
+        document.addEventListener("touchmove", drag, { passive: false });
+
+        // Override click to rely on our custom logic
         toggleBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
+            e.stopPropagation(); // Always stop prop to avoid document listener closing it
+            if (wasDragging) {
+                e.preventDefault();
+                wasDragging = false; // Reset
+                return;
+            }
             toggleSpeedDial();
         });
+        toggleBtn.onclick = null;
 
         // Close when clicking outside
         document.addEventListener("click", (e) => {
-            if (isOpen && !container.contains(e.target)) {
+            // Only if not dragging and interaction finished
+            if (isOpen && !container.contains(e.target) && !isDragging) {
                 closeSpeedDial();
             }
         });
     }
+
+    // Drag Functions
+    function dragStart(e) {
+        if (e.target.closest("#speed-dial-options")) return;
+
+        if (e.type === "touchstart") {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        } else {
+            // Only left mouse button
+            if (e.button !== 0) return;
+            startX = e.clientX;
+            startY = e.clientY;
+        }
+
+        hasMoved = false;
+        isDragging = false;
+        isInteractionStarted = true; // Enable global tracking
+    }
+
+    function dragEnd(e) {
+        if (!isInteractionStarted) return; // Ignore if we didn't start the drag on the button
+
+        if (!hasMoved) {
+            // It was a click!
+            // Handled by click listener
+            wasDragging = false;
+        } else {
+            // It was a drag.
+            wasDragging = true;
+            // Auto-reset wasDragging after a short delay in case click doesn't fire
+            setTimeout(() => {
+                wasDragging = false;
+            }, 100);
+
+            toggleBtn.classList.remove("scale-110");
+
+            let clientX, clientY;
+            if (e.changedTouches && e.changedTouches.length > 0) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const deltaX = clientX - startX;
+            const deltaY = clientY - startY;
+
+            let nextX = currentXOffset + deltaX;
+            let nextY = currentYOffset + deltaY;
+
+            // Boundary constraints
+            const padding = 24;
+            const size = 56;
+
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
+
+            const maxX = padding;
+            const minX = -(winW - padding - size);
+            const maxY = padding;
+            const minY = -(winH - padding - size);
+
+            nextX = Math.min(Math.max(nextX, minX), maxX);
+            nextY = Math.min(Math.max(nextY, minY), maxY);
+
+            currentXOffset = nextX;
+            currentYOffset = nextY;
+
+            setTranslate(currentXOffset, currentYOffset, container);
+        }
+
+        isDragging = false;
+        hasMoved = false;
+        isInteractionStarted = false; // Reset global tracking
+        startX = undefined;
+        startY = undefined;
+    }
+
+    function drag(e) {
+        if (!isInteractionStarted) return; // Ignore ghost moves
+
+        let clientX, clientY;
+        if (e.type === "touchmove") {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            // Mouse safety check (rarely needed with flag, but good)
+            if (e.buttons === 0) {
+                isInteractionStarted = false;
+                return;
+            }
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+
+        const deltaX = clientX - startX;
+        const deltaY = clientY - startY;
+
+        // Check Threshold (Increased to 8px for mobile safety)
+        if (!hasMoved) {
+            if (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8) {
+                hasMoved = true;
+                isDragging = true;
+                toggleBtn.classList.add("scale-110");
+            }
+        }
+
+        if (hasMoved) {
+            e.preventDefault();
+
+            let nextX = currentXOffset + deltaX;
+            let nextY = currentYOffset + deltaY;
+
+            // Boundary Checks (Reduced size constant)
+            const padding = 24;
+            const size = 56; // 48px + margin error?
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
+
+            const maxX = padding;
+            const minX = -(winW - padding - size);
+            const maxY = padding;
+            const minY = -(winH - padding - size);
+
+            nextX = Math.min(Math.max(nextX, minX), maxX);
+            nextY = Math.min(Math.max(nextY, minY), maxY);
+
+            setTranslate(nextX, nextY, container);
+        }
+    }
+
+    function setTranslate(xPos, yPos, el) {
+        el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
+    }
+
+    // Override click for toggle button to prevent toggle if dragged
+    // Override click handled above in init
 
     function toggleSpeedDial() {
         isOpen = !isOpen;
