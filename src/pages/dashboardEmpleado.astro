@@ -776,6 +776,49 @@ try {
     >
     </div>
 
+    <!-- Photo Action Modal (Instagram Styling) -->
+    <div
+        id="photoActionModal"
+        class="fixed inset-0 z-[70] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+        style="font-family: 'Outfit', sans-serif;"
+    >
+        <div
+            class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 transform scale-100 transition-all"
+        >
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-[#2F5D50]">
+                    Foto del Paciente
+                </h3>
+                <button
+                    id="closePhotoModalBtn"
+                    class="w-8 h-8 rounded-full bg-gray-100 text-gray-400 hover:text-gray-600 flex items-center justify-center transition-colors"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <button
+                    id="viewPhotoBtn"
+                    class="w-full py-4 rounded-2xl bg-[#2F5D50]/5 text-[#2F5D50] font-bold text-lg hover:bg-[#2F5D50] hover:text-white transition-all duration-200 flex items-center justify-center gap-3 border border-[#2F5D50]/10 shadow-sm"
+                >
+                    <i class="fa-regular fa-eye text-xl"></i> Ver Foto Actual
+                </button>
+                <button
+                    id="changePhotoBtn"
+                    class="w-full py-4 rounded-2xl bg-blue-50 text-blue-600 font-bold text-lg hover:bg-blue-600 hover:text-white transition-all duration-200 flex items-center justify-center gap-3 border border-blue-100 shadow-sm"
+                >
+                    <i class="fa-solid fa-camera text-xl"></i> Cambiar / Subir
+                </button>
+            </div>
+            <p class="text-center text-xs text-gray-400 mt-6 font-medium">
+                Selecciona una opción
+            </p>
+        </div>
+    </div>
+    <!-- Hidden File Input -->
+    <input type="file" id="photoUploadInput" accept="image/*" class="hidden" />
+
     <!-- MAIN SCRIPT -->
     <script>
         import { generateConsentPDF } from "../utils/ConsentPDFGenerator";
@@ -1737,32 +1780,33 @@ try {
 
                 div.innerHTML = `
                    <div class="absolute left-0 top-0 bottom-0 w-1.5" style="background-color: ${pColor};"></div>
-                    <div class="flex items-start gap-4 pl-3 flex-1 min-w-0 pr-4">
-                        <div class="relative w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden cursor-pointer flex-shrink-0 border border-gray-100"
-                             onclick="event.stopPropagation(); window.openPhoto('${hasPhoto ? app.photo : ""}', '${app.patient_name}')">
-                             ${photoContent}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                             <h4 class="font-bold text-gray-800 text-base group-hover:text-[#2F5D50] transition-colors truncate">${app.patient_name || "Sin Nombre"} <span class="text-xs text-gray-500 font-normal">(${app.birthday ? calcularEdad(app.birthday) : "?"} años)</span></h4>
-                             <div class="flex flex-col gap-1 text-xs text-gray-500 mt-0.5">
-                                 <div class="flex items-center gap-2">
-                                    <i class="fa-solid fa-notes-medical text-[#2F5D50]/60 min-w-[14px]"></i>
-                                    <span class="truncate">${app.service_name || app.servicio || app.name || "Consulta"}</span>
+                    <div class="flex flex-col gap-2 pl-3 flex-1 min-w-0 pr-4">
+                        <div class="flex items-start gap-4 w-full">
+                            <div class="relative w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden cursor-pointer flex-shrink-0 border border-gray-100 patient-avatar-btn">
+                                 ${photoContent}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                 <h4 class="font-bold text-gray-800 text-base group-hover:text-[#2F5D50] transition-colors leading-snug break-words">${app.patient_name || "Sin Nombre"} <span class="text-xs text-gray-500 font-normal whitespace-nowrap">(${app.birthday ? calcularEdad(app.birthday) : "?"} años)</span></h4>
+                                 <div class="flex flex-col gap-1 text-xs text-gray-500 mt-1">
+                                     <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-notes-medical text-[#2F5D50]/60 min-w-[14px]"></i>
+                                        <span class="truncate">${app.service_name || app.servicio || app.name || "Consulta"}</span>
+                                     </div>
+                                     <div class="flex items-center gap-2" style="color: ${pColor}">
+                                        <i class="fa-solid fa-user-doctor min-w-[14px]"></i>
+                                        <span class="truncate font-bold">${app.employed_name || "Fisio"}</span>
+                                     </div>
                                  </div>
-                                 <div class="flex items-center gap-2" style="color: ${pColor}">
-                                    <i class="fa-solid fa-user-doctor min-w-[14px]"></i>
-                                    <span class="truncate font-bold">${app.employed_name || "Fisio"}</span>
-                                 </div>
-                                 ${
-                                     app.last_diagnostic
-                                         ? `<div class="mt-2 p-2 bg-amber-50 border border-amber-100/50 rounded-lg text-xs text-gray-700 whitespace-normal break-words shadow-sm" title="Diagnóstico">
-                                              <p class="font-bold text-amber-600 text-[10px] uppercase tracking-wider mb-0.5 flex items-center gap-1"><i class="fa-solid fa-stethoscope"></i> Diagnóstico</p>
-                                              ${app.last_diagnostic}
-                                            </div>`
-                                         : ""
-                                 }
-                             </div>
+                            </div>
                         </div>
+                        ${
+                            app.last_diagnostic
+                                ? `<div class="w-full p-3 bg-amber-50 border border-amber-100/50 rounded-lg text-xs text-gray-700 whitespace-normal break-words shadow-sm leading-relaxed" title="Diagnóstico">
+                                      <p class="font-bold text-amber-600 text-[10px] uppercase tracking-wider mb-0.5 flex items-center gap-1"><i class="fa-solid fa-stethoscope"></i> Diagnóstico</p>
+                                      ${app.last_diagnostic}
+                                    </div>`
+                                : ""
+                        }
                     </div>
                      <div class="flex items-center justify-end gap-2 pr-1 w-full sm:w-auto border-t sm:border-t-0 border-gray-100 pt-2 sm:pt-0 mt-2 sm:mt-0 flex-shrink-0 flex-wrap">
                           <!-- Time -->
@@ -1808,6 +1852,15 @@ try {
                         e.stopPropagation();
                         // Open Full Edit Modal
                         iniciarEdicion(app);
+                    });
+                }
+
+                // Click listener for Avatar
+                const avBtn = div.querySelector(".patient-avatar-btn");
+                if (avBtn) {
+                    avBtn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        handleAvatarClick(app);
                     });
                 }
 
@@ -2201,6 +2254,121 @@ try {
                     console.error(e);
                 }
             }
+
+            // --- Quick Photo Upload Logic ---
+            const photoModal = document.getElementById("photoActionModal");
+            const photoInput = document.getElementById(
+                "photoUploadInput",
+            ) as HTMLInputElement;
+            const viewBtn = document.getElementById("viewPhotoBtn");
+            const changeBtn = document.getElementById("changePhotoBtn");
+            const closePhotoBtn = document.getElementById("closePhotoModalBtn");
+
+            let currentPhotoApp: Appointment | null = null;
+
+            function handleAvatarClick(app: Appointment) {
+                currentPhotoApp = app;
+                const hasPhoto =
+                    app.photo &&
+                    app.photo !== "default.png" &&
+                    !String(app.photo).includes("default.png");
+
+                if (!hasPhoto) {
+                    // Direct Camera/Upload
+                    photoInput?.click();
+                } else {
+                    // Show Action Sheet
+                    if (photoModal) photoModal.classList.remove("hidden");
+                }
+            }
+
+            // Bind Modal Buttons
+            viewBtn?.addEventListener("click", () => {
+                if (currentPhotoApp && currentPhotoApp.photo) {
+                    (window as any).openPhoto(
+                        currentPhotoApp.photo,
+                        currentPhotoApp.patient_name,
+                    );
+                }
+                if (photoModal) photoModal.classList.add("hidden");
+            });
+
+            changeBtn?.addEventListener("click", () => {
+                photoInput?.click();
+                if (photoModal) photoModal.classList.add("hidden");
+            });
+
+            closePhotoBtn?.addEventListener("click", () => {
+                if (photoModal) photoModal.classList.add("hidden");
+            });
+
+            // Handle File Select
+            photoInput?.addEventListener("change", async (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (!file || !currentPhotoApp) return;
+
+                // Show loading state (Optional but good UX)
+                const originalText = changeBtn ? changeBtn.innerHTML : "";
+                if (changeBtn) {
+                    changeBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...`;
+                    changeBtn.disabled = true;
+                }
+
+                const formData = new FormData();
+                formData.append("photo", file); // Corrected field name from 'image' to 'photo'
+
+                try {
+                    // Using the standard PATCH endpoint found in Paciente.astro
+                    const res = await fetch(
+                        `/api/v1/Pacientes/${currentPhotoApp.idpatient}`,
+                        {
+                            method: "PATCH",
+                            body: formData,
+                        },
+                    );
+
+                    if (res.ok) {
+                        // Success
+                        // Update UI immediately (optimistic) or reload
+                        reloadAppointments();
+                        if (photoModal) photoModal.classList.add("hidden");
+                    } else {
+                        const err = await res.text();
+                        console.error("Upload failed:", err);
+                        alert("Error al subir foto");
+                    }
+                } catch (error) {
+                    console.error("Upload error", error);
+                    alert("Error de conexión");
+                } finally {
+                    if (changeBtn) {
+                        changeBtn.innerHTML = originalText;
+                        changeBtn.disabled = false;
+                    }
+                    // Reset input
+                    photoInput.value = "";
+                }
+            });
+
+            function reloadAppointments() {
+                const dateInput = document.getElementById(
+                    "dateFilter",
+                ) as HTMLInputElement;
+                if (dateInput) fetchAppointments(dateInput.value);
+            }
+
+            // Expose globally if needed? No, purely internal to module scope?
+            // Wait, createAppointmentCard is in the SAME scope.
+            // But createAppointmentCard logic calls window.openPhoto.
+            // I removed the inline onclick. I need to bind it.
+
+            // In createAppointmentCard, I need to add the listener.
+            // Since createAppointmentCard creates the element, I can just do:
+            // div.querySelector('.patient-avatar-btn').addEventListener...
+            // which I will add in the Chunk 3 below. Wait, Chunk 3 should edit createAppointmentCard
+
+            // Wait, I need to make handleAvatarClick available to createAppointmentCard.
+            // They are in the same script block? Yes.
 
             // ... (keep history loadHistory unchanged) ...
 
