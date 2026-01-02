@@ -112,32 +112,31 @@ try {
 								class="sticky top-0 z-10 bg-white/95 backdrop-blur-md shadow-sm"
 							>
 								<tr
-									class="text-[#2F5D50] border-b border-[#2F5D50]/10"
+									class="text-[#2F5D50] border-b border-[#2F5D50]/10 text-sm"
 								>
+									<th
+										class="p-4 font-bold whitespace-nowrap text-center"
+										>#</th
+									>
+									<th class="p-4 font-bold whitespace-nowrap"
+										>Fecha/Hora</th
+									>
 									<th class="p-4 font-bold whitespace-nowrap"
 										>Paciente</th
 									>
-									<th
-										class="p-4 font-bold whitespace-nowrap text-center"
-										>Fecha</th
-									>
-									<th
-										class="p-4 font-bold whitespace-nowrap text-center"
-										>Hora</th
-									>
-									<th
-										class="p-4 font-bold whitespace-nowrap text-center"
-										>Sesión</th
+									<th class="p-4 font-bold whitespace-nowrap"
+										>Fisio</th
 									>
 									<th class="p-4 font-bold whitespace-nowrap"
 										>Servicios</th
 									>
-									<th class="p-4 font-bold whitespace-nowrap"
-										>Fisioterapeuta</th
+									<th
+										class="p-4 font-bold whitespace-nowrap text-center"
+										>Sesiones Paquete</th
 									>
 									<th
-										class="p-4 font-bold whitespace-nowrap text-right"
-										>Total</th
+										class="p-4 font-bold whitespace-nowrap text-center"
+										>Sesión Actual</th
 									>
 								</tr>
 							</thead>
@@ -208,6 +207,13 @@ try {
 	<script define:vars={{ historial }}>
 		// Datos iniciales desde el servidor
 		let allData = historial || [];
+		// Ensure allData is an array, mostly for safety if API returns object
+		if (!Array.isArray(allData) && allData.body) {
+			allData = allData.body;
+		} else if (!Array.isArray(allData)) {
+			allData = [];
+		}
+
 		let filteredData = [...allData];
 
 		// Estado de la paginación
@@ -225,23 +231,23 @@ try {
 		const showingEnd = document.getElementById("showingEnd");
 		const totalRecords = document.getElementById("totalRecords");
 
-		// Helpers de formato
-		const formatCurrency = (value) => {
-			if (!value) return "$0.00";
-			return new Intl.NumberFormat("es-MX", {
-				style: "currency",
-				currency: "MXN",
-			}).format(parseFloat(value));
-		};
-
-		const formatDate = (dateString) => {
-			if (!dateString) return "";
-			// Ajustar zona horaria si es necesario, o usar UTC como string simple
-			return new Date(dateString).toLocaleDateString("es-MX", {
-				year: "numeric",
-				month: "2-digit",
+		const formatDate = (dateString, timeString) => {
+			if (!dateString) return "-";
+			const d = new Date(dateString);
+			const dateStr = d.toLocaleDateString("es-MX", {
 				day: "2-digit",
+				month: "2-digit",
+				year: "numeric",
 			});
+
+			// Format time if available
+			let timeStr = "";
+			if (timeString) {
+				// Assuming timeString is like "15:00:00"
+				const [h, m] = timeString.split(":");
+				timeStr = `${h}:${m}`;
+			}
+			return `${dateStr} ${timeStr}`;
 		};
 
 		// Función Principal de Renderizado
@@ -272,14 +278,14 @@ try {
 			pageData.forEach((item) => {
 				const row = document.createElement("tr");
 				row.className =
-					"hover:bg-white/60 transition-colors group border-b border-transparent hover:border-[#2F5D50]/5";
+					"hover:bg-white/60 transition-colors group border-b border-transparent hover:border-[#2F5D50]/5 text-sm text-gray-700";
 
 				const initial = item.paciente
 					? item.paciente.charAt(0).toUpperCase()
 					: "?";
-				const hora = item.hora_inicio
-					? item.hora_inicio.substring(0, 5)
-					: "--:--";
+
+				const fullDateTime = formatDate(item.fecha, item.hora_inicio);
+
 				const serviciosTags = item.servicios
 					? item.servicios
 							.split(",")
@@ -290,39 +296,37 @@ try {
 							.join("")
 					: '<span class="text-xs text-gray-400 italic">Sin servicios</span>';
 
+				const sesionesPaquete = item.total_sesiones_paquete || "-";
+				const sesionActualPaquete = item.sesion_en_paquete || "-";
+
 				row.innerHTML = `
+                    <td class="p-4 text-center font-bold text-gray-500">
+                         #${item.numero_sesion || "-"}
+                    </td>
+                    <td class="p-4 whitespace-nowrap text-gray-600">
+                        ${fullDateTime}
+                    </td>
                     <td class="p-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-[#2F5D50]/10 flex items-center justify-center text-[#2F5D50] font-bold text-xs shadow-sm">
+                        <div class="flex items-center gap-2">
+                             <div class="w-6 h-6 rounded-full bg-[#2F5D50]/10 flex items-center justify-center text-[#2F5D50] font-bold text-[10px] shadow-sm flex-shrink-0">
                                 ${initial}
                             </div>
-                            <span class="font-bold text-gray-800 text-sm">${item.paciente || "Desconocido"}</span>
+                            <span class="font-bold text-gray-800">${item.paciente || "Desconocido"}</span>
                         </div>
                     </td>
-                    <td class="p-4 text-center whitespace-nowrap text-sm text-gray-600">
-                        ${formatDate(item.fecha)}
-                    </td>
-                    <td class="p-4 text-center whitespace-nowrap text-sm text-gray-600 font-mono">
-                        ${hora}
-                    </td>
-                    <td class="p-4 text-center">
-                        <span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg text-xs font-bold border border-blue-100 shadow-sm">
-                            #${item.numero_sesion || "1"}
-                        </span>
+                    <td class="p-4 text-gray-600">
+                         ${item.fisioterapeuta || "N/A"}
                     </td>
                     <td class="p-4">
-                        <div class="flex flex-wrap gap-1 max-w-[200px] sm:max-w-xs">
+                        <div class="flex flex-wrap gap-1 max-w-[200px]">
                             ${serviciosTags}
                         </div>
                     </td>
-                    <td class="p-4 text-sm text-gray-700">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-user-doctor text-[#2F5D50]/50 text-xs"></i>
-                            ${item.fisioterapeuta || "N/A"}
-                        </div>
+                    <td class="p-4 text-center text-gray-600 font-medium">
+                        ${sesionesPaquete}
                     </td>
-                    <td class="p-4 text-right font-bold text-[#2F5D50] whitespace-nowrap">
-                        ${formatCurrency(item.total)}
+                     <td class="p-4 text-center font-bold text-[#2F5D50]">
+                        ${sesionActualPaquete !== "-" ? `<span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100">${sesionActualPaquete}</span>` : "-"}
                     </td>
                 `;
 				tableBody.appendChild(row);
