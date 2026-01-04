@@ -1248,7 +1248,7 @@ try {
                             reason,
                             status,
                             idpatient,
-                            idemployed: finalPhysioId,
+                            idemployed: finalPhysioId || null,
                         };
 
                         // Logic: Consume Existing Package Session
@@ -2609,9 +2609,20 @@ try {
                     }
 
                     const json = await res.json();
-                    const history = Array.isArray(json)
-                        ? json
-                        : json.data || [];
+                    let history = [];
+
+                    if (Array.isArray(json)) {
+                        history = json;
+                    } else if (json.data && Array.isArray(json.data)) {
+                        history = json.data;
+                    } else if (
+                        json &&
+                        typeof json === "object" &&
+                        Object.keys(json).length > 0
+                    ) {
+                        // Handle single object response
+                        history = [json];
+                    }
 
                     if (history.length === 0) {
                         historyList.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm flex flex-col items-center gap-2"><i class="fa-regular fa-folder-open text-2xl opacity-50"></i><p>Este paciente no tiene historial registrado.</p></div>`;
@@ -2623,10 +2634,13 @@ try {
                         .map((item: any) => {
                             // Date Formatting
                             const dateStr =
-                                item.created_at || item.date || item.fecha;
+                                item.appointment_date ||
+                                item.created_at ||
+                                item.date;
                             const dateObj = dateStr
                                 ? new Date(dateStr)
                                 : new Date();
+
                             const formattedDate = dateObj.toLocaleDateString(
                                 "es-ES",
                                 {
@@ -2635,53 +2649,119 @@ try {
                                     year: "numeric",
                                 },
                             );
-                            const formattedTime = dateObj.toLocaleTimeString(
-                                "es-ES",
-                                { hour: "2-digit", minute: "2-digit" },
-                            );
+
+                            // Time Formatting (Handle "HH:MM:SS" string or Date object)
+                            let formattedTime = "--:--";
+                            if (item.appointment_time) {
+                                formattedTime = item.appointment_time.substring(
+                                    0,
+                                    5,
+                                );
+                            } else {
+                                formattedTime = dateObj.toLocaleTimeString(
+                                    "es-ES",
+                                    {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                    },
+                                );
+                            }
+
+                            const physioName =
+                                item.employedname ||
+                                item.employed_name ||
+                                "Fisioterapeuta";
+                            const noteContent =
+                                item.therapeutic_copy ||
+                                item.therapeuticnote ||
+                                "";
+                            // Diagnostic might not be in the new payload, but keeping fallback
+                            const diagnosticContent = item.diagnostic || "";
 
                             return `
-                        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
-                            <div class="flex justify-between items-start mb-3 pb-2 border-b border-gray-50">
-                                <div>
-                                    <h4 class="font-bold text-[#2F5D50] text-sm leading-tight">${item.service_name || "Consulta General"}</h4>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-md"><i class="fa-regular fa-calendar mr-1"></i>${formattedDate}</span>
-                                        <span class="text-[10px] text-gray-500"><i class="fa-regular fa-clock mr-1"></i>${formattedTime}</span>
+                        <div class="group relative bg-white rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#2F5D50]/10 overflow-hidden">
+                            <!-- Decorative side strip -->
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#2F5D50] to-[#2F5D50]/40"></div>
+                            
+                            <!-- Header -->
+                            <div class="flex justify-between items-start mb-4 pl-3">
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-lg text-gray-800 group-hover:text-[#2F5D50] transition-colors flex items-center gap-2">
+                                        ${item.service_name || "Consulta General"}
+                                        <span class="hidden sm:inline-block px-2 py-0.5 rounded-full bg-[#2F5D50]/10 text-[#2F5D50] text-[10px] font-bold uppercase tracking-wider">
+                                            Historial
+                                        </span>
+                                    </h4>
+                                    <div class="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500 font-medium">
+                                        <div class="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
+                                            <i class="fa-regular fa-calendar text-[#2F5D50]/70"></i>
+                                            ${formattedDate}
+                                        </div>
+                                        <div class="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
+                                            <i class="fa-regular fa-clock text-[#2F5D50]/70"></i>
+                                            ${formattedTime}
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="text-right">
-                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">${item.employed_name || "Fisioterapeuta"}</span>
+                                
+                                <!-- Doctor Badge -->
+                                <div class="flex flex-col items-end ml-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-right">
+                                            <span class="block text-[10px] text-gray-400 font-bold uppercase tracking-wider">Atendido por</span>
+                                            <span class="block text-xs font-bold text-gray-700 whitespace-nowrap">${physioName}</span>
+                                        </div>
+                                        <div class="hidden sm:flex w-8 h-8 rounded-full bg-[#2F5D50]/10 items-center justify-center text-[#2F5D50] text-xs font-bold shadow-sm ring-2 ring-white">
+                                            ${physioName.charAt(0).toUpperCase()}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div class="space-y-3">
+
+                            <!-- Content -->
+                            <div class="space-y-3 pl-3">
                                 ${
-                                    item.diagnostic
+                                    diagnosticContent
                                         ? `
-                                    <div class="bg-amber-50 rounded-lg p-2.5 border border-amber-100/50">
-                                        <p class="text-[10px] font-bold text-amber-700 uppercase mb-1 tracking-wide flex items-center gap-1"><i class="fa-solid fa-stethoscope"></i> Diagnóstico</p>
-                                        <p class="text-xs text-gray-700 leading-relaxed">${item.diagnostic}</p>
+                                    <div class="relative bg-amber-50/50 rounded-xl p-3 border border-amber-100 transition-colors group-hover:bg-amber-50">
+                                        <div class="flex items-start gap-3">
+                                            <div class="p-1.5 bg-amber-100 text-amber-600 rounded-lg shrink-0 mt-0.5 shadow-sm">
+                                                <i class="fa-solid fa-stethoscope text-xs"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-amber-700 uppercase mb-0.5 tracking-wide">Diagnóstico</p>
+                                                <p class="text-sm text-gray-700 leading-relaxed font-medium">${diagnosticContent}</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 `
                                         : ""
                                 }
 
                                 ${
-                                    item.therapeuticnote
+                                    noteContent
                                         ? `
-                                    <div class="bg-emerald-50 rounded-lg p-2.5 border border-emerald-100/50">
-                                        <p class="text-[10px] font-bold text-emerald-700 uppercase mb-1 tracking-wide flex items-center gap-1"><i class="fa-solid fa-notes-medical"></i> Nota Terapéutica</p>
-                                        <p class="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap">${item.therapeuticnote}</p>
+                                    <div class="relative bg-emerald-50/50 rounded-xl p-3 border border-emerald-100 transition-colors group-hover:bg-emerald-50">
+                                        <div class="flex items-start gap-3">
+                                            <div class="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg shrink-0 mt-0.5 shadow-sm">
+                                                <i class="fa-solid fa-notes-medical text-xs"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-emerald-700 uppercase mb-0.5 tracking-wide">Nota Terapéutica</p>
+                                                <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">${noteContent}</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 `
                                         : ""
                                 }
                                 
                                 ${
-                                    !item.diagnostic && !item.therapeuticnote
+                                    !diagnosticContent && !noteContent
                                         ? `
-                                    <p class="text-xs text-gray-400 italic text-center">Sin notas adicionales.</p>
+                                    <div class="text-center py-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                        <p class="text-xs text-gray-400 italic">Sin notas registradas</p>
+                                    </div>
                                 `
                                         : ""
                                 }
@@ -3034,7 +3114,6 @@ try {
                                         currentAppointment.nombre_paciente ||
                                         "",
                                     employedname: userName || "Fisioterapeuta",
-                                    // diagnostic_copy removed
                                     therapeutic_copy: noteElem?.value || "",
                                     numberappointment:
                                         currentAppointment.numsession || "1",
@@ -3046,7 +3125,9 @@ try {
                                     idpatient: currentAppointment.idpatient,
                                     idemployed:
                                         userId || currentAppointment.idemployed,
-                                    idappointment: currentAppointment.id,
+                                    idappointment:
+                                        currentAppointment.idappointment ||
+                                        currentAppointment.id,
                                     iddetailappointment: detailId || "",
                                 };
 
