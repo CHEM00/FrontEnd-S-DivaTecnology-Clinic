@@ -56,23 +56,24 @@ try {
         paquetesRes,
         adicionalesRes,
     ] = await Promise.all([
-        fetch(`${backendUrl}/api/v1/Pacientes`, { headers, agent }).then(
+        fetch(`${backendUrl}/api/v1/Pacientes`, { headers, agent } as any).then(
             (res) => (res.ok ? res.json() : []),
         ),
-        fetch(`${backendUrl}/api/v1/Agenda/fisio`, { headers, agent }).then(
-            (res) => (res.ok ? res.json() : []),
-        ),
+        fetch(`${backendUrl}/api/v1/Agenda/fisio`, {
+            headers,
+            agent,
+        } as any).then((res) => (res.ok ? res.json() : [])),
         fetch(`${backendUrl}/api/v1/Agenda/services`, {
             headers,
             agent,
-        }).then((res) => (res.ok ? res.json() : [])),
-        fetch(`${backendUrl}/api/v1/Package`, { headers, agent }).then((res) =>
-            res.ok ? res.json() : [],
+        } as any).then((res) => (res.ok ? res.json() : [])),
+        fetch(`${backendUrl}/api/v1/Package`, { headers, agent } as any).then(
+            (res) => (res.ok ? res.json() : []),
         ),
         fetch(`${backendUrl}/api/v1/Product_Service/additional`, {
             headers,
             agent,
-        }).then((res) => (res.ok ? res.json() : [])),
+        } as any).then((res) => (res.ok ? res.json() : [])),
     ]);
 
     pacientes = pacientesRes || [];
@@ -3231,7 +3232,9 @@ try {
                             ? canvas.toDataURL("image/png")
                             : "";
                         const pdfBytes = await generateConsentPDF(
-                            currentAppointment.nombre_paciente,
+                            currentAppointment.patient_name ||
+                                currentAppointment.nombre_paciente ||
+                                "Paciente",
                             userName || "Fisioterapeuta",
                             signatureData,
                             initials,
@@ -4396,7 +4399,7 @@ try {
                     >
                         <option value="">Seleccionar fisio...</option>
                         {
-                            empleados.map((empleado) => (
+                            empleados.map((empleado: any) => (
                                 <option value={empleado.id}>
                                     {empleado.firstname} {empleado.lastname}
                                 </option>

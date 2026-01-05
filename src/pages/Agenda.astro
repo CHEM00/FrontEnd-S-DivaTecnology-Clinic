@@ -616,42 +616,7 @@ try {
         import { SERVER_BACKEND_URL } from "../config";
 
         declare global {
-            interface Cita {
-                id: number;
-                currentday: string;
-                inithour: string;
-                endhour: string;
-                status:
-                    | "wait"
-                    | "confirmed"
-                    | "canceled"
-                    | "concluded"
-                    | "no assisted"
-                    | string;
-                reason: string;
-                idpatient: number;
-                idemployed: number;
-                idservice: number;
-                salepackage?: boolean;
-                session_number?: number;
-                total_sessions?: number;
-                patientname?: string;
-                patient?: {
-                    id: number;
-                    firstname: string;
-                    lastname: string;
-                };
-                employed?: {
-                    id: number;
-                    firstname: string;
-                    lastname: string;
-                };
-                service?: {
-                    id: number;
-                    name: string;
-                };
-                [key: string]: any;
-            }
+            // interface Cita removed (moved to types.d.ts)
 
             interface Window {
                 pacientesData: any[];
@@ -2043,8 +2008,6 @@ try {
                     endhour: endHourEl.value,
                     status: statusEl?.value || "wait",
                     reason: reasonEl?.value || "",
-                    idpatient: idPatientEl.value,
-                    idemployed: idEmployedEl.value,
                     // idservice: serviceId, // REMOVED: Service handled separately
                 };
 

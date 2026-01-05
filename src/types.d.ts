@@ -33,10 +33,35 @@ declare global {
         currentday: string;
         inithour: string;
         endhour: string;
-        status: 'wait' | 'confirmed' | 'canceled' | 'concluded';
+        status:
+        | "wait"
+        | "confirmed"
+        | "canceled"
+        | "concluded"
+        | "no assisted"
+        | string;
         reason: string;
+        idpatient: number;
+        idemployed: number;
+        idservice: number;
+        salepackage?: boolean;
+        session_number?: number;
+        total_sessions?: number;
         patientname?: string;
-        service_name?: string;
-        price?: string;
+        patient?: {
+            id: number;
+            firstname: string;
+            lastname: string;
+        };
+        employed?: {
+            id: number;
+            firstname: string;
+            lastname: string;
+        };
+        service?: {
+            id: number;
+            name: string;
+        };
+        [key: string]: any;
     }
 }
