@@ -2584,13 +2584,6 @@ try {
                     ? parseInt(evaInput.value)
                     : null;
 
-                console.log(
-                    "Auto-Saving. Pain Intensity:",
-                    pain_intensity,
-                    "Raw Value:",
-                    evaInput?.value,
-                );
-
                 let detailId = null;
 
                 try {
@@ -2871,9 +2864,16 @@ try {
                                 item.employedname ||
                                 item.employed_name ||
                                 "Fisioterapeuta";
-                            const serviceName = (
+
+                            // Updated Service Name Logic
+                            let serviceName = (
                                 item.service_name || "Consulta General"
                             ).toString();
+
+                            if (item.is_package_session) {
+                                serviceName = "Sesión de Paquete";
+                            }
+
                             const noteContent =
                                 item.therapeutic_copy ||
                                 item.therapeuticnote ||
@@ -2883,6 +2883,7 @@ try {
                                 item.pain_intensity ??
                                 item.notes?.pain_intensity;
                             const additionals = item.additionals || [];
+                            const sessionLabel = item.session_label || "";
 
                             // --- Logic for New Design ---
                             // Check for "Valoración"
@@ -2892,7 +2893,6 @@ try {
                                 .toLowerCase()
                                 .includes("valoracion");
 
-                            // Style Configuration
                             // Style Configuration
                             const cardStyles = isValuation
                                 ? {
@@ -2936,16 +2936,39 @@ try {
                                     label = "Intenso";
                                 }
 
+                                const sessionBadge = sessionLabel
+                                    ? `
+                                    <div class="mt-1 px-2 py-0.5 bg-blue-100 rounded-full border border-blue-200">
+                                        <span class="text-[10px] font-extrabold text-blue-700 uppercase tracking-widest block text-center whitespace-nowrap">${sessionLabel}</span>
+                                    </div>
+                                `
+                                    : "";
+
                                 evaBadge = `
-                                    <div class="flex flex-col items-center justify-center px-3 py-1.5 rounded-xl border ${colorClass} min-w-[60px] ml-4 shadow-sm bg-opacity-50 backdrop-blur-sm self-start">
-                                        <span class="text-[9px] font-bold uppercase tracking-wider opacity-60 mb-0.5">EVA</span>
-                                        <span class="text-2xl font-black leading-none">${val}</span>
-                                        <span class="text-[8px] font-bold uppercase tracking-wider opacity-70 mt-0.5">${label}</span>
+                                    <div class="flex flex-col items-center self-start ml-4">
+                                        <div class="flex flex-col items-center justify-center px-3 py-1.5 rounded-xl border ${colorClass} min-w-[60px] shadow-sm bg-opacity-50 backdrop-blur-sm mb-1">
+                                            <span class="text-[9px] font-bold uppercase tracking-wider opacity-60 mb-0.5">EVA</span>
+                                            <span class="text-2xl font-black leading-none">${val}</span>
+                                            <span class="text-[8px] font-bold uppercase tracking-wider opacity-70 mt-0.5">${label}</span>
+                                        </div>
+                                        ${sessionBadge}
                                     </div>
                                 `;
                             } else {
-                                // Placeholder for layout consistency if desired, or empty
-                                evaBadge = "";
+                                // If not EVA but is package, maybe show session label?
+                                // User request was specifically "below EVA label", implying existence of EVA.
+                                // However, for robustness:
+                                if (sessionLabel) {
+                                    evaBadge = `
+                                        <div class="flex flex-col items-center self-start ml-4">
+                                            <div class="mt-1 px-2 py-0.5 bg-gray-100 rounded-full border border-gray-200">
+                                                <span class="text-[8px] font-bold text-gray-500 uppercase tracking-widest block text-center whitespace-nowrap">${sessionLabel}</span>
+                                            </div>
+                                        </div>
+                                    `;
+                                } else {
+                                    evaBadge = "";
+                                }
                             }
 
                             // Additionals HTML
@@ -3203,10 +3226,6 @@ try {
                                         therapeutic_copy: noteElem?.value || "",
                                     };
 
-                                    console.log(
-                                        `Updating History with Detail ID: ${existingDetailId}`,
-                                    );
-
                                     const upHistRes = await fetch(
                                         `/api/v1/HistorialClinico/${existingDetailId}`,
                                         {
@@ -3220,9 +3239,6 @@ try {
                                     );
 
                                     if (upHistRes.ok) {
-                                        console.log(
-                                            "Historial Médico correctamente actualizado.",
-                                        );
                                         alert(
                                             "Notas y Historial actualizados correctamente",
                                         );
