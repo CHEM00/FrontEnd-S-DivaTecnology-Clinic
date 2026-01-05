@@ -740,9 +740,35 @@ try {
 
 			// Photo (if available) - for now just Initial
 			const init = (pName || "?").charAt(0).toUpperCase();
-			document.getElementById("detailPhotoContainer").innerHTML = p.photo
-				? `<img src="${p.photo}" class="w-full h-full object-cover">`
-				: `<span class="text-2xl">${init}</span>`;
+			// Photo Logic (Matches dashboardEmpleado.astro)
+			const rawPhoto = p.photo;
+			const hasPhoto =
+				rawPhoto &&
+				rawPhoto !== "default.png" &&
+				!String(rawPhoto).includes("default.png");
+
+			let photoHtml = "";
+			if (hasPhoto) {
+				let finalUrl = rawPhoto;
+				if (!finalUrl.startsWith("http")) {
+					if (
+						finalUrl.startsWith("uploads") ||
+						finalUrl.startsWith("/uploads")
+					) {
+						finalUrl = `${backendUrl}/${finalUrl.startsWith("/") ? finalUrl.slice(1) : finalUrl}`;
+					} else {
+						// Fallback assuming it's just a filename in standard folder
+						finalUrl = `${backendUrl}/uploads/images/${finalUrl}`;
+					}
+				}
+				const fallbackHtml = `<span class='text-2xl'>${init}</span>`;
+				photoHtml = `<img src="${finalUrl}" class="w-full h-full object-cover" onerror="this.parentNode.innerHTML=\`${fallbackHtml}\`">`;
+			} else {
+				photoHtml = `<span class="text-2xl">${init}</span>`;
+			}
+
+			document.getElementById("detailPhotoContainer").innerHTML =
+				photoHtml;
 
 			// 2. Session Info
 			// Date: 'currentday' or 'date'
