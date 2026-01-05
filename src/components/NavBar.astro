@@ -27,7 +27,7 @@ const currentPath = Astro.url.pathname;
 <button
     id="MobileToggle"
     onclick="toggleNavBar()"
-    class="lg:hidden fixed top-4 left-4 z-[9999] glass-button p-3 rounded-full shadow-lg hover:bg-[#236c5d] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E7D6D] active:scale-95"
+    class="lg:hidden fixed top-4 left-4 z-40 glass-button p-3 rounded-full shadow-lg hover:bg-[#236c5d] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E7D6D] active:scale-95"
     aria-label="Abrir menú"
 >
     <i class="fa-solid fa-bars fa-lg text-white"></i>
@@ -36,7 +36,7 @@ const currentPath = Astro.url.pathname;
 <!-- Backdrop overlay for mobile -->
 <div
     id="NavBackdrop"
-    class="fixed inset-0 bg-black/60 z-[9998] hidden lg:hidden transition-opacity duration-300 backdrop-blur-sm cursor-pointer"
+    class="fixed inset-0 bg-black/60 z-30 hidden lg:hidden transition-opacity duration-300 backdrop-blur-sm cursor-pointer"
     onclick="closeNavBar()"
 >
 </div>
@@ -44,7 +44,7 @@ const currentPath = Astro.url.pathname;
 <!-- Navigation Bar -->
 <aside
     id="Contenedor"
-    class="fixed lg:relative top-0 left-0 h-screen glass-panel z-[9999] transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0 w-72 lg:w-24 flex flex-col shadow-2xl lg:shadow-none flex-shrink-0 border-r border-white/20 overflow-hidden !bg-white lg:!bg-white/70"
+    class="fixed lg:relative top-0 left-0 h-screen glass-panel z-40 transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0 w-72 lg:w-24 flex flex-col shadow-2xl lg:shadow-none flex-shrink-0 border-r border-white/20 overflow-hidden !bg-white lg:!bg-white/70"
 >
     <!-- Logo / Header Area -->
     <div
