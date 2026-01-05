@@ -270,10 +270,19 @@ try {
                         <!-- Lista de resultados -->
                         <div
                             id="patientSearchResults"
-                            class="hidden absolute left-0 right-0 top-full mt-1 bg-white glass-panel border border-white/50 shadow-xl rounded-xl max-h-60 overflow-y-auto z-50"
+                            class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl max-h-60 overflow-y-auto z-50 text-gray-700"
                         >
                         </div>
                     </div>
+                    <!-- Link to New Patient Modal -->
+                    <button
+                        type="button"
+                        id="btnOpenNewPatient"
+                        class="text-xs text-[#2F5D50] font-bold mt-1 hover:underline flex items-center gap-1"
+                        onclick="window.dispatchEvent(new CustomEvent('open-new-patient-modal'))"
+                    >
+                        <i class="fa-solid fa-user-plus"></i> ¿Nuevo paciente?
+                    </button>
                 </div>
 
                 <!-- 2. Fecha -->
@@ -315,6 +324,19 @@ try {
                 </div>
 
                 <!-- 4. Hora -->
+                <div class="flex items-center gap-2 mb-2">
+                    <input
+                        type="checkbox"
+                        id="checkHorarioExtendido"
+                        class="w-4 h-4 text-[#2F5D50] rounded focus:ring-[#2F5D50] border-gray-300 transition-all"
+                    />
+                    <label
+                        for="checkHorarioExtendido"
+                        class="text-xs font-bold text-[#2F5D50] select-none cursor-pointer"
+                    >
+                        Habilitar horario extendido (01:00 - 23:00)
+                    </label>
+                </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label
@@ -459,6 +481,200 @@ try {
         </div>
     </FormModal>
 
+    <!-- Modal Nuevo Paciente -->
+    <FormModal
+        id="modalCrearPaciente"
+        title="Nuevo Paciente"
+        formId="formCrearPaciente"
+        submitText="Guardar"
+        cancelText="Cancelar"
+        size="lg"
+    >
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
+            <!-- Photo Upload -->
+            <div
+                class="col-span-1 md:col-span-2 flex flex-col items-center justify-center mb-2"
+            >
+                <label class="relative cursor-pointer group">
+                    <div
+                        class="w-24 h-24 rounded-full bg-gray-50 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden group-hover:border-[#2F5D50] transition-colors"
+                    >
+                        <img
+                            id="previewNewPatientPhoto"
+                            src=""
+                            class="w-full h-full object-cover hidden"
+                        />
+                        <div
+                            id="placeholderNewPatientPhoto"
+                            class="text-center text-gray-400 p-2"
+                        >
+                            <i class="fa-solid fa-camera text-2xl mb-1"></i>
+                            <span class="text-[10px] block">Subir Foto</span>
+                        </div>
+                    </div>
+                    <input
+                        type="file"
+                        name="photo"
+                        id="newPatientPhotoInput"
+                        class="hidden"
+                        accept="image/*"
+                    />
+                </label>
+            </div>
+
+            <div>
+                <label
+                    class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                    >Nombre *</label
+                >
+                <input
+                    type="text"
+                    name="firstname"
+                    required
+                    class="bg-white border border-gray-200 w-full rounded-xl px-4 py-2 bg-white/50 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                    placeholder="Juan"
+                />
+            </div>
+            <div>
+                <label
+                    class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                    >Apellido Paterno *</label
+                >
+                <input
+                    type="text"
+                    name="lastname"
+                    required
+                    class="bg-white border border-gray-200 w-full rounded-xl px-4 py-2 bg-white/50 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                    placeholder="Pérez"
+                />
+            </div>
+            <div>
+                <label
+                    class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                    >Apellido Materno</label
+                >
+                <input
+                    type="text"
+                    name="motherlastname"
+                    class="bg-white border border-gray-200 w-full rounded-xl px-4 py-2 bg-white/50 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                    placeholder="López"
+                />
+            </div>
+            <div>
+                <label
+                    class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                    >Email</label
+                >
+                <input
+                    type="email"
+                    name="email"
+                    class="bg-white border border-gray-200 w-full rounded-xl px-4 py-2 bg-white/50 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                    placeholder="juan@ejemplo.com"
+                />
+            </div>
+            <div>
+                <label
+                    class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                    >Teléfono</label
+                >
+                <input
+                    type="tel"
+                    name="phone"
+                    id="phone"
+                    required
+                    class="bg-white border border-gray-200 w-full rounded-xl px-4 py-2 bg-white/50 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                    placeholder="10 dígitos"
+                    maxlength="10"
+                    inputmode="numeric"
+                />
+                <p id="phoneError" class="text-xs text-red-500 mt-1 hidden">
+                    El teléfono debe tener 10 dígitos numéricos.
+                </p>
+            </div>
+            <div>
+                <label
+                    class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                    >Fecha Nacimiento</label
+                >
+                <input
+                    type="date"
+                    name="birthdate"
+                    class="bg-white border border-gray-200 w-full rounded-xl px-4 py-2 bg-white/50 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                />
+            </div>
+
+            <!-- Gender -->
+            <div>
+                <label
+                    class="block text-xs font-bold text-gray-500 uppercase mb-2"
+                    >Género</label
+                >
+                <div class="flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input
+                            type="radio"
+                            name="sex"
+                            value="male"
+                            class="text-[#2F5D50] focus:ring-[#2F5D50]"
+                        />
+                        <span class="text-sm text-gray-600">Masculino</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input
+                            type="radio"
+                            name="sex"
+                            value="female"
+                            class="text-[#2F5D50] focus:ring-[#2F5D50]"
+                        />
+                        <span class="text-sm text-gray-600">Femenino</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Civil Status -->
+            <div>
+                <label
+                    class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                    >Estado Civil</label
+                >
+                <select
+                    name="civilstatus"
+                    class="bg-white border border-gray-200 w-full rounded-xl px-4 py-2 bg-white/50 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                >
+                    <option value="single">Soltero/a</option>
+                    <option value="married">Casado/a</option>
+                    <option value="divorced">Divorciado/a</option>
+                    <option value="widowed">Viudo/a</option>
+                </select>
+            </div>
+
+            <div class="md:col-span-2">
+                <label
+                    class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                    >Ocupación</label
+                >
+                <input
+                    type="text"
+                    name="ocupation"
+                    class="bg-white border border-gray-200 w-full rounded-xl px-4 py-2 bg-white/50 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                    placeholder="A qué se dedica"
+                />
+            </div>
+            <div class="md:col-span-2">
+                <label
+                    class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                    >Domicilio</label
+                >
+                <input
+                    type="text"
+                    name="address"
+                    class="bg-white border border-gray-200 w-full rounded-xl px-4 py-2 bg-white/50 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
+                    placeholder="Dirección completa"
+                />
+            </div>
+        </div>
+    </FormModal>
+
     <!-- Scripts del Cliente -->
     <script define:vars={{ pacientes, paquetes, servicios }}>
         window.pacientesData = pacientes;
@@ -470,6 +686,43 @@ try {
         import { SERVER_BACKEND_URL } from "../config";
 
         declare global {
+            interface Cita {
+                id: number;
+                currentday: string;
+                inithour: string;
+                endhour: string;
+                status:
+                    | "wait"
+                    | "confirmed"
+                    | "canceled"
+                    | "concluded"
+                    | "no assisted"
+                    | string;
+                reason: string;
+                idpatient: number;
+                idemployed: number;
+                idservice: number;
+                salepackage?: boolean;
+                session_number?: number;
+                total_sessions?: number;
+                patientname?: string;
+                patient?: {
+                    id: number;
+                    firstname: string;
+                    lastname: string;
+                };
+                employed?: {
+                    id: number;
+                    firstname: string;
+                    lastname: string;
+                };
+                service?: {
+                    id: number;
+                    name: string;
+                };
+                [key: string]: any;
+            }
+
             interface Window {
                 pacientesData: any[];
                 paquetesData: any[];
@@ -620,6 +873,150 @@ try {
             // Cargar empleados si no se cargaron desde el servidor
             cargarEmpleados();
 
+            // --- Handlers para Nuevo Paciente (Refactor) ---
+            window.addEventListener("open-new-patient-modal", () => {
+                const form = document.getElementById(
+                    "formCrearPaciente",
+                ) as HTMLFormElement;
+                if (form) form.reset();
+                const preview = document.getElementById(
+                    "previewNewPatientPhoto",
+                );
+                const placeholder = document.getElementById(
+                    "placeholderNewPatientPhoto",
+                );
+                if (preview) preview.classList.add("hidden");
+                if (placeholder) placeholder.classList.remove("hidden");
+
+                const modal = document.getElementById("modalCrearPaciente");
+                if (modal) {
+                    modal.classList.remove("hidden");
+                    const content = modal.querySelector(
+                        ".modal-content-wrapper",
+                    );
+                    if (content) {
+                        setTimeout(() => {
+                            content.classList.remove("scale-95", "opacity-0");
+                            content.classList.add("scale-100", "opacity-100");
+                        }, 10);
+                    }
+                }
+            });
+
+            // Preview Photo Logic
+            const photoInput = document.getElementById("newPatientPhotoInput");
+            if (photoInput) {
+                photoInput.addEventListener("change", (e: any) => {
+                    const file = e.target.files[0];
+                    const preview = document.getElementById(
+                        "previewNewPatientPhoto",
+                    ) as HTMLImageElement;
+                    const placeholder = document.getElementById(
+                        "placeholderNewPatientPhoto",
+                    );
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                            if (preview) {
+                                preview.src = evt.target?.result as string;
+                                preview.classList.remove("hidden");
+                            }
+                            if (placeholder)
+                                placeholder.classList.add("hidden");
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            // Submit Nuevo Paciente
+            const formPaciente = document.getElementById("formCrearPaciente");
+            if (formPaciente) {
+                formPaciente.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+
+                    const phoneInput = document.getElementById(
+                        "phone",
+                    ) as HTMLInputElement;
+                    const phoneError = document.getElementById("phoneError");
+                    if (
+                        phoneInput.value.length !== 10 ||
+                        isNaN(Number(phoneInput.value))
+                    ) {
+                        if (phoneError) phoneError.classList.remove("hidden");
+                        return;
+                    }
+
+                    const formData = new FormData(
+                        formPaciente as HTMLFormElement,
+                    );
+                    const photoFile = formData.get("photo") as File;
+                    formData.delete("photo");
+
+                    const data: any = Object.fromEntries(formData.entries());
+                    data.is_active = true; // Default
+
+                    try {
+                        const res = await fetch("/api/v1/Pacientes", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(data),
+                        });
+
+                        if (res.ok) {
+                            const result = await res.json();
+                            // Upload Photo if exists
+                            if (photoFile && photoFile.size > 0 && result.id) {
+                                try {
+                                    const photoData = new FormData();
+                                    photoData.append("photo", photoFile);
+                                    await fetch(
+                                        `/api/v1/Pacientes/${result.id}`,
+                                        {
+                                            method: "PATCH",
+                                            body: photoData,
+                                        },
+                                    );
+                                } catch (e) {
+                                    console.error(e);
+                                }
+                            }
+
+                            alert("Paciente registrado exitosamente");
+                            window.cerrarModal("modalCrearPaciente");
+                            (formPaciente as HTMLFormElement).reset();
+
+                            // Update local list & Auto-select
+                            const newP = {
+                                ...data,
+                                id: result.id,
+                                havepackage: false,
+                                firstname: data.firstname,
+                                lastname: data.lastname,
+                            };
+                            if (window.pacientesData)
+                                window.pacientesData.push(newP);
+
+                            // Auto-select in Agenda Modal
+                            setTimeout(() => {
+                                window.abrirModalAgregar(); // Re-open if needed (it stays open usually, but we need to ensure we focus back)
+                                if (window.selectPatient) {
+                                    window.selectPatient(
+                                        result.id,
+                                        `${newP.firstname} ${newP.lastname}`,
+                                    );
+                                }
+                            }, 500);
+                        } else {
+                            alert("Error al registrar paciente");
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert("Error de conexión");
+                    }
+                });
+            }
+
             // --- Lógica de Nueva Cita (Actualizada) ---
 
             // Elementos UI
@@ -689,7 +1086,7 @@ try {
                     const div = document.createElement("div");
                     div.className =
                         "px-4 py-3 hover:bg-[#2F5D50]/10 cursor-pointer text-sm text-gray-700 transition-colors border-b border-gray-100 last:border-0";
-                    div.innerHTML = `<div class="font-bold text-[#2F5D50]">${p.firstname || "Sin Nombre"} ${p.lastname || ""}</div><div class="text-xs text-gray-500">ID: ...${p.id.slice(-4)}</div>`; // Más info si se desea
+                    div.innerHTML = `<div class="font-bold text-[#2F5D50]">${p.firstname || "Sin Nombre"} ${p.lastname || ""}</div>`;
 
                     div.onclick = (e) => {
                         e.stopPropagation(); // Evitar cerrar al click
@@ -762,6 +1159,63 @@ try {
 
                 // Ajustar formato fecha si es necesario (el input date devuelve YYYY-MM-DD)
                 let fechaFormateada = fecha;
+
+                // --- 24H Logic: Early Return (Exact logic from dashboardEmpleado) ---
+                const extended = (
+                    document.getElementById(
+                        "checkHorarioExtendido",
+                    ) as HTMLInputElement
+                )?.checked;
+
+                if (extended && horaInicioSelect) {
+                    horaInicioSelect.innerHTML =
+                        '<option value="">Seleccionar hora</option>';
+                    horaInicioSelect.disabled = false;
+
+                    // Generar 01:00 - 23:00
+                    for (let i = 1; i <= 23; i++) {
+                        const h = String(i).padStart(2, "0");
+                        const time = `${h}:00`;
+                        const option = document.createElement("option");
+                        option.value = time;
+                        option.textContent = time;
+
+                        // Si deseamos conservar la logica de physio random, necesitariamos los slots.
+                        // Pero el requerimiento es "funcione igual que empleado" (liberar todo).
+                        // Si hay fisio seleccionado, se asume ese fisio.
+
+                        horaInicioSelect.appendChild(option);
+                    }
+
+                    // Si estamos en modo edicion y hay una hora seleccionada que no es exacta (ej. 10:30), agregarla?
+                    // Por ahora generamos las horas en punto.
+                    if (selectedTime) {
+                        // Check if exists
+                        let exists = false;
+                        for (
+                            let i = 0;
+                            i < horaInicioSelect.options.length;
+                            i++
+                        ) {
+                            if (
+                                horaInicioSelect.options[i].value ===
+                                selectedTime
+                            )
+                                exists = true;
+                        }
+                        if (!exists) {
+                            const option = document.createElement("option");
+                            option.value = selectedTime;
+                            option.textContent = selectedTime + " (Actual)";
+                            option.selected = true;
+                            horaInicioSelect.appendChild(option);
+                        } else {
+                            horaInicioSelect.value = selectedTime;
+                        }
+                    }
+
+                    return; // BYPASS FETCH
+                }
 
                 try {
                     if (horaInicioSelect) {
@@ -877,12 +1331,18 @@ try {
                 }
             }
 
-            empleadoSelect?.addEventListener(
-                "change",
-                buscarHorariosDisponibles,
+            empleadoSelect?.addEventListener("change", () =>
+                buscarHorariosDisponibles(),
             );
-            fechaInput?.addEventListener("change", buscarHorariosDisponibles);
-            fechaInput?.addEventListener("blur", buscarHorariosDisponibles);
+            fechaInput?.addEventListener("change", () =>
+                buscarHorariosDisponibles(),
+            );
+            fechaInput?.addEventListener("blur", () =>
+                buscarHorariosDisponibles(),
+            );
+            document
+                .getElementById("checkHorarioExtendido")
+                ?.addEventListener("change", () => buscarHorariosDisponibles());
 
             // Exponer globalmente
             window.buscarHorariosDisponibles = buscarHorariosDisponibles;
@@ -1054,27 +1514,28 @@ try {
 
             // Crear días del mes
             for (let dia = 1; dia <= totalDiasMes; dia++) {
-                // Construir string YYYY-MM-DD manualmente para evitar problemas de timezone
+                // Construir string YYYY-MM-DD manualmente
                 const fechaStr = getYYYYMMDDFromParts(year, month, dia);
-
-                // Para comprobar "hoy", usamos la fecha local
                 const hoyStr = getLocalYYYYMMDD(new Date());
                 const esHoy = hoyStr === fechaStr;
 
                 const dayEl = document.createElement("div");
                 dayEl.className = `
-                    relative p-1 sm:p-2 rounded-xl border border-white/40 transition-all min-h-[60px] sm:min-h-[80px] flex flex-col gap-1 cursor-pointer hover:bg-white/60
-                    ${esHoy ? "ring-2 ring-[#2F5D50] bg-white/50" : "bg-white/30"}
+                    relative p-1 md:p-2 rounded-2xl border transition-all min-h-[80px] sm:min-h-[100px] flex flex-col justify-start cursor-pointer group overflow-hidden
+                    ${esHoy ? "bg-white ring-2 ring-[#2F5D50] shadow-md z-10" : "bg-white/40 border-white/50 hover:bg-white hover:shadow-lg hover:-translate-y-1 hover:z-20"}
                 `;
                 dayEl.dataset.date = fechaStr;
 
                 // Número del día
                 dayEl.innerHTML = `
-                    <div class="text-right font-bold text-xs sm:text-sm ${esHoy ? "text-[#2F5D50]" : "text-gray-600"}">
-                        ${dia}
+                    <div class="flex justify-between items-start w-full mb-1">
+                        <div class="h-2 w-2 rounded-full ${esHoy ? "bg-[#2F5D50]" : "transparent"}"></div>
+                        <span class="text-sm sm:text-base font-bold ${esHoy ? "text-[#2F5D50]" : "text-gray-400 group-hover:text-gray-600"}">
+                            ${dia}
+                        </span>
                     </div>
-                    <div class="flex-1 flex flex-col justify-center items-center gap-1 overflow-hidden" id="citas-${fechaStr}">
-                        <!-- Indicadores de citas se inyectarán aquí -->
+                    <div class="flex-1 w-full flex flex-col gap-1 overflow-visible" id="citas-${fechaStr}">
+                        <!-- Indicadores se inyectan aquí -->
                     </div>
                 `;
 
@@ -1148,26 +1609,81 @@ try {
         }
 
         function actualizarIndicadoresCalendario() {
-            console.log("Actualizando indicadores del calendario...");
+            // console.log("Actualizando indicadores...");
             Object.keys(citasPorDia).forEach((fechaStr) => {
                 const container = document.getElementById(`citas-${fechaStr}`);
                 if (container) {
                     container.innerHTML = ""; // Limpiar
                     const citas = citasPorDia[fechaStr];
-                    console.log(`Fecha: ${fechaStr}, Citas: ${citas.length}`);
 
-                    // Mostrar TAG con contador de citas
-                    if (citas.length > 0) {
-                        const badge = document.createElement("div");
-                        badge.className =
-                            "bg-[#2F5D50] text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full shadow-sm animate-fade-in";
-                        badge.textContent = `${citas.length} Citas`;
-                        container.appendChild(badge);
+                    if (citas.length === 0) return;
+
+                    // Lógica de visualización: Máximo 3 items, luego "+X"
+                    const maxDisplay = 3;
+                    const displayCitas = citas.slice(0, maxDisplay);
+                    const remaining = citas.length - maxDisplay;
+
+                    displayCitas.forEach((cita) => {
+                        const div = document.createElement("div");
+
+                        const statusConfig: any = {
+                            confirmed: {
+                                bg: "bg-green-100",
+                                text: "text-green-700",
+                                border: "border-green-200",
+                            },
+                            pending: {
+                                bg: "bg-yellow-100",
+                                text: "text-yellow-700",
+                                border: "border-yellow-200",
+                            },
+                            canceled: {
+                                bg: "bg-red-100",
+                                text: "text-red-700",
+                                border: "border-red-200",
+                            },
+                            concluded: {
+                                bg: "bg-blue-100",
+                                text: "text-blue-700",
+                                border: "border-blue-200",
+                            },
+                            wait: {
+                                bg: "bg-orange-100",
+                                text: "text-orange-700",
+                                border: "border-orange-200",
+                            },
+                            "no assisted": {
+                                bg: "bg-gray-100",
+                                text: "text-gray-700",
+                                border: "border-gray-200",
+                            },
+                        };
+
+                        const config =
+                            statusConfig[cita.status?.toLowerCase()] ||
+                            statusConfig.wait;
+                        const colorClass = `${config.bg} ${config.text} ${config.border}`;
+
+                        div.className = `text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-md font-medium truncate border ${colorClass} shadow-sm`;
+
+                        const hora = cita.inithour
+                            ? cita.inithour.substring(0, 5)
+                            : "";
+                        const nombre =
+                            cita.patientname ||
+                            cita.patient?.firstname ||
+                            "Cita";
+                        div.textContent = `${hora} ${nombre}`;
+                        container.appendChild(div);
+                    });
+
+                    if (remaining > 0) {
+                        const moreDiv = document.createElement("div");
+                        moreDiv.className =
+                            "text-[9px] text-gray-400 font-bold text-center mt-0.5";
+                        moreDiv.textContent = `+${remaining} más`;
+                        container.appendChild(moreDiv);
                     }
-                } else {
-                    console.warn(
-                        `No se encontró el contenedor para la fecha: citas-${fechaStr}`,
-                    );
                 }
             });
         }
@@ -1241,22 +1757,58 @@ try {
             citas.forEach((cita) => {
                 const card = document.createElement("div");
 
-                // Mapa de colores (Estilo Notificación: Borde Izquierdo)
-                let statusColorText = "text-gray-600";
-                let statusBg = "bg-gray-100";
-                let borderClass = "border-l-4";
-                let cardBgHover = "hover:bg-gray-50";
+                const statusConfig: any = {
+                    confirmed: {
+                        bg: "bg-green-100",
+                        text: "text-green-700",
+                        border: "border-green-500",
+                        label: "Confirmada",
+                        icon: "fa-thumbs-up",
+                    },
+                    pending: {
+                        bg: "bg-yellow-100",
+                        text: "text-yellow-700",
+                        border: "border-yellow-500",
+                        label: "Pendiente",
+                        icon: "fa-clock",
+                    },
+                    canceled: {
+                        bg: "bg-gray-100",
+                        text: "text-gray-700",
+                        border: "border-gray-500",
+                        label: "Cancelada",
+                        icon: "fa-xmark",
+                    },
+                    concluded: {
+                        bg: "bg-blue-100",
+                        text: "text-blue-700",
+                        border: "border-blue-500",
+                        label: "Concluida",
+                        icon: "fa-check",
+                    },
+                    wait: {
+                        bg: "bg-orange-100",
+                        text: "text-orange-700",
+                        border: "border-orange-500",
+                        label: "En espera",
+                        icon: "fa-clock",
+                    },
+                    "no assisted": {
+                        bg: "bg-red-100",
+                        text: "text-red-700",
+                        border: "border-red-500",
+                        label: "No asistió",
+                        icon: "fa-user-xmark",
+                    },
+                };
 
-                switch (cita.status) {
-                    case "concluded":
-                        statusColorText = "text-blue-700";
-                        cardBgHover = "hover:bg-green-50/30";
-                        break;
-                    default:
-                        borderClass += " border-l-gray-300";
-                }
+                const statusKey = cita.status?.toLowerCase() || "wait";
+                const config = statusConfig[statusKey] || statusConfig.wait;
 
-                card.className = `glass-panel p-4 rounded-xl cursor-pointer transition-all border-y border-r border-white/50 shadow-sm group mb-3 ${borderClass} ${cardBgHover}`;
+                // Color strip style based on status (as requested per dashboardAdmin style)
+                // Note: User mentioned 'patient ID color', but primarily wants consistency with dashboard which uses status/physio.
+                // We use status style here for clarity and "dashboardAdmin" look.
+                card.className = `glass-panel p-4 rounded-xl cursor-pointer transition-all border-y border-r border-white/50 shadow-sm group mb-3 border-l-4 ${config.border.replace("border-", "border-l-")} hover:bg-gray-50`;
 
                 const initHour = cita.inithour
                     ? cita.inithour.substring(0, 5)
@@ -1281,19 +1833,30 @@ try {
                     }
                 }
 
+                let packInfo = "";
+                if (cita.salepackage) {
+                    packInfo = `
+                        <div class="mt-1 flex items-center gap-1 text-[10px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md inline-block border border-purple-100">
+                             <i class="fa-solid fa-box-open"></i>
+                             <span>Paquete: Sesión ${cita.session_number || "?"} de ${cita.total_sessions || "?"}</span>
+                        </div>
+                    `;
+                }
+
                 card.innerHTML = `
                     <div class="flex justify-between items-start mb-2">
                         <span class="font-bold text-[#2F5D50] text-sm bg-[#2F5D50]/10 px-2 py-0.5 rounded">
                             ${initHour} - ${endHour}
                         </span>
-                        <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${statusBg} ${statusColorText}">
-                            ${cita.status}
+                        <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${config.bg} ${config.text} flex items-center gap-1">
+                            <i class="fa-solid ${config.icon}"></i> ${config.label}
                         </span>
                     </div>
                     <h4 class="font-bold text-gray-800 text-base mb-1 flex items-center">
                         ${patientName} ${patientAge}
                     </h4>
-                    <p class="text-xs text-gray-500 line-clamp-2">${cita.reason || "Sin motivo"}</p>
+                    ${packInfo}
+                    <p class="text-xs text-gray-500 line-clamp-2 mt-1">${cita.reason || "Sin motivo"}</p>
                 `;
 
                 card.addEventListener("click", () =>
@@ -1403,7 +1966,20 @@ try {
                         <div class="glass-panel p-3 rounded-xl text-center bg-white/40">
                             <i class="fa-solid fa-info-circle text-[#2F5D50] mb-1"></i>
                             <p class="text-xs text-gray-500">Estado</p>
-                            <p class="font-bold text-sm capitalize text-gray-800">${appointment.status}</p>
+                            <p class="font-bold text-sm capitalize text-gray-800">
+                                ${
+                                    (
+                                        {
+                                            confirmed: "Confirmada",
+                                            pending: "Pendiente",
+                                            canceled: "Cancelada",
+                                            concluded: "Concluida",
+                                            wait: "En espera",
+                                            "no assisted": "No asistió",
+                                        } as any
+                                    )[appointment.status] || appointment.status
+                                }
+                            </p>
                         </div>
                     </div>
 
@@ -1504,6 +2080,7 @@ try {
                     endhour: endHourEl.value,
                     status: statusEl?.value || "wait",
                     reason: reasonEl?.value || "",
+                    idservice: serviceId, // Added per requirement
                 };
 
                 // Validar que se hayan seleccionado horas y servicio
@@ -1702,9 +2279,10 @@ try {
                 filtered.forEach((p: any) => {
                     const div = document.createElement("div");
                     div.className =
-                        "p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-50 last:border-0";
-                    div.innerHTML = `<div class="font-medium text-gray-800">${p.firstname} ${p.lastname}</div>
-                                     <div class="text-xs text-gray-500">${p.email || "Sin email"}</div>`;
+                        "p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-0";
+                    // Modified to hide ID and just show Name + Email or just Name
+                    div.innerHTML = `<div class="font-medium text-gray-800">${p.firstname} ${p.lastname}</div>`;
+
                     // @ts-ignore
                     div.onclick = () =>
                         window.selectPatient(
@@ -1755,7 +2333,7 @@ try {
         };
 
         // --- EDICIÓN ROBUSTA ---
-        window.openEditModal = (app: any) => {
+        window.openEditModal = async (app: any) => {
             console.log("Abriendo Modal Edición:", app);
             const modal = document.getElementById("modalAgregarCita");
             const form = document.getElementById(
@@ -1825,7 +2403,15 @@ try {
             const serviceEl = document.getElementById(
                 "agregarIdService",
             ) as HTMLSelectElement;
-            if (serviceEl && app.idservice) serviceEl.value = app.idservice;
+
+            let serviceId = app.idservice;
+            if (!serviceId && app.services && app.services.length > 0) {
+                serviceId = app.services[0].id;
+            }
+            // Also check 'services' from detailed object if passed differently
+            // (The 'app' object here is a mix of appointment + other fields constructed in initiating function)
+
+            if (serviceEl && serviceId) serviceEl.value = serviceId;
 
             // Package UI Check
             const pData = window.pacientesData?.find(
@@ -1836,7 +2422,16 @@ try {
             // Time Slots & Selection
             const timeVal = app.inithour ? app.inithour.substring(0, 5) : "";
             if (dateVal && window.buscarHorariosDisponibles) {
-                window.buscarHorariosDisponibles(timeVal);
+                // Important: Await the slots loading so the value can be set
+                await window.buscarHorariosDisponibles(timeVal);
+            }
+
+            // Re-set initHour just in case (buscarHorariosDisponibles handles it, but safety check)
+            if (timeVal) {
+                const initHourEl = document.getElementById(
+                    "agregarInitHour",
+                ) as HTMLSelectElement;
+                if (initHourEl) initHourEl.value = timeVal;
             }
 
             window.abrirModalAgregar();
@@ -1848,6 +2443,7 @@ try {
                 ...detalle.appointment,
                 patient: detalle.patient,
                 employed: detalle.employed,
+                services: detalle.services, // Pass services for auto-selection
                 idpatient: detalle.patient.id,
                 patientname:
                     detalle.patient.firstname + " " + detalle.patient.lastname,
