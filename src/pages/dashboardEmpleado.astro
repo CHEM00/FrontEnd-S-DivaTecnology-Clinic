@@ -486,6 +486,38 @@ try {
 
                     <!-- Consultation Fields (Initially Hidden) -->
                     <div id="consultationFields" class="space-y-4 hidden">
+                        <!-- New EVA Scale Input (Daily Progress) -->
+                        <div
+                            class="bg-rose-50 p-4 rounded-xl border border-rose-100"
+                        >
+                            <label
+                                class="block text-xs font-bold text-rose-700 uppercase mb-2 flex justify-between"
+                            >
+                                <span>Escala de Dolor (EVA) - Progreso</span>
+                                <span
+                                    id="evaScaleDisplay"
+                                    class="text-lg font-bold">0</span
+                                >
+                            </label>
+                            <input
+                                type="range"
+                                id="evaScaleInput"
+                                min="0"
+                                max="10"
+                                value="0"
+                                step="1"
+                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-rose-600"
+                                oninput="document.getElementById('evaScaleDisplay').innerText = this.value; if(typeof updateEvaColor === 'function') updateEvaColor(this.value);"
+                                onchange="if(typeof debouncedSave === 'function') debouncedSave();"
+                            />
+                            <div
+                                class="flex justify-between text-[10px] text-gray-500 mt-1 font-bold uppercase"
+                            >
+                                <span>Sin Dolor</span>
+                                <span>Moderado</span>
+                                <span>Peor Dolor</span>
+                            </div>
+                        </div>
                         <div
                             id="diagnosisContainer"
                             class="bg-yellow-50 p-4 rounded-2xl border border-yellow-100 hidden"
@@ -664,6 +696,21 @@ try {
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Price Container (Moved to Main Body) -->
+                        <div
+                            id="modalPriceContainer"
+                            class="hidden w-full bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex justify-between items-center shadow-sm mt-4"
+                        >
+                            <span
+                                class="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-2"
+                            >
+                                <i class="fa-solid fa-tag"></i> Total a Pagar
+                            </span>
+                            <span class="text-xl font-black text-emerald-700"
+                                >$0.00</span
+                            >
+                        </div>
                     </div>
                 </div>
 
@@ -715,6 +762,7 @@ try {
                             <i class="fa-solid fa-clock-rotate-left"></i> Historial
                             clinico
                         </h3>
+
                         <button
                             id="closeHistoryBtn"
                             class="w-8 h-8 rounded-full bg-white text-gray-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-all shadow-sm"
@@ -1617,13 +1665,13 @@ try {
             const physioColors = [
                 "#ef4444", // red-500
                 "#3b82f6", // blue-500
-                "#22c55e", // green-500
+                "#0d9488", // teal-600 (Was bright green)
                 "#a855f7", // purple-500
                 "#f97316", // orange-500
                 "#14b8a6", // teal-500
                 "#ec4899", // pink-500
                 "#6366f1", // indigo-500
-                "#84cc16", // lime-500
+                "#64748b", // slate-500 (Was lime "chillón")
                 "#06b6d4", // cyan-500
             ];
 
@@ -1632,6 +1680,26 @@ try {
                 const numId = typeof id === "string" ? parseInt(id, 10) : id;
                 if (isNaN(numId)) return "#9ca3af";
                 return physioColors[numId % physioColors.length];
+            };
+
+            // --- EVA Scale Helper ---
+            (window as any).updateEvaColor = function (val: number) {
+                const display = document.getElementById("evaScaleDisplay");
+                const input = document.getElementById(
+                    "evaScaleInput",
+                ) as HTMLInputElement;
+
+                if (display) display.innerText = val.toString();
+                if (input) {
+                    // Gradient Logic
+                    // 0-3 Green, 4-6 Yellow, 7-10 Red
+                    let color = "#10B981"; // Green
+                    if (val >= 4 && val <= 6) color = "#F59E0B"; // Yellow
+                    if (val >= 7) color = "#EF4444"; // Red
+
+                    input.style.accentColor = color;
+                    if (display) display.style.color = color;
+                }
             };
 
             function filterAppointments(term: string) {
@@ -2142,12 +2210,107 @@ try {
                             (currentAppointment as any).detailId = notes.id; // Store Detail ID for History Update
                             if (diag) diag.value = notes.diagnostic || "";
                             if (note) note.value = notes.therapeuticnote || "";
+
+                            // --- EVA SCALE PRE-FILL ---
+                            const evaInput = document.getElementById(
+                                "evaScaleInput",
+                            ) as HTMLInputElement;
+                            const evaDisplay =
+                                document.getElementById("evaScaleDisplay");
+                            if (evaInput && evaDisplay) {
+                                const painVal = notes.pain_intensity;
+                                if (painVal !== null && painVal !== undefined) {
+                                    evaInput.value = painVal.toString();
+                                    evaDisplay.innerText = painVal.toString();
+                                    // Assuming updateEvaColor is defined globally or we define it later
+                                    if (
+                                        typeof (window as any)
+                                            .updateEvaColor === "function"
+                                    ) {
+                                        (window as any).updateEvaColor(
+                                            parseInt(painVal),
+                                        );
+                                    }
+                                } else {
+                                    evaInput.value = "0";
+                                    evaDisplay.innerText = "0"; // Default
+                                    if (
+                                        typeof (window as any)
+                                            .updateEvaColor === "function"
+                                    ) {
+                                        (window as any).updateEvaColor(0);
+                                    }
+                                }
+                            }
+
+                            // --- PRICE CALCULATION ---
+                            let totalPrice = 0;
+                            // Sum Service Price
+                            if (
+                                appData.get_appointment_detail?.services &&
+                                Array.isArray(
+                                    appData.get_appointment_detail.services,
+                                )
+                            ) {
+                                totalPrice =
+                                    appData.get_appointment_detail.services.reduce(
+                                        (acc: number, curr: any) => {
+                                            // Use unit_price (preferred) or value
+                                            const val = parseFloat(
+                                                curr.unit_price ||
+                                                    curr.value ||
+                                                    0,
+                                            );
+                                            return acc + val;
+                                        },
+                                        0,
+                                    );
+                            }
+
+                            // Display Price Label
+                            const priceContainer = document.getElementById(
+                                "modalPriceContainer",
+                            );
+                            if (priceContainer) {
+                                priceContainer.innerHTML = `
+                                    <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-2">
+                                        <i class="fa-solid fa-tag"></i> Total a Pagar
+                                    </span>
+                                    <span class="text-xl font-black text-emerald-700">$${totalPrice.toFixed(2)}</span>
+                                `;
+                                priceContainer.classList.remove("hidden");
+                            }
                         } else {
                             if (currentAppointment)
                                 (currentAppointment as any).detailId = null; // Reset
                             hasDetails = false; // Mark as new
                             if (diag) diag.value = "";
                             if (note) note.value = "";
+
+                            // Reset EVA Scale
+                            const evaInput = document.getElementById(
+                                "evaScaleInput",
+                            ) as HTMLInputElement;
+                            const evaDisplay =
+                                document.getElementById("evaScaleDisplay");
+                            if (evaInput && evaDisplay) {
+                                evaInput.value = "0";
+                                evaDisplay.innerText = "0";
+                                // Reset color
+                                if (
+                                    typeof (window as any).updateEvaColor ===
+                                    "function"
+                                ) {
+                                    (window as any).updateEvaColor(0);
+                                }
+                            }
+
+                            // Reset Price Label
+                            const priceContainer = document.getElementById(
+                                "modalPriceContainer",
+                            );
+                            if (priceContainer)
+                                priceContainer.classList.add("hidden");
                         }
 
                         // Fix: Update Reason from Detail Payload (as requested)
@@ -2399,6 +2562,35 @@ try {
                     "consultationNote",
                 ) as HTMLTextAreaElement;
 
+                // Get EVA Value (Robust lookup for duplicates)
+                let evaInput = document.getElementById(
+                    "evaScaleInput",
+                ) as HTMLInputElement;
+
+                // Safety check for duplicates (e.g. if mistakenly rendered twice)
+                const allEvas = document.querySelectorAll("#evaScaleInput");
+                if (allEvas.length > 1) {
+                    for (let i = 0; i < allEvas.length; i++) {
+                        const el = allEvas[i] as HTMLElement;
+                        // Select the visible one (closest to user interaction)
+                        if (el.offsetParent !== null) {
+                            evaInput = el as HTMLInputElement;
+                            break;
+                        }
+                    }
+                }
+
+                const pain_intensity = evaInput
+                    ? parseInt(evaInput.value)
+                    : null;
+
+                console.log(
+                    "Auto-Saving. Pain Intensity:",
+                    pain_intensity,
+                    "Raw Value:",
+                    evaInput?.value,
+                );
+
                 let detailId = null;
 
                 try {
@@ -2410,6 +2602,7 @@ try {
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({
                                     therapeuticnote: noteElem?.value || "",
+                                    pain_intensity: pain_intensity,
                                     // Diagnóstico removed (handled by Evaluation endpoint)
                                 }),
                             },
@@ -2423,6 +2616,7 @@ try {
                     } else {
                         const payload = {
                             therapeuticnote: noteElem?.value || "",
+                            pain_intensity: pain_intensity,
                             // Diagnóstico removed (handled by Evaluation endpoint)
                         };
 
@@ -2646,7 +2840,6 @@ try {
                             const dateObj = dateStr
                                 ? new Date(dateStr)
                                 : new Date();
-
                             const formattedDate = dateObj.toLocaleDateString(
                                 "es-ES",
                                 {
@@ -2656,7 +2849,7 @@ try {
                                 },
                             );
 
-                            // Time Formatting (Handle "HH:MM:SS" string or Date object)
+                            // Time Helper
                             let formattedTime = "--:--";
                             if (item.appointment_time) {
                                 formattedTime = item.appointment_time.substring(
@@ -2673,107 +2866,162 @@ try {
                                 );
                             }
 
+                            // Data Extraction
                             const physioName =
                                 item.employedname ||
                                 item.employed_name ||
                                 "Fisioterapeuta";
+                            const serviceName = (
+                                item.service_name || "Consulta General"
+                            ).toString();
                             const noteContent =
                                 item.therapeutic_copy ||
                                 item.therapeuticnote ||
-                                "";
-                            // Diagnostic might not be in the new payload, but keeping fallback
-                            const diagnosticContent = item.diagnostic || "";
+                                item.notes?.therapeuticnote ||
+                                "Sin nota registrada.";
+                            const painVal =
+                                item.pain_intensity ??
+                                item.notes?.pain_intensity;
+                            const additionals = item.additionals || [];
+
+                            // --- Logic for New Design ---
+                            // Check for "Valoración"
+                            const isValuation = serviceName
+                                .normalize("NFD")
+                                .replace(/[\u0300-\u036f]/g, "")
+                                .toLowerCase()
+                                .includes("valoracion");
+
+                            // Style Configuration
+                            // Style Configuration
+                            const cardStyles = isValuation
+                                ? {
+                                      border: "border border-violet-200 border-l-4 border-l-violet-500",
+                                      bg: "bg-white",
+                                      iconBg: "bg-violet-100 text-violet-600",
+                                      icon: "fa-clipboard-user",
+                                      titleColor: "text-violet-900",
+                                      badgeBg:
+                                          "bg-violet-100 text-violet-700 border-violet-200",
+                                      noteClass:
+                                          "bg-violet-50 border border-violet-200 text-violet-900/80",
+                                  }
+                                : {
+                                      border: "border border-emerald-100 border-l-4 border-l-[#2F5D50]",
+                                      bg: "bg-white",
+                                      iconBg: "bg-[#E8F5F1] text-[#2F5D50]",
+                                      icon: "fa-user-doctor",
+                                      titleColor: "text-gray-900",
+                                      badgeBg:
+                                          "bg-gray-100 text-gray-600 border-gray-200",
+                                      noteClass:
+                                          "bg-blue-50 border border-blue-200 text-blue-900/80",
+                                  };
+
+                            // EVA Badge Logic
+                            let evaBadge = "";
+                            if (painVal !== null && painVal !== undefined) {
+                                const val = parseInt(painVal);
+                                let colorClass =
+                                    "bg-green-100 text-green-700 border-green-200";
+                                let label = "Leve";
+                                if (val >= 4) {
+                                    colorClass =
+                                        "bg-yellow-100 text-yellow-700 border-yellow-200";
+                                    label = "Moderado";
+                                }
+                                if (val >= 7) {
+                                    colorClass =
+                                        "bg-red-100 text-red-700 border-red-200";
+                                    label = "Intenso";
+                                }
+
+                                evaBadge = `
+                                    <div class="flex flex-col items-center justify-center px-3 py-1.5 rounded-xl border ${colorClass} min-w-[60px] ml-4 shadow-sm bg-opacity-50 backdrop-blur-sm self-start">
+                                        <span class="text-[9px] font-bold uppercase tracking-wider opacity-60 mb-0.5">EVA</span>
+                                        <span class="text-2xl font-black leading-none">${val}</span>
+                                        <span class="text-[8px] font-bold uppercase tracking-wider opacity-70 mt-0.5">${label}</span>
+                                    </div>
+                                `;
+                            } else {
+                                // Placeholder for layout consistency if desired, or empty
+                                evaBadge = "";
+                            }
+
+                            // Additionals HTML
+                            let additionalsHtml = "";
+                            if (
+                                Array.isArray(additionals) &&
+                                additionals.length > 0
+                            ) {
+                                const listItems = additionals
+                                    .map(
+                                        (add) => `
+                                    <li class="flex justify-between items-center text-xs text-gray-600 border-b border-gray-50 last:border-0 py-1">
+                                        <span>${add.name}</span>
+                                        <span class="font-bold text-gray-400">x${add.amount || 1}</span>
+                                    </li>
+                                `,
+                                    )
+                                    .join("");
+
+                                additionalsHtml = `
+                                    <div class="mt-3 pt-3 border-t border-gray-100/50">
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-1 flex items-center gap-1"><i class="fa-solid fa-cart-plus"></i> Adicionales</p>
+                                        <ul class="space-y-1 bg-white/50 rounded-lg p-2 border border-gray-100 shadow-sm">
+                                            ${listItems}
+                                        </ul>
+                                    </div>
+                                `;
+                            }
 
                             return `
-                        <div class="group relative bg-white rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#2F5D50]/10 overflow-hidden">
-                            <!-- Decorative side strip -->
-                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#2F5D50] to-[#2F5D50]/40"></div>
-                            
-                            <!-- Header -->
-                            <div class="flex justify-between items-start mb-4 pl-3">
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-lg text-gray-800 group-hover:text-[#2F5D50] transition-colors flex items-center gap-2">
-                                        ${item.service_name || "Consulta General"}
-                                        <span class="hidden sm:inline-block px-2 py-0.5 rounded-full bg-[#2F5D50]/10 text-[#2F5D50] text-[10px] font-bold uppercase tracking-wider">
-                                            Historial
-                                        </span>
-                                    </h4>
-                                    <div class="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500 font-medium">
-                                        <div class="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
-                                            <i class="fa-regular fa-calendar text-[#2F5D50]/70"></i>
-                                            ${formattedDate}
-                                        </div>
-                                        <div class="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
-                                            <i class="fa-regular fa-clock text-[#2F5D50]/70"></i>
-                                            ${formattedTime}
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Doctor Badge -->
-                                <div class="flex flex-col items-end ml-2">
-                                    <div class="flex items-center gap-2">
-                                        <div class="text-right">
-                                            <span class="block text-[10px] text-gray-400 font-bold uppercase tracking-wider">Atendido por</span>
-                                            <span class="block text-xs font-bold text-gray-700 whitespace-nowrap">${physioName}</span>
-                                        </div>
-                                        <div class="hidden sm:flex w-8 h-8 rounded-full bg-[#2F5D50]/10 items-center justify-center text-[#2F5D50] text-xs font-bold shadow-sm ring-2 ring-white">
-                                            ${physioName.charAt(0).toUpperCase()}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Content -->
-                            <div class="space-y-3 pl-3">
-                                ${
-                                    diagnosticContent
-                                        ? `
-                                    <div class="relative bg-amber-50/50 rounded-xl p-3 border border-amber-100 transition-colors group-hover:bg-amber-50">
-                                        <div class="flex items-start gap-3">
-                                            <div class="p-1.5 bg-amber-100 text-amber-600 rounded-lg shrink-0 mt-0.5 shadow-sm">
-                                                <i class="fa-solid fa-stethoscope text-xs"></i>
+                                <div class="relative group rounded-xl shadow-sm border border-gray-100 ${cardStyles.border} ${cardStyles.bg} p-5 transition-all duration-200 hover:shadow-md overflow-hidden">
+                                    
+                                    <!-- Header -->
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-full ${cardStyles.iconBg} flex items-center justify-center shadow-sm ring-2 ring-white">
+                                                <i class="fa-solid ${cardStyles.icon} text-lg"></i>
                                             </div>
                                             <div>
-                                                <p class="text-[10px] font-bold text-amber-700 uppercase mb-0.5 tracking-wide">Diagnóstico</p>
-                                                <p class="text-sm text-gray-700 leading-relaxed font-medium">${diagnosticContent}</p>
+                                                <h4 class="font-bold ${cardStyles.titleColor} text-base leading-tight">
+                                                    ${serviceName}
+                                                </h4>
+                                                <div class="flex items-center text-xs text-gray-500 gap-2 mt-0.5 font-medium">
+                                                    <span>${formattedDate}</span>
+                                                    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                                                    <span>${formattedTime}</span>
+                                                </div>
                                             </div>
                                         </div>
+                                        
+                                        <div class="text-xs font-bold text-[#2F5D50]/80 bg-[#2F5D50]/5 px-2 py-1 rounded-md border border-[#2F5D50]/10">
+                                            ${physioName}
+                                        </div>
                                     </div>
-                                `
-                                        : ""
-                                }
 
-                                ${
-                                    noteContent
-                                        ? `
-                                    <div class="relative bg-emerald-50/50 rounded-xl p-3 border border-emerald-100 transition-colors group-hover:bg-emerald-50">
-                                        <div class="flex items-start gap-3">
-                                            <div class="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg shrink-0 mt-0.5 shadow-sm">
-                                                <i class="fa-solid fa-notes-medical text-xs"></i>
+                                    <!-- Content Body -->
+                                    <div class="flex justify-between items-start gap-4">
+                                        <!-- Note Text -->
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm px-3 py-1.5 rounded-lg leading-relaxed whitespace-pre-wrap break-words font-normal ${cardStyles.noteClass}">
+                                                ${noteContent}
                                             </div>
-                                            <div>
-                                                <p class="text-[10px] font-bold text-emerald-700 uppercase mb-0.5 tracking-wide">Nota Terapéutica</p>
-                                                <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">${noteContent}</p>
-                                            </div>
+                                            ${additionalsHtml}
                                         </div>
+
+                                        <!-- EVA Badge (Right Side) -->
+                                        ${evaBadge}
                                     </div>
-                                `
-                                        : ""
-                                }
-                                
-                                ${
-                                    !diagnosticContent && !noteContent
-                                        ? `
-                                    <div class="text-center py-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                                        <p class="text-xs text-gray-400 italic">Sin notas registradas</p>
+
+                                    <!-- Decoration -->
+                                    <div class="absolute -right-6 -bottom-6 text-[80px] opacity-[0.02] pointer-events-none transform rotate-12 transition-transform duration-500 group-hover:rotate-0 group-hover:scale-110">
+                                        <i class="fa-solid ${cardStyles.icon} text-black"></i>
                                     </div>
-                                `
-                                        : ""
-                                }
-                            </div>
-                        </div>
-                        `;
+
+                                </div>
+                            `;
                         })
                         .join("");
                 } catch (e) {
@@ -2942,6 +3190,13 @@ try {
                                         "consultationNote",
                                     ) as HTMLTextAreaElement;
                                     // Removed diagElem (Evaluation handled separately)
+
+                                    const evaInput = document.getElementById(
+                                        "evaScaleInput",
+                                    ) as HTMLInputElement;
+                                    const pain_intensity = evaInput
+                                        ? parseInt(evaInput.value)
+                                        : 0;
 
                                     const updatePayload = {
                                         // diagnostic_copy removed
@@ -3215,6 +3470,7 @@ try {
             }
 
             const debouncedSave = debounce(saveDraft, 1500);
+            (window as any).debouncedSave = debouncedSave;
 
             const diagInput = document.getElementById("consultationDiagnosis");
             const noteInput = document.getElementById("consultationNote");
