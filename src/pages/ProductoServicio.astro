@@ -86,6 +86,41 @@ try {
 				}
 
 				<!-- Tabla Container -->
+				<!-- Buscador y Selector -->
+				<div
+					class="mb-6 animate-fade-in-up stagger-1 flex flex-col sm:flex-row justify-between items-center gap-4"
+				>
+					<div class="relative w-full sm:w-96">
+						<i
+							class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-[#2F5D50]/50"
+						></i>
+						<input
+							type="text"
+							id="searchInput"
+							placeholder="Buscar producto o servicio..."
+							class="glass-input w-full rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all shadow-sm"
+						/>
+					</div>
+
+					<!-- Selector de Registros por página -->
+					<div
+						class="flex items-center gap-2 bg-white/50 px-4 py-2.5 rounded-xl border border-white/60 shadow-sm w-full sm:w-auto justify-center"
+					>
+						<span
+							class="text-xs font-bold text-gray-500 whitespace-nowrap"
+							>Mostrar:</span
+						>
+						<select
+							id="rowsPerPage"
+							class="bg-transparent text-sm font-bold text-[#2F5D50] outline-none cursor-pointer"
+						>
+							<option value="5">5</option>
+							<option value="10" selected>10</option>
+							<option value="20">20</option>
+						</select>
+					</div>
+				</div>
+
 				<div
 					class="glass-panel rounded-3xl overflow-visible animate-fade-in-up stagger-2 border border-white/40 shadow-xl"
 				>
@@ -110,101 +145,36 @@ try {
 									>
 								</tr>
 							</thead>
-							<tbody class="divide-y divide-[#2F5D50]/5">
-								{
-									table.map((item) => (
-										<tr
-											class="hover:bg-white/60 transition-colors group cursor-pointer"
-											onclick={`verDetalles(${item.id})`}
-										>
-											<td class="p-5">
-												<div class="font-bold text-gray-800 text-lg">
-													{item.name}
-												</div>
-											</td>
-											<td class="p-5">
-												<span class="font-bold text-[#2F5D50] bg-[#2F5D50]/10 px-3 py-1 rounded-lg">
-													${item.value}
-												</span>
-											</td>
-											<td class="p-5 hidden md:table-cell">
-												<div class="text-gray-600 text-sm max-w-xs truncate bg-white/50 px-3 py-1 rounded-lg border border-white/40">
-													{item.description}
-												</div>
-											</td>
-											<td class="p-5 text-center">
-												<span
-													class={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm ${item.type === "service" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}
-												>
-													{item.type === "service"
-														? "Servicio"
-														: "Adicional"}
-												</span>
-											</td>
-											<td class="p-5 text-center relative">
-												<div class="dropdown relative inline-block text-left">
-													<button
-														type="button"
-														class="w-8 h-8 rounded-lg hover:bg-[#2F5D50]/10 text-gray-500 hover:text-[#2F5D50] transition-colors flex items-center justify-center"
-														onclick={`event.stopPropagation(); toggleDropdown('dropdown-${item.id}')`}
-													>
-														<i class="fa-solid fa-ellipsis-vertical" />
-													</button>
-													<div
-														id={`dropdown-${item.id}`}
-														class="dropdown-menu hidden absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl border border-gray-100 z-50 animate-fade-in-up origin-top-right"
-														onclick="event.stopPropagation()"
-													>
-														<div class="py-1">
-															<button
-																class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#2F5D50] flex items-center gap-2 transition-colors"
-																onclick={`verDetalles(${item.id}); toggleDropdown('dropdown-${item.id}')`}
-															>
-																<i class="fa-regular fa-pen-to-square" />
-																Editar
-															</button>
-															<button
-																class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
-																onclick={`confirmarEliminacion(${item.id}, '${item.name}'); toggleDropdown('dropdown-${item.id}')`}
-															>
-																<i class="fa-regular fa-trash-can" />
-																Eliminar
-															</button>
-														</div>
-													</div>
-												</div>
-											</td>
-										</tr>
-									))
-								}
-								{
-									table.length === 0 && !error && (
-										<tr>
-											<td
-												colspan="5"
-												class="p-12 text-center text-gray-500"
-											>
-												<div class="flex flex-col items-center gap-4">
-													<div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center">
-														<i class="fa-solid fa-box-open text-4xl text-gray-400" />
-													</div>
-													<p class="text-lg font-medium">
-														No hay productos o
-														servicios registrados
-													</p>
-													<button
-														class="text-[#2F5D50] font-bold hover:underline"
-														onclick="abrirModal('modalFormulario', 'crear')"
-													>
-														Agregar el primero
-													</button>
-												</div>
-											</td>
-										</tr>
-									)
-								}
+							<tbody
+								id="tableBody"
+								class="divide-y divide-[#2F5D50]/5"
+							>
+								<!-- Rendered by JS -->
 							</tbody>
 						</table>
+
+						<!-- Estado Vacío -->
+						<div
+							id="emptyState"
+							class="hidden flex flex-col items-center justify-center text-gray-500 py-12"
+						>
+							<div
+								class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4"
+							>
+								<i
+									class="fa-solid fa-box-open text-4xl text-gray-400"
+								></i>
+							</div>
+							<p class="text-lg font-medium mb-2">
+								No se encontraron items
+							</p>
+							<button
+								class="text-[#2F5D50] font-bold hover:underline"
+								onclick="abrirModal('modalFormulario', 'crear')"
+							>
+								Agregar nuevo
+							</button>
+						</div>
 					</div>
 
 					<!-- Pagination -->
@@ -353,15 +323,172 @@ try {
 		</div>
 	</div>
 
-	<script is:inline>
+	<script define:vars={{ table, SERVER_BACKEND_URL }}>
+		const backendUrl = SERVER_BACKEND_URL;
+		let allData = table || [];
+		let filteredData = [...allData];
+		let currentPage = 1;
+		let rowsPerPage = 10;
 		let itemIdEliminar = null;
 
+		// --- DOM Elements ---
+		const tableBody = document.getElementById("tableBody");
+		const emptyState = document.getElementById("emptyState");
+		const searchInput = document.getElementById("searchInput");
+		const rowsPerPageSelect = document.getElementById("rowsPerPage");
+		const prevBtn = document.querySelector(
+			"button .fa-chevron-left",
+		)?.parentElement; // Select by icon parent
+		const nextBtn = document.querySelector(
+			"button .fa-chevron-right",
+		)?.parentElement; // Select by icon parent
+		const paginationInfo = document.querySelector(
+			".text-sm.text-gray-600.font-medium",
+		); // Select by class
+
+		// --- Render Function ---
+		function renderTable() {
+			const startIndex = (currentPage - 1) * rowsPerPage;
+			const endIndex = Math.min(
+				startIndex + rowsPerPage,
+				filteredData.length,
+			);
+			const pageData = filteredData.slice(startIndex, endIndex);
+
+			if (tableBody) tableBody.innerHTML = "";
+
+			if (pageData.length === 0) {
+				if (emptyState) emptyState.classList.remove("hidden");
+				updatePaginationControls();
+				return;
+			}
+
+			if (emptyState) emptyState.classList.add("hidden");
+
+			pageData.forEach((item) => {
+				const tr = document.createElement("tr");
+				tr.className =
+					"hover:bg-white/60 transition-colors group cursor-pointer border-b border-[#2F5D50]/5";
+				tr.onclick = () => verDetalles(item.id);
+
+				tr.innerHTML = `
+					<td class="p-5">
+						<div class="font-bold text-gray-800 text-lg">${item.name}</div>
+					</td>
+					<td class="p-5">
+						<span class="font-bold text-[#2F5D50] bg-[#2F5D50]/10 px-3 py-1 rounded-lg">
+							$${item.value}
+						</span>
+					</td>
+					<td class="p-5 hidden md:table-cell">
+						<div class="text-gray-600 text-sm max-w-xs truncate bg-white/50 px-3 py-1 rounded-lg border border-white/40">
+							${item.description}
+						</div>
+					</td>
+					<td class="p-5 text-center">
+						<span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm ${item.type === "service" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}">
+							${item.type === "service" ? "Servicio" : "Adicional"}
+						</span>
+					</td>
+					<td class="p-5 text-center relative">
+						<div class="dropdown relative inline-block text-left">
+							<button type="button" class="w-8 h-8 rounded-lg hover:bg-[#2F5D50]/10 text-gray-500 hover:text-[#2F5D50] transition-colors flex items-center justify-center dropdown-btn" data-id="${item.id}">
+								<i class="fa-solid fa-ellipsis-vertical pointer-events-none"></i>
+							</button>
+							<div id="dropdown-${item.id}" class="dropdown-menu hidden absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl border border-gray-100 z-50 animate-fade-in-up origin-top-right">
+								<div class="py-1">
+									<button class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#2F5D50] flex items-center gap-2 transition-colors" onclick="event.stopPropagation(); verDetalles(${item.id}); toggleDropdown('dropdown-${item.id}')">
+										<i class="fa-regular fa-pen-to-square"></i> Editar
+									</button>
+									<button class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors" onclick="event.stopPropagation(); confirmarEliminacion(${item.id}, '${item.name}'); toggleDropdown('dropdown-${item.id}')">
+										<i class="fa-regular fa-trash-can"></i> Eliminar
+									</button>
+								</div>
+							</div>
+						</div>
+					</td>
+				`;
+				tableBody.appendChild(tr);
+			});
+
+			updatePaginationControls();
+
+			// Re-bind dropdown buttons
+			document.querySelectorAll(".dropdown-btn").forEach((btn) => {
+				btn.addEventListener("click", (e) => {
+					e.stopPropagation();
+					const id = btn.getAttribute("data-id");
+					toggleDropdown(`dropdown-${id}`);
+				});
+			});
+		}
+
+		function updatePaginationControls() {
+			const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+
+			if (paginationInfo) {
+				paginationInfo.innerHTML = `Mostrando <span class="font-bold text-[#2F5D50]">${filteredData.length > 0 ? (currentPage - 1) * rowsPerPage + 1 : 0}</span> - <span class="font-bold text-[#2F5D50]">${Math.min(currentPage * rowsPerPage, filteredData.length)}</span> de <span class="font-bold text-[#2F5D50]">${filteredData.length}</span>`;
+			}
+
+			if (prevBtn) {
+				prevBtn.disabled = currentPage === 1;
+				prevBtn.onclick = () => {
+					if (currentPage > 1) {
+						currentPage--;
+						renderTable();
+					}
+				};
+			}
+
+			if (nextBtn) {
+				nextBtn.disabled =
+					currentPage >= totalPages || totalPages === 0;
+				nextBtn.onclick = () => {
+					if (currentPage < totalPages) {
+						currentPage++;
+						renderTable();
+					}
+				};
+			}
+		}
+
+		// --- Event Listeners ---
+		if (searchInput) {
+			searchInput.addEventListener("input", (e) => {
+				const term = e.target.value.toLowerCase();
+				filteredData = allData.filter(
+					(item) =>
+						item.name.toLowerCase().includes(term) ||
+						item.description.toLowerCase().includes(term) ||
+						(item.type === "service"
+							? "servicio"
+							: "adicional"
+						).includes(term),
+				);
+				currentPage = 1;
+				renderTable();
+			});
+		}
+
+		if (rowsPerPageSelect) {
+			rowsPerPageSelect.addEventListener("change", (e) => {
+				rowsPerPage = parseInt(e.target.value);
+				currentPage = 1;
+				renderTable();
+			});
+		}
+
+		// Initial Render
+		document.addEventListener("DOMContentLoaded", () => {
+			renderTable();
+		});
+
+		// --- Modal & CRUD Logic (Existing) ---
 		window.abrirModal = (id, modo) => {
 			const modal = document.getElementById(id);
 			if (!modal) return;
 
 			modal.classList.remove("hidden");
-			// Animation
 			const content = modal.querySelector(".modal-content-wrapper");
 			if (content) {
 				setTimeout(() => {
@@ -415,7 +542,6 @@ try {
 				);
 				if (title) title.textContent = "Editar Producto/Servicio";
 
-				// Llenar formulario
 				document.getElementById("itemId").value = item.id;
 				document.getElementById("name").value = item.name;
 				document.getElementById("value").value = item.value;
@@ -433,7 +559,6 @@ try {
 			document.getElementById("modalEliminar").classList.remove("hidden");
 		};
 
-		// Dropdown logic
 		window.toggleDropdown = (id) => {
 			document.querySelectorAll(".dropdown-menu").forEach((menu) => {
 				if (menu.id !== id) menu.classList.add("hidden");
@@ -450,7 +575,6 @@ try {
 			}
 		});
 
-		// Form Submit
 		document
 			.getElementById("formProductoServicio")
 			?.addEventListener("submit", async (e) => {
@@ -470,7 +594,6 @@ try {
 				const url = isEdit
 					? `/api/v1/Productos&Servicios/${id}`
 					: "/api/v1/Productos&Servicios";
-
 				const method = isEdit ? "PATCH" : "POST";
 
 				try {
