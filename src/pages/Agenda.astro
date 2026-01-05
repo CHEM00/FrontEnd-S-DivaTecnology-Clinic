@@ -598,78 +598,8 @@ try {
                 >
                 <input
                     type="date"
-                    name="birthdate"
+                    name="birthday"
                     class="bg-white border border-gray-200 w-full rounded-xl px-4 py-2 bg-white/50 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                />
-            </div>
-
-            <!-- Gender -->
-            <div>
-                <label
-                    class="block text-xs font-bold text-gray-500 uppercase mb-2"
-                    >Género</label
-                >
-                <div class="flex gap-4">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="radio"
-                            name="sex"
-                            value="male"
-                            class="text-[#2F5D50] focus:ring-[#2F5D50]"
-                        />
-                        <span class="text-sm text-gray-600">Masculino</span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="radio"
-                            name="sex"
-                            value="female"
-                            class="text-[#2F5D50] focus:ring-[#2F5D50]"
-                        />
-                        <span class="text-sm text-gray-600">Femenino</span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Civil Status -->
-            <div>
-                <label
-                    class="block text-xs font-bold text-gray-500 uppercase mb-1"
-                    >Estado Civil</label
-                >
-                <select
-                    name="civilstatus"
-                    class="bg-white border border-gray-200 w-full rounded-xl px-4 py-2 bg-white/50 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                >
-                    <option value="single">Soltero/a</option>
-                    <option value="married">Casado/a</option>
-                    <option value="divorced">Divorciado/a</option>
-                    <option value="widowed">Viudo/a</option>
-                </select>
-            </div>
-
-            <div class="md:col-span-2">
-                <label
-                    class="block text-xs font-bold text-gray-500 uppercase mb-1"
-                    >Ocupación</label
-                >
-                <input
-                    type="text"
-                    name="ocupation"
-                    class="bg-white border border-gray-200 w-full rounded-xl px-4 py-2 bg-white/50 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                    placeholder="A qué se dedica"
-                />
-            </div>
-            <div class="md:col-span-2">
-                <label
-                    class="block text-xs font-bold text-gray-500 uppercase mb-1"
-                    >Domicilio</label
-                >
-                <input
-                    type="text"
-                    name="address"
-                    class="bg-white border border-gray-200 w-full rounded-xl px-4 py-2 bg-white/50 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                    placeholder="Dirección completa"
                 />
             </div>
         </div>
@@ -1901,7 +1831,14 @@ try {
         }
 
         function renderDetalleCita(detalle: any) {
-            const { appointment, patient, employed, notes } = detalle;
+            const {
+                appointment,
+                patient,
+                employed,
+                notes,
+                services,
+                package: pkg,
+            } = detalle; // Updated destructuring
 
             if (!sidePanelContentEl) return;
 
@@ -1990,18 +1927,43 @@ try {
                             <p class="text-gray-800 font-medium">${appointment.reason}</p>
                         </div>
 
+                        <!-- Servicio (New) -->
                         <div class="bg-white/40 p-4 rounded-xl border border-white/50">
-                            <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Especialista</h4>
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-[#2F5D50]/20 flex items-center justify-center text-[#2F5D50]">
-                                    <i class="fa-solid fa-user-doctor text-sm"></i>
-                                </div>
-                                <div>
-                                    <p class="font-bold text-sm text-gray-800">${employed.firstname} ${employed.lastname}</p>
-                                    <p class="text-xs text-gray-500">ID: ${employed.id}</p>
-                                </div>
-                            </div>
+                            <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Servicio</h4>
+                            ${
+                                services && services.length > 0
+                                    ? services
+                                          .map(
+                                              (s: any) => `
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-sm font-medium text-gray-800">${s.name}</span>
+                                        <span class="text-xs font-bold text-[#2F5D50] bg-[#2F5D50]/10 px-2 py-0.5 rounded">$${s.unit_price}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500">${s.description || ""}</p>
+                                `,
+                                          )
+                                          .join("")
+                                    : '<p class="text-sm text-gray-400 italic">Sin servicio asignado</p>'
+                            }
                         </div>
+
+                         <!-- Paquete (New) -->
+                        ${
+                            pkg && pkg.session_number
+                                ? `
+                                <div class="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                                    <h4 class="text-xs font-bold text-purple-700 uppercase mb-2"><i class="fa-solid fa-box-open mr-1"></i> Paquete Activo</h4>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-700">Sesión Actual</span>
+                                        <span class="font-bold text-purple-700 text-lg">${pkg.session_number} <span class="text-xs text-gray-400 font-normal">/ ${pkg.total_sessions}</span></span>
+                                    </div>
+                                    <div class="w-full bg-purple-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                                        <div class="bg-purple-500 h-full rounded-full" style="width: ${(pkg.session_number / pkg.total_sessions) * 100}%"></div>
+                                    </div>
+                                </div>
+                                `
+                                : ""
+                        }
 
                         ${
                             notes
@@ -2010,6 +1972,7 @@ try {
                             <h4 class="text-xs font-bold text-yellow-700 uppercase mb-2"><i class="fa-regular fa-note-sticky mr-1"></i> Nota Terapéutica</h4>
                             <p class="text-sm text-gray-700 italic">"${notes.therapeuticnote}"</p>
                             ${notes.diagnostic ? `<p class="text-sm text-gray-700 mt-2 font-bold">Dx: ${notes.diagnostic}</p>` : ""}
+                            ${notes.pain_intensity ? `<div class="mt-2 flex items-center gap-2 text-xs text-yellow-800"><span class="font-bold">Dolor:</span> ${notes.pain_intensity}/10</div>` : ""}
                         </div>
                         `
                                 : ""
@@ -2080,7 +2043,9 @@ try {
                     endhour: endHourEl.value,
                     status: statusEl?.value || "wait",
                     reason: reasonEl?.value || "",
-                    idservice: serviceId, // Added per requirement
+                    idpatient: idPatientEl.value,
+                    idemployed: idEmployedEl.value,
+                    // idservice: serviceId, // REMOVED: Service handled separately
                 };
 
                 // Validar que se hayan seleccionado horas y servicio
@@ -2127,6 +2092,7 @@ try {
 
                     if (isEdit && editId) {
                         // PATCH
+                        // 1. Update Appointment Details
                         console.log("Enviando actualización (PATCH)...", data);
                         const res = await fetch(`/api/v1/Citas/${editId}`, {
                             method: "PATCH",
@@ -2136,7 +2102,17 @@ try {
                         if (!res.ok)
                             throw new Error("Error al actualizar la cita");
 
-                        // Update Service if changed (Optional, assumed standard for now)
+                        // 2. Update Service (Separate Endpoint)
+                        if (serviceId) {
+                            await fetch(`/api/v1/Agenda/${editId}/services`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    serviceId: serviceId,
+                                }),
+                            });
+                        }
+
                         alert("Cita actualizada correctamente");
                     } else {
                         // POST
@@ -2432,6 +2408,25 @@ try {
                     "agregarInitHour",
                 ) as HTMLSelectElement;
                 if (initHourEl) initHourEl.value = timeVal;
+            }
+
+            // Populate End Hour
+            const endTimeVal = app.endhour
+                ? app.endhour.toString().substring(0, 5)
+                : "";
+            const endHourEl = document.getElementById(
+                "agregarEndHour",
+            ) as HTMLInputElement;
+            if (endHourEl && endTimeVal) {
+                endHourEl.value = endTimeVal;
+            } else if (endHourEl && timeVal) {
+                // Fallback: Calculate +1 hour if endhour missing but inithour exists
+                const [h, m] = timeVal.split(":").map(Number);
+                const date = new Date();
+                date.setHours(h);
+                date.setMinutes(m);
+                date.setHours(date.getHours() + 1);
+                endHourEl.value = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
             }
 
             window.abrirModalAgregar();
