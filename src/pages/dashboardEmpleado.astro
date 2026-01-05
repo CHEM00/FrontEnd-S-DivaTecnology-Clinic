@@ -2994,8 +2994,9 @@ try {
                                           "bg-blue-50 border border-blue-200 text-blue-900/80",
                                   };
 
-                            // EVA Badge Logic
-                            let evaBadge = "";
+                            // EVA Badge Logic (Now displayed on the left, replacing icon)
+                            let leftColumnContent = "";
+
                             if (painVal !== null && painVal !== undefined) {
                                 const val = parseInt(painVal);
                                 let colorClass =
@@ -3012,39 +3013,32 @@ try {
                                     label = "Intenso";
                                 }
 
-                                const sessionBadge = sessionLabel
-                                    ? `
-                                    <div class="mt-1 px-2 py-0.5 bg-blue-100 rounded-full border border-blue-200">
-                                        <span class="text-[10px] font-extrabold text-blue-700 uppercase tracking-widest block text-center whitespace-nowrap">${sessionLabel}</span>
-                                    </div>
-                                `
-                                    : "";
-
-                                evaBadge = `
-                                    <div class="flex flex-col items-center self-start ml-4">
-                                        <div class="flex flex-col items-center justify-center px-3 py-1.5 rounded-xl border ${colorClass} min-w-[60px] shadow-sm bg-opacity-50 backdrop-blur-sm mb-1">
-                                            <span class="text-[9px] font-bold uppercase tracking-wider opacity-60 mb-0.5">EVA</span>
-                                            <span class="text-2xl font-black leading-none">${val}</span>
-                                            <span class="text-[8px] font-bold uppercase tracking-wider opacity-70 mt-0.5">${label}</span>
-                                        </div>
-                                        ${sessionBadge}
+                                leftColumnContent += `
+                                    <div class="flex flex-col items-center justify-center px-2 py-1.5 rounded-xl border ${colorClass} w-14 shadow-sm bg-opacity-50 backdrop-blur-sm mb-2">
+                                        <span class="text-[8px] font-bold uppercase tracking-wider opacity-60 mb-0.5">EVA</span>
+                                        <span class="text-xl font-black leading-none">${val}</span>
+                                        <span class="text-[7px] font-bold uppercase tracking-wider opacity-70 mt-0.5">${label}</span>
                                     </div>
                                 `;
                             } else {
-                                // If not EVA but is package, maybe show session label?
-                                // User request was specifically "below EVA label", implying existence of EVA.
-                                // However, for robustness:
-                                if (sessionLabel) {
-                                    evaBadge = `
-                                        <div class="flex flex-col items-center self-start ml-4">
-                                            <div class="mt-1 px-2 py-0.5 bg-gray-100 rounded-full border border-gray-200">
-                                                <span class="text-[8px] font-bold text-gray-500 uppercase tracking-widest block text-center whitespace-nowrap">${sessionLabel}</span>
-                                            </div>
-                                        </div>
-                                    `;
-                                } else {
-                                    evaBadge = "";
-                                }
+                                // Placeholder if no EVA but we want to keep structure?
+                                // Or maybe just an empty box or the generic icon as fallback?
+                                // User asked to "quites el icono y coloques la escala de eva".
+                                // If no EVA, maybe just show nothing or a dash.
+                                leftColumnContent += `
+                                     <div class="flex flex-col items-center justify-center px-2 py-1.5 rounded-xl border border-gray-100 bg-gray-50 w-14 shadow-sm mb-2">
+                                        <span class="text-[8px] font-bold uppercase tracking-wider opacity-40">EVA</span>
+                                        <span class="text-xl font-black leading-none text-gray-300">-</span>
+                                    </div>
+                                `;
+                            }
+
+                            if (sessionLabel) {
+                                leftColumnContent += `
+                                    <div class="px-2 py-1 bg-blue-50 rounded-lg border border-blue-100 w-14 flex items-center justify-center text-center">
+                                        <span class="text-[9px] font-extrabold text-blue-600 uppercase tracking-widest leading-tight">${sessionLabel.replace("Sesión ", "#")}</span>
+                                    </div>
+                                `;
                             }
 
                             // Additionals HTML
@@ -3075,47 +3069,43 @@ try {
                             }
 
                             return `
-                                <div class="relative group rounded-xl shadow-sm border border-gray-100 ${cardStyles.border} ${cardStyles.bg} p-5 transition-all duration-200 hover:shadow-md overflow-hidden">
+                                <div class="relative group rounded-xl shadow-sm border border-gray-100 ${cardStyles.border} ${cardStyles.bg} p-4 transition-all duration-200 hover:shadow-md overflow-hidden">
                                     
-                                    <!-- Header -->
-                                    <div class="flex justify-between items-start mb-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 rounded-full ${cardStyles.iconBg} flex items-center justify-center shadow-sm ring-2 ring-white">
-                                                <i class="fa-solid ${cardStyles.icon} text-lg"></i>
-                                            </div>
-                                            <div>
-                                                <h4 class="font-bold ${cardStyles.titleColor} text-base leading-tight">
-                                                    ${serviceName}
-                                                </h4>
-                                                <div class="flex items-center text-xs text-gray-500 gap-2 mt-0.5 font-medium">
-                                                    <span>${formattedDate}</span>
-                                                    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                                                    <span>${formattedTime}</span>
+                                    <div class="flex gap-4">
+                                        <!-- Left Column: EVA + Session -->
+                                        <div class="flex flex-col items-center flex-shrink-0 pt-1">
+                                            ${leftColumnContent}
+                                        </div>
+
+                                        <!-- Right Column: Content -->
+                                        <div class="flex-1 min-w-0">
+                                            <!-- Header Line -->
+                                            <div class="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <h4 class="font-bold ${cardStyles.titleColor} text-sm leading-tight">
+                                                        ${serviceName}
+                                                    </h4>
+                                                    <div class="flex items-center text-[10px] text-gray-500 gap-2 mt-0.5 font-medium">
+                                                        <span>${formattedDate}</span>
+                                                        <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                                                        <span>${formattedTime}</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="text-[10px] font-bold text-[#2F5D50]/80 bg-[#2F5D50]/5 px-2 py-1 rounded-md border border-[#2F5D50]/10 whitespace-nowrap">
+                                                    ${physioName}
                                                 </div>
                                             </div>
-                                        </div>
-                                        
-                                        <div class="text-xs font-bold text-[#2F5D50]/80 bg-[#2F5D50]/5 px-2 py-1 rounded-md border border-[#2F5D50]/10">
-                                            ${physioName}
-                                        </div>
-                                    </div>
 
-                                    <!-- Content Body -->
-                                    <div class="flex justify-between items-start gap-4">
-                                        <!-- Note Text -->
-                                        <div class="flex-1 min-w-0">
-                                            <div class="text-sm px-3 py-1.5 rounded-lg leading-relaxed whitespace-pre-wrap break-words font-normal ${cardStyles.noteClass}">
-                                                ${noteContent}
-                                            </div>
+                                            <!-- Note Text (Full Width) -->
+                                            <div class="text-xs px-3 py-2 rounded-lg leading-relaxed whitespace-pre-wrap break-words font-normal ${cardStyles.noteClass} w-full">${noteContent}</div>
+                                            
                                             ${additionalsHtml}
                                         </div>
-
-                                        <!-- EVA Badge (Right Side) -->
-                                        ${evaBadge}
                                     </div>
 
-                                    <!-- Decoration -->
-                                    <div class="absolute -right-6 -bottom-6 text-[80px] opacity-[0.02] pointer-events-none transform rotate-12 transition-transform duration-500 group-hover:rotate-0 group-hover:scale-110">
+                                    <!-- Decoration (Subtler) -->
+                                    <div class="absolute -right-4 -bottom-4 text-[60px] opacity-[0.02] pointer-events-none transform rotate-12">
                                         <i class="fa-solid ${cardStyles.icon} text-black"></i>
                                     </div>
 
