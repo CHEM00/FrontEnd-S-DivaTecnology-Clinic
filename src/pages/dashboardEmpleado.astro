@@ -1662,6 +1662,7 @@ try {
 
             // Globals
             let currentAppointments: Appointment[] = [];
+            let currentAppointmentDetails: any = null; // Re-adding global
             const physioColors = [
                 "#ef4444", // red-500
                 "#3b82f6", // blue-500
@@ -2197,6 +2198,8 @@ try {
                         if (appData.body) appData = appData.body;
                         if (Array.isArray(appData)) appData = appData[0];
 
+                        currentAppointmentDetails = appData; // Store globally for saveDraft
+
                         const diag = document.getElementById(
                             "consultationDiagnosis",
                         ) as HTMLInputElement;
@@ -2245,26 +2248,61 @@ try {
 
                             // --- PRICE CALCULATION ---
                             let totalPrice = 0;
-                            // Sum Service Price
+                            const services =
+                                appData.get_appointment_detail?.services;
+                            const packageInfo =
+                                appData.get_appointment_detail?.package;
+
                             if (
-                                appData.get_appointment_detail?.services &&
-                                Array.isArray(
-                                    appData.get_appointment_detail.services,
-                                )
+                                (services && Array.isArray(services)) ||
+                                packageInfo
                             ) {
-                                totalPrice =
-                                    appData.get_appointment_detail.services.reduce(
-                                        (acc: number, curr: any) => {
-                                            // Use unit_price (preferred) or value
-                                            const val = parseFloat(
-                                                curr.unit_price ||
-                                                    curr.value ||
-                                                    0,
-                                            );
-                                            return acc + val;
-                                        },
-                                        0,
-                                    );
+                                let basePrice = 0;
+                                let additionalsPrice = 0;
+
+                                // 1. Determine Base Price (Package vs Regular)
+                                if (packageInfo && packageInfo.session_number) {
+                                    // Package Logic
+                                    if (packageInfo.session_number === 1) {
+                                        basePrice = parseFloat(
+                                            packageInfo.package_price || 0,
+                                        );
+                                    } else {
+                                        basePrice = 0; // Sessions > 1 are prepaid/free
+                                    }
+                                } else {
+                                    // Regular Appointment Logic (Sum of primary services if no package info)
+                                    // However, usually 'services' contains everything.
+                                    // If no packageInfo, we sum everything normally.
+                                    // But we need to separate this to avoid double counting if logic changes.
+                                }
+
+                                // 2. Calculate Services & Additionals
+                                if (services && Array.isArray(services)) {
+                                    services.forEach((curr: any) => {
+                                        const type = (
+                                            curr.type || ""
+                                        ).toLowerCase();
+                                        const val = parseFloat(
+                                            curr.unit_price || curr.value || 0,
+                                        );
+
+                                        if (packageInfo) {
+                                            // Inside a Package Context
+                                            if (type === "package_session") {
+                                                // Ignore, price handled by basePrice logic above
+                                            } else {
+                                                // Is Additional
+                                                additionalsPrice += val;
+                                            }
+                                        } else {
+                                            // No Package Context -> Sum everything
+                                            basePrice += val;
+                                        }
+                                    });
+                                }
+
+                                totalPrice = basePrice + additionalsPrice;
                             }
 
                             // Display Price Label
@@ -2586,6 +2624,43 @@ try {
 
                 let detailId = null;
 
+                // --- Calculate Total for Payload ---
+                let total = 0;
+
+                // 1. Base Price (Package Logic)
+                let basePrice = 0;
+                if (
+                    currentAppointmentDetails &&
+                    currentAppointmentDetails.get_appointment_detail
+                ) {
+                    const packageInfo =
+                        currentAppointmentDetails.get_appointment_detail
+                            .package;
+                    if (packageInfo && packageInfo.session_number) {
+                        if (packageInfo.session_number === 1) {
+                            basePrice = parseFloat(
+                                packageInfo.package_price || 0,
+                            );
+                        } else {
+                            basePrice = 0;
+                        }
+                    }
+                }
+
+                // 2. Additionals Price (From Live DOM)
+                let additionalsPrice = 0;
+                const checkedServices = document.querySelectorAll(
+                    "input[name='additional_service']:checked",
+                );
+                checkedServices.forEach((cb: any) => {
+                    const price = parseFloat(
+                        cb.getAttribute("data-price") || "0",
+                    );
+                    additionalsPrice += price;
+                });
+
+                total = basePrice + additionalsPrice;
+
                 try {
                     if (hasDetails) {
                         const res = await fetch(
@@ -2596,7 +2671,7 @@ try {
                                 body: JSON.stringify({
                                     therapeuticnote: noteElem?.value || "",
                                     pain_intensity: pain_intensity,
-                                    // Diagnóstico removed (handled by Evaluation endpoint)
+                                    total: total,
                                 }),
                             },
                         );
@@ -2610,7 +2685,7 @@ try {
                         const payload = {
                             therapeuticnote: noteElem?.value || "",
                             pain_intensity: pain_intensity,
-                            // Diagnóstico removed (handled by Evaluation endpoint)
+                            total: total,
                         };
 
                         let res = await fetch(
@@ -3494,6 +3569,54 @@ try {
             if (diagInput) diagInput.addEventListener("input", debouncedSave);
             if (noteInput) noteInput.addEventListener("input", debouncedSave);
 
+            // Helper to update UI Price immediately
+            function updateTotalPriceUI() {
+                const priceContainer = document.getElementById(
+                    "modalPriceContainer",
+                );
+                if (!priceContainer) return;
+
+                let basePrice = 0;
+                if (
+                    currentAppointmentDetails &&
+                    currentAppointmentDetails.get_appointment_detail
+                ) {
+                    const packageInfo =
+                        currentAppointmentDetails.get_appointment_detail
+                            .package;
+                    if (packageInfo && packageInfo.session_number) {
+                        if (packageInfo.session_number === 1) {
+                            basePrice = parseFloat(
+                                packageInfo.package_price || 0,
+                            );
+                        } else {
+                            basePrice = 0;
+                        }
+                    }
+                }
+
+                let additionalsPrice = 0;
+                const checkedServices = document.querySelectorAll(
+                    "input[name='additional_service']:checked",
+                );
+                checkedServices.forEach((cb: any) => {
+                    const price = parseFloat(
+                        cb.getAttribute("data-price") || "0",
+                    );
+                    additionalsPrice += price;
+                });
+
+                const total = basePrice + additionalsPrice;
+
+                priceContainer.innerHTML = `
+                    <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-tag"></i> Total a Pagar
+                    </span>
+                    <span class="text-xl font-black text-emerald-700">$${total.toFixed(2)}</span>
+                `;
+                priceContainer.classList.remove("hidden");
+            }
+
             // Listen to Additionals checkboxes
             const addContainer = document.getElementById(
                 "additionalsContainer",
@@ -3534,6 +3657,7 @@ try {
                                     if (serviceResponse.ok) {
                                         savedAdditionals.add(id);
                                         savedAdditionals.add(Number(id));
+                                        updateTotalPriceUI(); // Update UI
 
                                         // Visual feedback
                                         const saveIndicator =
@@ -3587,9 +3711,7 @@ try {
                                     if (delRes.ok) {
                                         savedAdditionals.delete(Number(id));
                                         savedAdditionals.delete(String(id));
-                                        console.log(
-                                            `Service ${id} deleted successfully.`,
-                                        );
+                                        updateTotalPriceUI(); // Update UI
                                         // Visual feedback
                                         const saveIndicator =
                                             document.getElementById(
