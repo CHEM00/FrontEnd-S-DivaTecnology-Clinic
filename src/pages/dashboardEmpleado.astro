@@ -4279,6 +4279,16 @@ try {
             if (formPaciente) {
                 formPaciente.addEventListener("submit", async (e) => {
                     e.preventDefault();
+
+                    const submitBtn = formPaciente.querySelector(
+                        'button[type="submit"]',
+                    ) as HTMLButtonElement;
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML =
+                            '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+                    }
+
                     // ... (existing submission logic same as before, simplified for diff)
                     const formData = new FormData(
                         formPaciente as HTMLFormElement,
@@ -4372,6 +4382,11 @@ try {
                     } catch (err) {
                         console.error(err);
                         alert("Error de conexión");
+                    } finally {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = "Guardar";
+                        }
                     }
                 });
             }
