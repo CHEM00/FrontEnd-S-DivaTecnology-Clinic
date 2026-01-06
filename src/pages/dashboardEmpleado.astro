@@ -489,6 +489,7 @@ try {
                     <div id="consultationFields" class="space-y-4 hidden">
                         <!-- New EVA Scale Input (Daily Progress) -->
                         <div
+                            id="evaScaleContainer"
                             class="bg-rose-50 p-4 rounded-xl border border-rose-100"
                         >
                             <label
@@ -1665,7 +1666,7 @@ try {
             let currentAppointments: Appointment[] = [];
             let currentAppointmentDetails: any = null; // Re-adding global
             const physioColors = [
-                "#ef4444", // red-500
+                "#f97316", // red-500
                 "#3b82f6", // blue-500
                 "#0d9488", // teal-600 (Was bright green)
                 "#a855f7", // purple-500
@@ -2179,8 +2180,15 @@ try {
                     );
                     if (serviceName.includes("valoracion")) {
                         diagnosisContainer.classList.remove("hidden");
+                        const evaContainer =
+                            document.getElementById("evaScaleContainer");
+                        if (evaContainer) evaContainer.classList.add("hidden");
                     } else {
                         diagnosisContainer.classList.add("hidden");
+                        const evaContainer =
+                            document.getElementById("evaScaleContainer");
+                        if (evaContainer)
+                            evaContainer.classList.remove("hidden");
                     }
                 }
             }
@@ -2625,9 +2633,21 @@ try {
                     }
                 }
 
-                const pain_intensity = evaInput
-                    ? parseInt(evaInput.value)
-                    : null;
+                let pain_intensity = evaInput ? parseInt(evaInput.value) : null;
+
+                // If EVA container is hidden (Valoración), use the specific valuation pain intensity input
+                const evaContainer =
+                    document.getElementById("evaScaleContainer");
+                if (evaContainer && evaContainer.classList.contains("hidden")) {
+                    const evalPainInput = document.getElementById(
+                        "evalPainIntensity",
+                    ) as HTMLInputElement;
+                    if (evalPainInput && evalPainInput.value) {
+                        pain_intensity = parseInt(evalPainInput.value);
+                    } else {
+                        pain_intensity = null;
+                    }
+                }
 
                 let detailId = null;
 
