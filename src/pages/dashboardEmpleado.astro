@@ -2663,6 +2663,10 @@ try {
                     const packageInfo =
                         currentAppointmentDetails.get_appointment_detail
                             .package;
+                    const services =
+                        currentAppointmentDetails.get_appointment_detail
+                            .services;
+
                     if (packageInfo && packageInfo.session_number) {
                         if (packageInfo.session_number === 1) {
                             basePrice = parseFloat(
@@ -2671,6 +2675,15 @@ try {
                         } else {
                             basePrice = 0;
                         }
+                    } else if (services && Array.isArray(services)) {
+                        // Regular Appointment: Sum valid 'service' types
+                        services.forEach((srv: any) => {
+                            if (srv.type === "service") {
+                                basePrice += parseFloat(
+                                    srv.value || srv.unit_price || 0,
+                                );
+                            }
+                        });
                     }
                 }
 
@@ -3645,14 +3658,27 @@ try {
                     const packageInfo =
                         currentAppointmentDetails.get_appointment_detail
                             .package;
+                    const services =
+                        currentAppointmentDetails.get_appointment_detail
+                            .services;
+
                     if (packageInfo && packageInfo.session_number) {
                         if (packageInfo.session_number === 1) {
                             basePrice = parseFloat(
-                                packageInfo.package_price || 0,
+                                packageInfo.package_price || "0",
                             );
                         } else {
                             basePrice = 0;
                         }
+                    } else if (services && Array.isArray(services)) {
+                        // Regular Appointment: Sum valid 'service' types
+                        services.forEach((srv: any) => {
+                            if (srv.type === "service") {
+                                basePrice += parseFloat(
+                                    srv.value || srv.unit_price || "0",
+                                );
+                            }
+                        });
                     }
                 }
 
