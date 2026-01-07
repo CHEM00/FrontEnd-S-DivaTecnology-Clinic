@@ -27,10 +27,10 @@ const currentPath = Astro.url.pathname;
 <button
     id="MobileToggle"
     onclick="toggleNavBar()"
-    class="lg:hidden fixed top-4 left-4 z-40 glass-button p-3 rounded-full shadow-lg hover:bg-[#236c5d] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E7D6D] active:scale-95"
+    class="lg:hidden fixed top-3 left-3 z-50 glass-button w-8 h-8 flex items-center justify-center rounded-full shadow-md hover:bg-[#236c5d] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E7D6D] active:scale-95"
     aria-label="Abrir menú"
 >
-    <i class="fa-solid fa-bars fa-lg text-white"></i>
+    <i class="fa-solid fa-bars text-sm text-white"></i>
 </button>
 
 <!-- Backdrop overlay for mobile -->
@@ -44,7 +44,7 @@ const currentPath = Astro.url.pathname;
 <!-- Navigation Bar -->
 <aside
     id="Contenedor"
-    class="fixed lg:relative top-0 left-0 h-screen glass-panel z-40 transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0 w-72 lg:w-24 flex flex-col shadow-2xl lg:shadow-none flex-shrink-0 border-r border-white/20 overflow-hidden !bg-white lg:!bg-white/70"
+    class="fixed lg:relative top-0 left-0 h-[100dvh] glass-panel z-40 transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0 w-64 lg:w-24 flex flex-col shadow-2xl lg:shadow-none flex-shrink-0 border-r border-white/20 overflow-hidden !bg-white lg:!bg-white/70"
 >
     <!-- Logo / Header Area -->
     <div
@@ -165,7 +165,7 @@ const currentPath = Astro.url.pathname;
             // Solo agregar toggle si estamos en modo móvil (controlado por CSS, pero aquí lo inyectamos siempre y CSS lo oculta en desktop si es necesario, pero la lógica original lo tenía como primer item)
             // En la lógica original, el primer item era el toggle. Vamos a mantener esa estructura pero dinámica.
 
-            // Reconstruir lista incluyendo el toggle al principio
+            // Reconstruir lista incluyendo el toggle al principio y logout al final
             const finalItems = [
                 {
                     icon: "fa-bars",
@@ -175,6 +175,13 @@ const currentPath = Astro.url.pathname;
                     roles: [1, 3],
                 },
                 ...allowedIcons,
+                {
+                    icon: "fa-right-from-bracket",
+                    label: "Cerrar Sesión",
+                    href: "#",
+                    action: "logout",
+                    roles: [1, 3], // Visible para todos
+                },
             ];
 
             finalItems.forEach((item, idx) => {
@@ -186,41 +193,73 @@ const currentPath = Astro.url.pathname;
 
                 const isActive = currentPath === item.href;
                 const isToggle = item.action === "toggle";
+                const isLogout = item.action === "logout";
 
                 const li = document.createElement("li");
                 li.className = "w-full relative group";
 
+                // Define base colors
+                let containerClass, iconClass, textClass;
+
+                if (isLogout) {
+                    // Logout Styles (Red)
+                    containerClass =
+                        "text-red-600 hover:bg-red-50 hover:shadow-md";
+                    iconClass = "bg-red-50 group-hover:bg-red-100 text-red-500";
+                    textClass = "text-red-600 group-hover:text-red-700";
+                } else if (isToggle) {
+                    // Toggle Styles
+                    containerClass =
+                        "justify-center lg:justify-center mb-4 bg-[#2F5D50]/5 hover:bg-[#2F5D50]/10 border border-[#2F5D50]/10 text-[#2F5D50]";
+                    iconClass =
+                        "bg-white/40 group-hover:bg-white/80 text-[#2F5D50]";
+                    textClass = "text-[#2F5D50]";
+                } else if (isActive) {
+                    // Active Item Styles
+                    containerClass =
+                        "bg-[#2F5D50] text-white shadow-lg shadow-[#2F5D50]/30";
+                    iconClass = "bg-white/20 text-white";
+                    textClass = "text-white";
+                } else {
+                    // Default Item Styles
+                    containerClass =
+                        "text-[#2F5D50] hover:bg-white/60 hover:shadow-md";
+                    iconClass =
+                        "bg-white/40 group-hover:bg-white/80 text-[#2F5D50]";
+                    textClass = "text-[#2F5D50]";
+                }
+
                 li.innerHTML = `
                     <a
                         href="${item.href}"
-                        onclick="${isToggle ? "toggleNavBar(); return false;" : "handleNavClick()"}"
+                        onclick="${isToggle ? "toggleNavBar(); return false;" : isLogout ? "logout(); return false;" : "handleNavClick()"}"
                         class="
-                        flex items-center w-full p-3 rounded-2xl transition-all duration-300 group
-                        ${idx === 0 ? "justify-center lg:justify-center mb-4 bg-[#2F5D50]/5 hover:bg-[#2F5D50]/10 border border-[#2F5D50]/10" : "justify-start lg:justify-center"}
-                        ${isActive && idx !== 0 ? "bg-[#2F5D50] text-white shadow-lg shadow-[#2F5D50]/30" : "text-[#2F5D50] hover:bg-white/60 hover:shadow-md"}
+                        ${isToggle ? "hidden lg:flex" : "flex"} items-center w-full p-2 rounded-2xl transition-all duration-300 group
+                        ${isToggle ? "justify-center lg:justify-center" : "justify-start lg:justify-center"}
+                        ${containerClass}
                         nav-link relative overflow-hidden
                     "
                     >
-                        ${isActive && idx !== 0 ? '<div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white/30 rounded-r-full"></div>' : ""}
+                        ${isActive && !isToggle && !isLogout ? '<div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white/30 rounded-r-full"></div>' : ""}
 
                         <div
-                            class="w-10 h-10 flex items-center justify-center flex-shrink-0 rounded-xl transition-transform duration-300 group-hover:scale-110 ${isActive && idx !== 0 ? "bg-white/20" : "bg-white/40 group-hover:bg-white/80"}"
+                            class="w-8 h-8 flex items-center justify-center flex-shrink-0 rounded-xl transition-transform duration-300 group-hover:scale-110 ${iconClass}"
                         >
-                            <i class="fa-solid ${item.icon} text-xl ${isActive && idx !== 0 ? "text-white" : "text-[#2F5D50]"}"></i>
+                            <i class="fa-solid ${item.icon} text-sm"></i>
                         </div>
 
                         <span
-                            class="ml-4 font-medium whitespace-nowrap transition-all duration-300 ${idx === 0 ? "lg:hidden" : "lg:hidden label-text"} ${isActive && idx !== 0 ? "text-white" : "text-[#2F5D50]"}"
+                            class="ml-3 font-medium text-sm whitespace-nowrap transition-all duration-300 ${isToggle ? "lg:hidden" : "lg:hidden label-text"} ${textClass}"
                         >
                             ${item.label}
                         </span>
 
                         ${
-                            idx !== 0
+                            !isToggle
                                 ? `
-                            <div class="absolute left-full ml-4 px-3 py-2 bg-[#2F5D50] text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:translate-x-0 translate-x-[-10px] transition-all duration-300 z-50 whitespace-nowrap shadow-xl pointer-events-none hidden lg:block tooltip-container">
+                            <div class="absolute left-full ml-4 px-3 py-2 ${isLogout ? "bg-red-600" : "bg-[#2F5D50]"} text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:translate-x-0 translate-x-[-10px] transition-all duration-300 z-50 whitespace-nowrap shadow-xl pointer-events-none hidden lg:block tooltip-container">
                                 ${item.label}
-                                <div class="absolute left-0 top-1/2 -translate-y-1/2 -ml-1 w-2 h-2 bg-[#2F5D50] transform rotate-45"></div>
+                                <div class="absolute left-0 top-1/2 -translate-y-1/2 -ml-1 w-2 h-2 ${isLogout ? "bg-red-600" : "bg-[#2F5D50]"} transform rotate-45"></div>
                             </div>
                         `
                                 : ""
@@ -236,29 +275,13 @@ const currentPath = Astro.url.pathname;
         // Y también al cambiar de página (astro view transitions si se usaran, pero por si acaso)
         renderNav();
     </script>
-
-    <!-- Footer / User Profile (Optional) -->
-    <div class="p-4 border-t border-white/10 mt-auto">
-        <button
-            class="w-full flex items-center justify-center p-3 rounded-xl hover:bg-red-50 text-red-600 transition-colors group"
-            onclick="logout()"
-        >
-            <div
-                class="w-10 h-10 flex items-center justify-center rounded-xl bg-red-100 group-hover:bg-red-200 transition-colors"
-            >
-                <i class="fa-solid fa-right-from-bracket"></i>
-            </div>
-            <span class="ml-3 font-medium lg:hidden label-text"
-                >Cerrar Sesión</span
-            >
-        </button>
-    </div>
 </aside>
 
 <script is:inline>
     function toggleNavBar() {
         const cont = document.getElementById("Contenedor");
         const backdrop = document.getElementById("NavBackdrop");
+        const toggleBtn = document.getElementById("MobileToggle");
         const labels = document.querySelectorAll(".label-text");
         const navLinks = document.querySelectorAll(".nav-link");
         const tooltips = document.querySelectorAll(".tooltip-container");
@@ -272,11 +295,13 @@ const currentPath = Astro.url.pathname;
                 // Open
                 cont.classList.remove("-translate-x-full");
                 backdrop.classList.remove("hidden");
+                toggleBtn?.classList.add("hidden"); // Hide toggle
                 document.body.style.overflow = "hidden";
             } else {
                 // Close
                 cont.classList.add("-translate-x-full");
                 backdrop.classList.add("hidden");
+                toggleBtn?.classList.remove("hidden"); // Show toggle
                 document.body.style.overflow = "";
             }
         } else {
@@ -334,10 +359,12 @@ const currentPath = Astro.url.pathname;
     function closeNavBar() {
         const cont = document.getElementById("Contenedor");
         const backdrop = document.getElementById("NavBackdrop");
+        const toggleBtn = document.getElementById("MobileToggle");
 
         if (window.innerWidth < 1024) {
             cont.classList.add("-translate-x-full");
             backdrop.classList.add("hidden");
+            toggleBtn?.classList.remove("hidden"); // Show toggle
             document.body.style.overflow = "";
         }
     }

@@ -109,7 +109,7 @@ try {
             >
                 <!-- Grid Principal con mayor separación -->
                 <div
-                    class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:h-full h-auto"
+                    class="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:h-full h-auto"
                 >
                     <!-- Columna Izquierda: Gráficos y Estadísticas (8 columnas) -->
                     <!-- Mobile: Charts second (order-2), Desktop: Charts left (order-1) -->
@@ -121,49 +121,78 @@ try {
                             class="glass-panel rounded-3xl flex flex-col h-full overflow-hidden border border-white/60 !bg-white shadow-xl"
                         >
                             <div
-                                class="p-6 border-b border-[#2F5D50]/10 bg-white/40 backdrop-blur-md sticky top-0 z-20"
-                            >
                                 <div
-                                    class="flex justify-between items-center mb-6"
-                                >
-                                    <h2
-                                        class="text-xl font-bold text-[#2F5D50] flex items-center gap-2"
-                                    >
-                                        <i class="fa-regular fa-calendar-days"
-                                        ></i>
-                                        Mi Agenda
-                                    </h2>
-                                    <button
-                                        class="w-10 h-10 rounded-xl bg-white/50 hover:bg-[#2F5D50] hover:text-white flex items-center justify-center text-[#2F5D50] transition-all shadow-sm"
-                                    >
-                                        <i class="fa-solid fa-filter"></i>
-                                    </button>
-                                </div>
-                                <div class="relative group flex-1">
-                                    <input
-                                        type="date"
-                                        id="dateFilter"
-                                        class="w-full glass-input rounded-xl px-4 py-3 text-sm font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#2F5D50]/20 transition-all"
-                                    />
+                                class="p-2 border-b border-[#2F5D50]/10 bg-white/40 backdrop-blur-md sticky top-0 z-20"
+                            >
+                                <div class="flex flex-col gap-2">
                                     <div
-                                        class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2F5D50] group-hover:scale-110 transition-transform"
+                                        class="flex justify-between items-center"
                                     >
-                                        <i class="fa-regular fa-calendar"></i>
+                                        <!-- Date Navigation -->
+                                        <div
+                                            class="flex items-center bg-white/80 rounded-lg p-0.5 border border-gray-100 shadow-sm"
+                                        >
+                                            <button
+                                                id="prevDayBtn"
+                                                class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-gray-100 rounded-md transition-colors"
+                                            >
+                                                <i
+                                                    class="fa-solid fa-chevron-left text-xs"
+                                                ></i>
+                                            </button>
+                                            <div
+                                                class="px-2 text-center min-w-[120px] flex flex-col items-center justify-center leading-none cursor-pointer hover:bg-gray-50 rounded-md transition-colors py-1 group"
+                                                id="dateDisplayContainer"
+                                                title="Cambiar fecha"
+                                            >
+                                                <span
+                                                    id="currentDateDisplay"
+                                                    class="text-xs font-bold text-[#2F5D50] capitalize group-hover:text-[#236c5d] transition-colors"
+                                                    >Cargando...</span
+                                                >
+                                                <input
+                                                    type="date"
+                                                    id="dateFilter"
+                                                    class="absolute w-0 h-0 opacity-0 pointer-events-none bottom-0"
+                                                />
+                                            </div>
+                                            <button
+                                                id="nextDayBtn"
+                                                class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-gray-100 rounded-md transition-colors"
+                                            >
+                                                <i
+                                                    class="fa-solid fa-chevron-right text-xs"
+                                                ></i>
+                                            </button>
+                                        </div>
+
+                                        <!-- Agenda Link -->
+                                        <a
+                                            href="/Agenda"
+                                            title="Ver Calendario Mensual"
+                                            class="w-8 h-8 rounded-lg bg-[#2F5D50]/10 text-[#2F5D50] hover:bg-[#2F5D50] hover:text-white flex items-center justify-center transition-all shadow-sm"
+                                        >
+                                            <i
+                                                class="fa-regular fa-calendar-days text-xs"
+                                            ></i>
+                                        </a>
                                     </div>
-                                </div>
-                                <!-- Buscador de Pacientes -->
-                                <div class="relative group mt-3 flex-1">
-                                    <input
-                                        type="text"
-                                        id="appointment-search-client"
-                                        placeholder="Buscar paciente..."
-                                        class="w-full glass-input rounded-xl px-4 py-3 text-sm font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#2F5D50]/20 transition-all"
-                                    />
-                                    <div
-                                        class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2F5D50] group-hover:scale-110 transition-transform"
-                                    >
-                                        <i class="fa-solid fa-magnifying-glass"
-                                        ></i>
+
+                                    <!-- Search Bar (Compact) -->
+                                    <div class="relative group w-full">
+                                        <input
+                                            type="text"
+                                            id="appointment-search-client"
+                                            placeholder="Buscar paciente..."
+                                            class="w-full glass-input rounded-lg px-2 py-1.5 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-[#2F5D50]/20 transition-all border border-gray-200/50"
+                                        />
+                                        <div
+                                            class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[#2F5D50] group-hover:scale-110 transition-transform"
+                                        >
+                                            <i
+                                                class="fa-solid fa-magnifying-glass text-[10px]"
+                                            ></i>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -948,6 +977,25 @@ try {
                 "appointmentsGrid",
             ) as HTMLElement;
 
+            // Date Interaction
+            const dateDisplayContainer = document.getElementById(
+                "dateDisplayContainer",
+            );
+            if (dateDisplayContainer && dateInput) {
+                dateDisplayContainer.addEventListener("click", () => {
+                    if (typeof dateInput.showPicker === "function") {
+                        try {
+                            dateInput.showPicker();
+                        } catch (e) {
+                            console.warn("showPicker failed", e);
+                            dateInput.click();
+                        }
+                    } else {
+                        dateInput.click();
+                    }
+                });
+            }
+
             // Modal
             const modal = document.getElementById(
                 "appointmentModal",
@@ -1714,12 +1762,53 @@ try {
 
             // --- Initialization ---
             if (dateInput) {
+                // --- Date Navigation Logic ---
+                const prevDayBtn = document.getElementById("prevDayBtn");
+                const nextDayBtn = document.getElementById("nextDayBtn");
+                const currentDateDisplay =
+                    document.getElementById("currentDateDisplay");
+
+                const updateDateDisplay = (dateStr: string) => {
+                    // Create date object treating input as local time
+                    const [y, m, d] = dateStr.split("-").map(Number);
+                    const date = new Date(y, m - 1, d);
+
+                    const options: Intl.DateTimeFormatOptions = {
+                        day: "numeric",
+                        month: "long",
+                        weekday: "short",
+                    };
+
+                    if (currentDateDisplay) {
+                        const str = date.toLocaleDateString("es-ES", options);
+                        currentDateDisplay.textContent =
+                            str.charAt(0).toUpperCase() + str.slice(1);
+                    }
+                };
+
+                const changeDateBy = (days: number) => {
+                    const [y, m, d] = dateInput.value.split("-").map(Number);
+                    const current = new Date(y, m - 1, d);
+                    current.setDate(current.getDate() + days);
+                    const newDate = current.toLocaleDateString("en-CA");
+                    dateInput.value = newDate;
+                    updateDateDisplay(newDate);
+                    fetchAppointments(newDate);
+                };
+
+                // Initialize
                 const today = new Date().toLocaleDateString("en-CA");
                 dateInput.value = today;
+                updateDateDisplay(today);
                 fetchAppointments(today);
+
+                // Event Listeners
+                prevDayBtn?.addEventListener("click", () => changeDateBy(-1));
+                nextDayBtn?.addEventListener("click", () => changeDateBy(1));
 
                 dateInput.addEventListener("change", (e) => {
                     const target = e.target as HTMLInputElement;
+                    updateDateDisplay(target.value);
                     fetchAppointments(target.value);
                 });
 
@@ -1841,7 +1930,7 @@ try {
             function createAppointmentCard(app: Appointment) {
                 const div = document.createElement("div");
                 div.className =
-                    "bg-white/60 hover:bg-white/90 backdrop-blur-sm p-4 sm:p-5 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-start gap-4 sm:gap-0";
+                    "bg-white/60 hover:bg-white/90 backdrop-blur-sm p-2 rounded-lg border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden flex flex-col sm:flex-row justify-between items-start gap-1.5";
 
                 const statusConfig: any = {
                     confirmed: {
@@ -1909,10 +1998,10 @@ try {
                         }
                     }
                     // On error fallback to initials
-                    const fallbackHtml = `<div class='w-full h-full flex items-center justify-center text-[#2F5D50] font-bold text-xl bg-[#2F5D50]/10'>${(app.patient_name || "?").charAt(0).toUpperCase()}</div>`;
+                    const fallbackHtml = `<div class='w-full h-full flex items-center justify-center text-[#2F5D50] font-bold text-xs bg-[#2F5D50]/10'>${(app.patient_name || "?").charAt(0).toUpperCase()}</div>`;
                     photoContent = `<img src="${finalUrl}" alt="${app.patient_name}" class="w-full h-full object-cover" onerror="this.parentNode.innerHTML=\`${fallbackHtml}\`">`;
                 } else {
-                    photoContent = `<div class="w-full h-full flex items-center justify-center text-[#2F5D50] font-bold text-xl bg-[#2F5D50]/10">
+                    photoContent = `<div class="w-full h-full flex items-center justify-center text-[#2F5D50] font-bold text-xs bg-[#2F5D50]/10">
                                         ${(app.patient_name || "?").charAt(0).toUpperCase()}
                                      </div>`;
                 }
@@ -1935,63 +2024,68 @@ try {
                 div.style.borderLeftColor = cardStripColor;
 
                 div.innerHTML = `
-                   <div class="absolute left-0 top-0 bottom-0 w-1.5" style="background-color: ${cardStripColor};"></div>
-                   ${app.status?.toLowerCase() === "canceled" ? `<div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0 user-select-none"><i class="fa-solid fa-xmark text-red-600/10 text-8xl"></i></div>` : ""}
-                    <div class="flex flex-col gap-2 pl-3 flex-1 min-w-0 pr-4 relative z-10">
-                        <div class="flex items-start gap-4 w-full">
-                            <div class="relative w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden cursor-pointer flex-shrink-0 border border-gray-100 patient-avatar-btn">
+                   <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: ${cardStripColor};"></div>
+                   ${app.status?.toLowerCase() === "canceled" ? `<div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0 user-select-none"><i class="fa-solid fa-xmark text-red-600/10 text-5xl"></i></div>` : ""}
+                    <div class="flex flex-col gap-1 pl-2 flex-1 min-w-0 pr-1 relative z-10 w-full">
+                        <div class="flex items-start gap-2 w-full">
+                            <div class="relative w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden cursor-pointer flex-shrink-0 border border-gray-100 patient-avatar-btn">
                                  ${photoContent}
                             </div>
-                            <div class="flex-1 min-w-0">
-                                 <h4 class="font-bold text-gray-800 text-base group-hover:text-[#2F5D50] transition-colors leading-snug break-words">${app.patient_name || "Sin Nombre"} <span class="text-xs text-gray-500 font-normal whitespace-nowrap">(${app.birthday ? calcularEdad(app.birthday) : "?"} años)</span></h4>
-                                 <div class="flex flex-col gap-1 text-xs text-gray-500 mt-1">
-                                     <div class="flex items-center gap-2">
-                                        <i class="fa-solid fa-notes-medical text-[#2F5D50]/60 min-w-[14px]"></i>
+                            <div class="flex-1 min-w-0 py-0.5">
+                                 <h4 class="font-bold text-gray-800 text-xs group-hover:text-[#2F5D50] transition-colors leading-tight break-words">${app.patient_name || "Sin Nombre"} <span class="text-[9px] text-gray-400 font-normal whitespace-nowrap">(${app.birthday ? calcularEdad(app.birthday) : "?"} años)</span></h4>
+                                 <div class="flex flex-col gap-0.5 text-[10px] text-gray-500 mt-0.5">
+                                     <div class="flex items-center gap-1.5">
+                                        <i class="fa-solid fa-notes-medical text-[#2F5D50]/60 min-w-[10px]"></i>
                                         <span class="truncate">${app.service_name || app.servicio || app.name || "Consulta"}</span>
                                      </div>
-                                     <div class="flex items-center gap-2" style="color: ${pColor}">
-                                        <i class="fa-solid fa-user-doctor min-w-[14px]"></i>
+                                     <div class="flex items-center gap-1.5" style="color: ${pColor}">
+                                        <i class="fa-solid fa-user-doctor min-w-[10px]"></i>
                                         <span class="truncate font-bold">${app.employed_name || "Fisio"}</span>
                                      </div>
                                  </div>
                             </div>
+                            <!-- Time moved to top-right for compactness -->
+                            <div class="flex flex-col items-end">
+                                <span class="text-xs font-bold text-gray-700 font-mono tracking-tight">${app.inithour?.substring(0, 5) || "--:--"}</span>
+                            </div>
                         </div>
+                        
                         ${
                             app.last_diagnostic
-                                ? `<div class="w-full p-3 bg-amber-50 border border-amber-100/50 rounded-lg text-xs text-gray-700 whitespace-normal break-words shadow-sm leading-relaxed" title="Diagnóstico">
-                                      <p class="font-bold text-amber-600 text-[10px] uppercase tracking-wider mb-0.5 flex items-center gap-1"><i class="fa-solid fa-stethoscope"></i> Diagnóstico</p>
-                                      ${app.last_diagnostic}
+                                ? `<div class="w-full px-1.5 py-1 bg-amber-50/50 border border-amber-100/50 rounded text-[9px] text-gray-600 whitespace-normal break-words shadow-sm leading-snug mt-1" title="Diagnóstico">
+                                      <p class="font-bold text-amber-600 text-[8px] uppercase tracking-wider mb-0.5 flex items-center gap-1"><i class="fa-solid fa-stethoscope text-[8px]"></i> Dx</p>
+                                      <span class="line-clamp-2">${app.last_diagnostic}</span>
                                     </div>`
                                 : ""
                         }
-                    </div>
-                     <div class="flex items-center justify-end gap-2 pr-1 w-full sm:w-auto border-t sm:border-t-0 border-gray-100 pt-2 sm:pt-0 mt-2 sm:mt-0 flex-shrink-0 flex-wrap">
-                          <!-- Time -->
-                          <span class="text-base font-bold text-gray-700 font-mono tracking-tight mr-1">${app.inithour?.substring(0, 5) || "--:--"}</span>
-                          
-                          <!-- Note Alert -->
-                          ${
-                              missingNotes
-                                  ? `<span class="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-full border border-red-200 shadow-sm flex items-center gap-1 animate-pulse" title="Falta Nota">
-                                        <i class="fa-solid fa-circle-exclamation"></i> Nota
-                                     </span>`
-                                  : ""
-                          }
 
-                          <!-- Session Pkg -->
-                          ${
-                              app.session_label
-                                  ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 shadow-sm" title="Sesión">
-                                       <i class="fa-solid fa-layer-group text-[9px] text-purple-500"></i> ${app.session_label}
-                                     </span>`
-                                  : ""
-                          }
-                          
-                          <!-- Edit Icon -->
-                          <button class="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-gray-100 transition-all quick-edit-btn ml-1" title="Editar">
-                              <i class="fa-solid fa-pen-to-square text-sm"></i>
-                          </button>
-                     </div>
+                         <div class="flex items-center justify-between w-full mt-1 border-t border-black/5 pt-1">
+                            <div class="flex items-center gap-2">
+                                <!-- Note Alert -->
+                                ${
+                                    missingNotes
+                                        ? `<span class="px-1.5 py-0.5 bg-red-50 text-red-600 text-[8px] font-bold rounded-md border border-red-200 shadow-sm flex items-center gap-1 animate-pulse" title="Falta Nota">
+                                                <i class="fa-solid fa-circle-exclamation"></i> Nota
+                                           </span>`
+                                        : ""
+                                }
+
+                                <!-- Session Pkg -->
+                                ${
+                                    app.session_label
+                                        ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8px] font-bold bg-purple-50 text-purple-700 border border-purple-200 shadow-sm" title="Sesión">
+                                             <i class="fa-solid fa-layer-group text-[8px] text-purple-500"></i> ${app.session_label}
+                                           </span>`
+                                        : ""
+                                }
+                            </div>
+                            
+                            <!-- Edit Icon -->
+                            <button class="w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-gray-100 transition-all quick-edit-btn" title="Editar">
+                                <i class="fa-solid fa-pen-to-square text-[10px]"></i>
+                            </button>
+                         </div>
+                    </div>
                 `;
 
                 // Click listener for the CARD (opens details)
