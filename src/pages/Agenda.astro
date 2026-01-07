@@ -94,12 +94,7 @@ try {
                 class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-[#2F5D50]/20 scrollbar-track-transparent relative z-10 flex flex-col"
             >
                 <!-- Botón Flotante para Móvil -->
-                <button
-                    id="nuevaCitaBtnMobile"
-                    class="md:hidden fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[#2F5D50] text-white shadow-xl flex items-center justify-center text-2xl hover:scale-110 transition-transform"
-                >
-                    <i class="fa-solid fa-plus"></i>
-                </button>
+                <!-- Botón Flotante para Móvil eliminado (usa SpeedDial global) -->
 
                 <!-- Contenedor Principal: Calendario + Panel Lateral -->
                 <div class="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
@@ -756,9 +751,6 @@ try {
                 ?.addEventListener("click", abrirModal);
             document
                 .getElementById("nuevaCitaBtnHeader")
-                ?.addEventListener("click", abrirModal);
-            document
-                .getElementById("nuevaCitaBtnMobile")
                 ?.addEventListener("click", abrirModal);
 
             closeSidePanelBtn?.addEventListener("click", () => {
