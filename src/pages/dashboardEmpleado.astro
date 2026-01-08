@@ -1351,6 +1351,22 @@ try {
                         return;
                     }
 
+                    // Mutual Exclusivity / Requirement Check
+                    const usePackageCheck = document.getElementById(
+                        "usePackageCheckbox",
+                    ) as HTMLInputElement;
+
+                    if (
+                        !idservice &&
+                        !idPackage &&
+                        (!usePackageCheck || !usePackageCheck.checked)
+                    ) {
+                        alert(
+                            "Debe seleccionar un Servicio, un Paquete o usar una sesión de paquete.",
+                        );
+                        return;
+                    }
+
                     try {
                         // Check attribute for robust edit detection
                         const editId =
@@ -3653,7 +3669,11 @@ try {
             if (finishBtn) {
                 finishBtn.addEventListener("click", async () => {
                     if (!currentAppointment) return;
+
+                    const originalText = finishBtn.textContent;
                     finishBtn.disabled = true;
+                    finishBtn.innerHTML =
+                        '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
 
                     const action = finishBtn.getAttribute("data-action");
 
@@ -3978,6 +3998,7 @@ try {
                         alert("Error al procesar");
                     } finally {
                         finishBtn.disabled = false;
+                        if (originalText) finishBtn.textContent = originalText;
                     }
                 });
             }
