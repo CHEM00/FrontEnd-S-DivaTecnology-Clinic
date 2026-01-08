@@ -26,6 +26,18 @@ const headers: HeadersInit = {
     ...(token && { Cookie: `auth_token=${token}` }),
 };
 
+let dashboardUrl = "/";
+if (token) {
+    try {
+        const payload = token.split(".")[1];
+        const decoded = JSON.parse(Buffer.from(payload, "base64").toString());
+        if (decoded.idrol === 1) dashboardUrl = "/dashboardAdmin";
+        else if (decoded.idrol === 3) dashboardUrl = "/dashboardEmpleado";
+    } catch (e) {
+        console.error("Error decoding token for dashboard redirection", e);
+    }
+}
+
 const { Agent } = await import("node:https");
 const agent = new Agent({ rejectUnauthorized: false });
 
@@ -80,14 +92,14 @@ try {
             </div>
 
             <TopTag titulo="AGENDA" nombreUsuario="ADMINISTRADOR">
-                <!-- Botón Nueva Cita en el Header para mejor visibilidad -->
-                <button
-                    id="nuevaCitaBtnHeader"
+                <!-- Botón Home (Redirección según Rol) -->
+                <a
+                    href={dashboardUrl}
                     class="hidden md:flex glass-button px-4 py-2 rounded-xl bg-[#2F5D50] text-white hover:bg-[#234D20] transition-all font-medium items-center gap-2 shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-0.5 text-sm ml-4"
                 >
-                    <i class="fa-solid fa-plus"></i>
-                    NUEVA CITA
-                </button>
+                    <i class="fa-solid fa-house"></i>
+                    INICIO
+                </a>
             </TopTag>
 
             <main
@@ -189,12 +201,26 @@ try {
                         <div
                             class="p-6 border-b border-gray-100 bg-white flex justify-between items-center"
                         >
-                            <h3
-                                class="text-[#2F5D50] text-xl font-bold"
-                                id="sidePanelTitle"
-                            >
-                                Detalles
-                            </h3>
+                            <div class="flex items-center gap-4">
+                                <button
+                                    id="prevDayPanelBtn"
+                                    class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-[#2F5D50]/10 transition-colors"
+                                >
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <h3
+                                    class="text-[#2F5D50] text-xl font-bold text-center min-w-[200px]"
+                                    id="sidePanelTitle"
+                                >
+                                    Detalles
+                                </h3>
+                                <button
+                                    id="nextDayPanelBtn"
+                                    class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-[#2F5D50]/10 transition-colors"
+                                >
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
                             <button
                                 id="closeSidePanelBtn"
                                 class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-[#2F5D50]/10 transition-colors"
@@ -748,9 +774,6 @@ try {
             };
             document
                 .getElementById("nuevaCitaBtn")
-                ?.addEventListener("click", abrirModal);
-            document
-                .getElementById("nuevaCitaBtnHeader")
                 ?.addEventListener("click", abrirModal);
 
             closeSidePanelBtn?.addEventListener("click", () => {
@@ -1341,7 +1364,7 @@ try {
                     console.log("Datos de empleados recibidos:", empleados); // DEBUG: Ver estructura
                     empleados.forEach((emp: Empleado) => {
                         const option = document.createElement("option");
-                        option.value = emp.id;
+                        option.value = String(emp.id);
                         option.textContent = `${emp.firstname} ${emp.lastname}`;
                         select.appendChild(option);
                     });
@@ -1556,6 +1579,35 @@ try {
         }
 
         // --- Lógica del Panel Lateral ---
+        const prevDayPanelBtn = document.getElementById("prevDayPanelBtn");
+        const nextDayPanelBtn = document.getElementById("nextDayPanelBtn");
+
+        function updateSidePanelDate(offset: number) {
+            // @ts-ignore
+            if (!window.fechaSeleccionada) return;
+
+            // @ts-ignore
+            const [year, month, day] = window.fechaSeleccionada
+                .split("-")
+                .map(Number);
+            const dateObj = new Date(year, month - 1, day);
+            dateObj.setDate(dateObj.getDate() + offset);
+
+            const newYear = dateObj.getFullYear();
+            const newMonth = dateObj.getMonth();
+            const newDay = dateObj.getDate();
+
+            const newFechaStr = getYYYYMMDDFromParts(newYear, newMonth, newDay);
+            seleccionarDia(newFechaStr, newDay);
+        }
+
+        prevDayPanelBtn?.addEventListener("click", () =>
+            updateSidePanelDate(-1),
+        );
+        nextDayPanelBtn?.addEventListener("click", () =>
+            updateSidePanelDate(1),
+        );
+
         function seleccionarDia(fechaStr: string, diaNumero: number) {
             // Guardar fecha seleccionada para actualizaciones en tiempo real
             // @ts-ignore
