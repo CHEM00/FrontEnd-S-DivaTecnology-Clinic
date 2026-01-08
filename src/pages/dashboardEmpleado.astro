@@ -3082,38 +3082,121 @@ try {
 
                 try {
                     // Use backendUrl if using external backend, or relative if proxied.
-                    // The dashboard-data element provides backendUrl.
-                    // Safety check for URL construction
                     const url = backendUrl.startsWith("http")
                         ? `${backendUrl}/api/v1/HistorialClinico/${patientId}`
                         : `/api/v1/HistorialClinico/${patientId}`;
 
-                    const res = await fetch(url);
+                    const statusUrl = backendUrl.startsWith("http")
+                        ? `${backendUrl}/api/v1/medical_history/${patientId}/statusappointments`
+                        : `/api/v1/medical_history/${patientId}/statusappointments`;
 
-                    if (!res.ok) {
-                        // If 404, maybe no history
-                        if (res.status === 404) {
-                            historyList.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm"><p>No se encontró historial clínico.</p></div>`;
-                            return;
+                    // Fetch Parallel
+                    const [resHistory, resStatus] = await Promise.all([
+                        fetch(url),
+                        fetch(statusUrl).catch((e) => ({ ok: false })), // Soft fail for new endpoint
+                    ]);
+
+                    if (!resHistory.ok) {
+                        if (resHistory.status === 404) {
+                            // Will check status appointments later, don't return yet if history is empty
+                        } else {
+                            throw new Error("Error al obtener el historial");
                         }
-                        throw new Error("Error al obtener el historial");
                     }
 
-                    const json = await res.json();
+                    // 1. Process Finished History
                     let history = [];
-
-                    if (Array.isArray(json)) {
-                        history = json;
-                    } else if (json.data && Array.isArray(json.data)) {
-                        history = json.data;
-                    } else if (
-                        json &&
-                        typeof json === "object" &&
-                        Object.keys(json).length > 0
-                    ) {
-                        // Handle single object response
-                        history = [json];
+                    if (resHistory.ok) {
+                        const json = await resHistory.json();
+                        if (Array.isArray(json)) {
+                            history = json;
+                        } else if (json.data && Array.isArray(json.data)) {
+                            history = json.data;
+                        } else if (
+                            json &&
+                            typeof json === "object" &&
+                            Object.keys(json).length > 0
+                        ) {
+                            history = [json];
+                        }
                     }
+
+                    // 2. Process Status Appointments (Future, Canceled, No-Show)
+                    let statusApps: any[] = [];
+                    if ((resStatus as Response).ok) {
+                        try {
+                            const jsonStatus = await (
+                                resStatus as Response
+                            ).json();
+                            // Expected Payload: [{ "appointments_resume": { "future_appointments": [], ... } }]
+                            // Or handle if it returns object directly
+                            let dataRoot = jsonStatus;
+                            if (
+                                Array.isArray(jsonStatus) &&
+                                jsonStatus.length > 0
+                            )
+                                dataRoot = jsonStatus[0];
+
+                            const resume = dataRoot.appointments_resume || {};
+                            const futures = resume.future_appointments || [];
+                            const canceled = resume.canceled_appointments || [];
+                            const noAssisted =
+                                resume.no_assisted_appointments || [];
+
+                            // Normalize and Tag
+                            const normalize = (
+                                list: any[],
+                                type: string,
+                                label: string,
+                            ) => {
+                                return list.map((item) => ({
+                                    ...item,
+                                    // Map to unified structure
+                                    appointment_date: item.date,
+                                    appointment_time:
+                                        item.start_time || item.inithour,
+                                    service_name:
+                                        item.service_name || item.servicio,
+                                    employedname:
+                                        item.therapist || item.employed_name,
+                                    status_type: type, // 'future', 'canceled', 'no_assisted'
+                                    status_label: label,
+                                }));
+                            };
+
+                            statusApps = [
+                                ...normalize(futures, "future", "Próxima Cita"),
+                                ...normalize(canceled, "canceled", "Cancelada"),
+                                ...normalize(
+                                    noAssisted,
+                                    "no_assisted",
+                                    "No Asistió",
+                                ),
+                            ];
+                        } catch (e) {
+                            console.error(
+                                "Error parsing status appointments:",
+                                e,
+                            );
+                        }
+                    }
+
+                    // 3. Merge and Sort (Desc by Date -> Future first)
+                    const fullHistory = [...statusApps, ...history];
+
+                    fullHistory.sort((a, b) => {
+                        const da = new Date(
+                            a.appointment_date || a.date || a.created_at || 0,
+                        );
+                        const db = new Date(
+                            b.appointment_date || b.date || b.created_at || 0,
+                        );
+                        // Sort Descending (Newest/Future First)
+                        return db.getTime() - da.getTime();
+                    });
+
+                    // Update variable name for rendering loop
+                    history = fullHistory;
 
                     if (history.length === 0) {
                         historyList.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm flex flex-col items-center gap-2"><i class="fa-regular fa-folder-open text-2xl opacity-50"></i><p>Este paciente no tiene historial registrado.</p></div>`;
@@ -3192,29 +3275,78 @@ try {
                                 .includes("valoracion");
 
                             // Style Configuration
-                            const cardStyles = isValuation
-                                ? {
-                                      border: "border border-violet-200 border-l-4 border-l-violet-500",
-                                      bg: "bg-white",
-                                      iconBg: "bg-violet-100 text-violet-600",
-                                      icon: "fa-clipboard-user",
-                                      titleColor: "text-violet-900",
-                                      badgeBg:
-                                          "bg-violet-100 text-violet-700 border-violet-200",
-                                      noteClass:
-                                          "bg-violet-50 border border-violet-200 text-violet-900/80",
-                                  }
-                                : {
-                                      border: "border border-emerald-100 border-l-4 border-l-[#2F5D50]",
-                                      bg: "bg-white",
-                                      iconBg: "bg-[#E8F5F1] text-[#2F5D50]",
-                                      icon: "fa-user-doctor",
-                                      titleColor: "text-gray-900",
-                                      badgeBg:
-                                          "bg-gray-100 text-gray-600 border-gray-200",
-                                      noteClass:
-                                          "bg-blue-50 border border-blue-200 text-blue-900/80",
-                                  };
+                            let cardStyles = {
+                                border: "border border-emerald-100 border-l-4 border-l-[#2F5D50]",
+                                bg: "bg-white",
+                                iconBg: "bg-[#E8F5F1] text-[#2F5D50]",
+                                icon: "fa-user-doctor",
+                                titleColor: "text-gray-900",
+                                badgeBg:
+                                    "bg-gray-100 text-gray-600 border-gray-200",
+                                noteClass:
+                                    "bg-blue-50 border border-blue-200 text-blue-900/80",
+                            };
+
+                            if (item.status_type === "future") {
+                                cardStyles = {
+                                    border: "border border-blue-200 border-l-4 border-l-blue-500",
+                                    bg: "bg-blue-50/30",
+                                    iconBg: "bg-blue-100 text-blue-600",
+                                    icon: "fa-calendar-day",
+                                    titleColor: "text-blue-900",
+                                    badgeBg:
+                                        "bg-blue-100 text-blue-700 border-blue-200",
+                                    noteClass: "hidden", // Usually no notes for future
+                                };
+                            } else if (item.status_type === "canceled") {
+                                cardStyles = {
+                                    border: "border border-red-200 border-l-4 border-l-red-500",
+                                    bg: "bg-red-50/30 relative overflow-hidden",
+                                    iconBg: "bg-red-100 text-red-600",
+                                    icon: "fa-ban",
+                                    titleColor: "text-red-900",
+                                    badgeBg:
+                                        "bg-red-100 text-red-700 border-red-200",
+                                    noteClass:
+                                        "bg-red-50 border border-red-200 text-red-900/80",
+                                };
+                            } else if (item.status_type === "no_assisted") {
+                                cardStyles = {
+                                    border: "border border-orange-200 border-l-4 border-l-orange-500",
+                                    bg: "bg-orange-50/30 relative overflow-hidden",
+                                    iconBg: "bg-orange-100 text-orange-600",
+                                    icon: "fa-user-slash",
+                                    titleColor: "text-orange-900",
+                                    badgeBg:
+                                        "bg-orange-100 text-orange-700 border-orange-200",
+                                    noteClass:
+                                        "bg-orange-50 border border-orange-200 text-orange-900/80",
+                                };
+                            } else if (isValuation) {
+                                cardStyles = {
+                                    border: "border border-violet-200 border-l-4 border-l-violet-500",
+                                    bg: "bg-white",
+                                    iconBg: "bg-violet-100 text-violet-600",
+                                    icon: "fa-clipboard-user",
+                                    titleColor: "text-violet-900",
+                                    badgeBg:
+                                        "bg-violet-100 text-violet-700 border-violet-200",
+                                    noteClass:
+                                        "bg-violet-50 border border-violet-200 text-violet-900/80",
+                                };
+                            }
+
+                            // Watermarks
+                            let watermark = "";
+                            if (item.status_type === "canceled") {
+                                watermark = `<div class="absolute right-0 top-0 bottom-0 flex items-center justify-center opacity-[0.05] pointer-events-none pr-10">
+                                    <i class="fa-solid fa-ban text-8xl text-red-900"></i>
+                                </div>`;
+                            } else if (item.status_type === "no_assisted") {
+                                watermark = `<div class="absolute right-0 top-0 bottom-0 flex items-center justify-center opacity-[0.05] pointer-events-none pr-10">
+                                    <i class="fa-solid fa-user-slash text-8xl text-orange-900"></i>
+                                </div>`;
+                            }
 
                             // Valuation Details Logic
                             let valuationHtml = "";
@@ -3333,7 +3465,7 @@ try {
 
                             return `
                                 <div class="relative group rounded-xl shadow-sm border border-gray-100 ${cardStyles.border} ${cardStyles.bg} p-4 transition-all duration-200 hover:shadow-md overflow-hidden">
-                                    
+                                    ${watermark}
                                     <div class="flex gap-4">
                                         <!-- Left Column: EVA + Session -->
                                         <div class="flex flex-col items-center flex-shrink-0 pt-1">
@@ -3345,6 +3477,7 @@ try {
                                             <!-- Header Line -->
                                             <div class="flex justify-between items-start mb-2">
                                                 <div>
+                                                    ${item.status_type === "future" ? `<div class="mb-1"><span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm tracking-wide">PRÓXIMA</span></div>` : ""}
                                                     <h4 class="font-bold ${cardStyles.titleColor} text-sm leading-tight">
                                                         ${serviceName}
                                                     </h4>
