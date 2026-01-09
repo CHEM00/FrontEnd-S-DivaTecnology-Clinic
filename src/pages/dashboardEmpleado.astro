@@ -3439,9 +3439,23 @@ try {
                                 item.appointment_date ||
                                 item.created_at ||
                                 item.date;
-                            const dateObj = dateStr
-                                ? new Date(dateStr)
-                                : new Date();
+
+                            let dateObj;
+                            // Fix: Parse YYYY-MM-DD as local date to prevent timezone shift
+                            if (
+                                dateStr &&
+                                typeof dateStr === "string" &&
+                                /^\d{4}-\d{2}-\d{2}$/.test(dateStr)
+                            ) {
+                                const [y, m, d] = dateStr
+                                    .split("-")
+                                    .map(Number);
+                                dateObj = new Date(y, m - 1, d);
+                            } else {
+                                dateObj = dateStr
+                                    ? new Date(dateStr)
+                                    : new Date();
+                            }
                             const formattedDate = dateObj.toLocaleDateString(
                                 "es-ES",
                                 {
