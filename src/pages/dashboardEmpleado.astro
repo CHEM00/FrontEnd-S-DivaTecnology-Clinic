@@ -814,6 +814,14 @@ try {
                         <i class="fa-solid fa-clipboard-check"></i>
                         <span>Finalizar Consulta</span>
                     </button>
+                    <!-- Reagendar Button (New) -->
+                    <button
+                        id="rescheduleBtn"
+                        class="mt-2 w-full py-3.5 rounded-xl bg-orange-500 text-white font-bold shadow-lg shadow-orange-500/30 hover:bg-orange-600 active:scale-[0.98] transition-all hidden flex items-center justify-center gap-2"
+                    >
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <span>Reagendar</span>
+                    </button>
                     <p
                         id="timeValidationError"
                         class="text-xs text-red-500 text-center mt-2 hidden font-medium"
@@ -1010,6 +1018,7 @@ try {
             const finishBtn = document.getElementById(
                 "finishConsultationBtn",
             ) as HTMLButtonElement;
+            const rescheduleBtn = document.getElementById("rescheduleBtn");
             const consentSection = document.getElementById(
                 "consentSection",
             ) as HTMLElement;
@@ -1025,6 +1034,84 @@ try {
             const pdfPreview = document.getElementById(
                 "pdfPreview",
             ) as HTMLElement;
+
+            // Reagendar Logic
+            if (rescheduleBtn) {
+                rescheduleBtn.addEventListener("click", () => {
+                    if (!currentAppointment) return;
+
+                    // 1. Close Details Modal
+                    closeModalBtn?.click();
+
+                    // 2. Prepare "New Appointment" Form (Reset & Pre-fill)
+                    const form = document.getElementById(
+                        "formAgregarCita",
+                    ) as HTMLFormElement;
+                    if (form) {
+                        form.reset();
+                        // Clear Edit Attributes
+                        form.removeAttribute("data-edit-id");
+                        form.removeAttribute("data-original-service-id");
+
+                        // Set Title
+                        const modalTitle = document.querySelector(
+                            "#modalAgregarCita h2",
+                        );
+                        if (modalTitle) modalTitle.textContent = "NUEVA CITA";
+                        const submitBtn = document.querySelector(
+                            "#formAgregarCita button[type='submit']",
+                        );
+                        if (submitBtn) submitBtn.textContent = "GUARDAR";
+
+                        // Pre-fill Patient
+                        const idPatientEl = document.getElementById(
+                            "agregarIdPatient",
+                        ) as HTMLInputElement;
+                        const searchInput = document.getElementById(
+                            "patientSearchInput",
+                        ) as HTMLInputElement;
+
+                        if (idPatientEl)
+                            idPatientEl.value =
+                                currentAppointment.idpatient || "";
+                        if (searchInput) {
+                            searchInput.value =
+                                currentAppointment.patient_name ||
+                                currentAppointment.nombre_paciente ||
+                                currentAppointment.name ||
+                                "";
+                        }
+                    }
+
+                    // 3. Open Modal
+                    // Assuming 'showFormModal' is global or accessible, or use existing logic if not exposed.
+                    // dashboardEmpleado has 'showFormModal' defined in client script?
+                    // Wait, 'showFormModal' might not be in scope here if it is imported or separate.
+                    // Checking file: lines 53 show usage of showFormModal in 'iniciarEdicion'.
+                    // But 'iniciarEdicion' is inside the DOMContentLoaded scope.
+                    // 'showFormModal' is likely imported or defined globally by FormModal component?
+                    // Actually FormModal component typically exposes window.showFormModal or similar, OR it's a global function.
+                    // In 'iniciarEdicion' (line 1274 previous view) it calls 'showFormModal("modalAgregarCita")'.
+                    // So it should be available.
+                    if (typeof (window as any).showFormModal === "function") {
+                        (window as any).showFormModal("modalAgregarCita");
+                    } else {
+                        // Fallback if local function
+                        // But usually FormModal.astro scripts put it on window?
+                        // Or it is defined in Layout. let's assume it works as it works in 'iniciarEdicion'.
+                        // If 'iniciarEdicion' uses it directly, it might be in scope.
+                        // Let's use the exact same call.
+                        // But typescript might complain if not cast.
+                        // Attempting to call it.
+                        try {
+                            // @ts-ignore
+                            showFormModal("modalAgregarCita");
+                        } catch (e) {
+                            console.error("showFormModal not found", e);
+                        }
+                    }
+                });
+            }
 
             // Signature
             const canvas = document.getElementById(
@@ -2238,6 +2325,7 @@ try {
                     finishBtn,
                     pdfPreview,
                     errorMsg,
+                    rescheduleBtn,
                 ];
                 hideIds.forEach((el) => el?.classList.add("hidden"));
 
@@ -2273,6 +2361,7 @@ try {
                     ) as HTMLTextAreaElement;
                     if (diag) diag.disabled = true;
                     if (note) note.disabled = true;
+                    if (rescheduleBtn) rescheduleBtn.classList.remove("hidden");
                     return;
                 } else {
                     const diag = document.getElementById(
@@ -2323,11 +2412,13 @@ try {
                     if (consultationFields)
                         consultationFields.classList.remove("hidden");
                     if (finishBtn) finishBtn.classList.remove("hidden");
+                    if (rescheduleBtn) rescheduleBtn.classList.remove("hidden");
                 } else {
                     if (consultationFields)
                         consultationFields.classList.remove("hidden");
                     // removed saveDraftBtn
                     if (finishBtn) finishBtn.classList.remove("hidden");
+                    if (rescheduleBtn) rescheduleBtn.classList.remove("hidden");
                 }
 
                 // Handle Concluded Status (Update Mode)
@@ -2340,6 +2431,8 @@ try {
                             "bg-blue-600",
                             "hover:bg-blue-700",
                         ); // Visual distinction
+                        if (rescheduleBtn)
+                            rescheduleBtn.classList.remove("hidden");
                     }
                     if (consentSection) consentSection.classList.add("hidden");
                     const toggleContainer = document.getElementById(
