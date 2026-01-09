@@ -1040,8 +1040,8 @@ try {
                 rescheduleBtn.addEventListener("click", () => {
                     if (!currentAppointment) return;
 
-                    // 1. Close Details Modal
-                    closeModalBtn?.click();
+                    // 1. Close Details Modal (DISABLED for Stacking)
+                    // closeModalBtn?.click();
 
                     // 2. Prepare "New Appointment" Form (Reset & Pre-fill)
                     const form = document.getElementById(
@@ -1699,6 +1699,20 @@ try {
                                 currentdayInput?.value ||
                                 new Date().toLocaleDateString("en-CA");
                             fetchAppointments(dateToFetch);
+
+                            // --- Draft Cleanup ---
+                            if (currentAppointment) {
+                                localStorage.removeItem(
+                                    `draft_consultation_${currentAppointment.idappointment || currentAppointment.id}`,
+                                );
+                            }
+
+                            // --- Draft Cleanup ---
+                            if (currentAppointment) {
+                                localStorage.removeItem(
+                                    `draft_consultation_${currentAppointment.idappointment || currentAppointment.id}`,
+                                );
+                            }
                         } else {
                             const err = await res.text();
                             console.error(err);
@@ -2393,6 +2407,64 @@ try {
 
                 await loadDraft(app.idappointment || app.id);
 
+                // --- Draft Recovery Logic ---
+                const draftKey = `draft_consultation_${app.idappointment || app.id}`;
+                const draftJson = localStorage.getItem(draftKey);
+
+                if (draftJson) {
+                    // console.log(`[Draft] Found draft for ${app.idappointment || app.id}`, draftJson);
+                    try {
+                        const draft = JSON.parse(draftJson);
+                        const oneDayMs = 24 * 60 * 60 * 1000;
+                        if (Date.now() - draft.timestamp < oneDayMs) {
+                            let restoredCount = 0;
+                            // Restore loop
+                            Object.keys(draft).forEach((key) => {
+                                if (key === "timestamp") return;
+                                const el = document.getElementById(
+                                    key,
+                                ) as HTMLInputElement;
+                                if (el) {
+                                    if (el.type === "checkbox") {
+                                        el.checked = !!draft[key];
+                                    } else {
+                                        el.value = draft[key] || "";
+                                    }
+
+                                    // Trigger visual updates if needed (e.g. EVA color)
+                                    if (key === "evaScaleInput") {
+                                        const display =
+                                            document.getElementById(
+                                                "evaScaleDisplay",
+                                            );
+                                        if (display)
+                                            display.innerText = el.value;
+                                        if (
+                                            typeof (window as any)
+                                                .updateEvaColor === "function"
+                                        ) {
+                                            (window as any).updateEvaColor(
+                                                parseInt(el.value),
+                                            );
+                                        }
+                                    }
+                                    restoredCount++;
+                                }
+                            });
+
+                            // if (restoredCount > 0) {
+                            //    // Show Notification (Disabled by user request)
+                            // }
+                        } else {
+                            // Expired
+                            localStorage.removeItem(draftKey);
+                        }
+                    } catch (e) {
+                        console.error("Error parsing draft", e);
+                        localStorage.removeItem(draftKey);
+                    }
+                }
+
                 if (isValoracion && !hasPDF) {
                     // Show Toggle Button instead of Consent Section directly
                     const toggleContainer = document.getElementById(
@@ -2483,6 +2555,53 @@ try {
                             evaContainer.classList.remove("hidden");
                     }
                 }
+                // --- Auto-Save Listener Setup (Comprehensive) ---
+                const inputIds = [
+                    "consultationDiagnosis", // hidden legacy? or used?
+                    "consultationNote",
+                    "evaScaleInput",
+                    "evalDiagnostic",
+                    "evalInjuryMechanism",
+                    "evalPainOnset",
+                    "evalPainIntensity",
+                    "evalAggravating",
+                    "evalRelief",
+                    "evalPreviousTherapy", // checkbox
+                    "evalPreviousReason",
+                ];
+
+                const saveDraft = () => {
+                    if (!currentAppointment) return;
+
+                    const draft: any = { timestamp: Date.now() };
+
+                    inputIds.forEach((id) => {
+                        const el = document.getElementById(
+                            id,
+                        ) as HTMLInputElement;
+                        if (el) {
+                            if (el.type === "checkbox") {
+                                draft[id] = el.checked;
+                            } else {
+                                draft[id] = el.value;
+                            }
+                        }
+                    });
+
+                    // console.log(`[Draft] Saving full draft for ${currentAppointment.idappointment || currentAppointment.id}`, draft);
+                    localStorage.setItem(
+                        `draft_consultation_${currentAppointment.idappointment || currentAppointment.id}`,
+                        JSON.stringify(draft),
+                    );
+                };
+
+                inputIds.forEach((id) => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener("input", saveDraft);
+                        el.addEventListener("change", saveDraft); // For checkbox & range
+                    }
+                });
             }
 
             let savedAdditionals = new Set();
