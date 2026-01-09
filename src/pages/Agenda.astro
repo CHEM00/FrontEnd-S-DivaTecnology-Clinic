@@ -92,14 +92,7 @@ try {
             </div>
 
             <TopTag titulo="AGENDA" nombreUsuario="ADMINISTRADOR">
-                <!-- Botón Home (Redirección según Rol) -->
-                <a
-                    href={dashboardUrl}
-                    class="hidden md:flex glass-button px-4 py-2 rounded-xl bg-[#2F5D50] text-white hover:bg-[#234D20] transition-all font-medium items-center gap-2 shadow-lg hover:shadow-[#2F5D50]/30 transform hover:-translate-y-0.5 text-sm ml-4"
-                >
-                    <i class="fa-solid fa-house"></i>
-                    INICIO
-                </a>
+                <!-- Botón Home (Redirección según Rol) eliminado de aquí -->
             </TopTag>
 
             <main
@@ -124,13 +117,13 @@ try {
                                     class="text-xl sm:text-2xl font-bold text-[#2F5D50]"
                                     >Calendario</span
                                 >
-                                <!-- Botón Nueva Cita (visible en tablet/desktop si no cabe en header) -->
-                                <button
-                                    id="nuevaCitaBtn"
-                                    class="md:hidden glass-button px-3 py-1.5 rounded-lg bg-[#2F5D50] text-white text-xs font-bold"
+                                <a
+                                    href={dashboardUrl}
+                                    class="glass-button px-3 py-1.5 rounded-lg bg-[#2F5D50] text-white text-xs font-bold flex items-center gap-2 hover:bg-[#234D20] transition-colors shadow-sm"
                                 >
-                                    + Cita
-                                </button>
+                                    <i class="fa-solid fa-house"></i>
+                                    INICIO
+                                </a>
                             </div>
                             <div
                                 class="flex items-center gap-2 sm:gap-4 bg-gray-50 rounded-xl p-1 border border-gray-200 shadow-sm w-full sm:w-auto justify-between sm:justify-center"
@@ -2221,9 +2214,8 @@ try {
         // --- PROTECCIÓN NUEVO PACIENTE ---
         // Buscar el formulario y adjuntar listener si no tiene uno robusto
         const formPaciente = document.getElementById("formCrearPaciente");
-        if (formPaciente) {
-            // Clonar para eliminar listeners anteriores si existen y evitar duplicados
-            // O mejor, asumimos que este script corre una vez.
+        if (formPaciente && !formPaciente.dataset.listenerAttached) {
+            formPaciente.dataset.listenerAttached = "true";
             formPaciente.addEventListener("submit", async (e) => {
                 e.preventDefault();
                 const form = e.target as HTMLFormElement;
