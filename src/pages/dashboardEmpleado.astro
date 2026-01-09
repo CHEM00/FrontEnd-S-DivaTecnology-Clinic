@@ -2021,14 +2021,22 @@ try {
 
             function renderAppointments(appointments: Appointment[]) {
                 if (!grid) return;
-                if (!appointments || appointments.length === 0) {
+
+                // Filter out canceled appointments as per user request
+                const activeAppointments = appointments.filter(
+                    (app) => app.status?.toLowerCase() !== "canceled",
+                );
+
+                if (!activeAppointments || activeAppointments.length === 0) {
                     grid.innerHTML = `<div class="py-12 flex flex-col items-center justify-center text-gray-400"><i class="fa-regular fa-calendar-xmark text-4xl mb-3 opacity-50"></i><p>No tienes citas para este día</p></div>`;
                     return;
                 }
                 grid.innerHTML = "";
-                appointments.sort((a, b) => (a.inithour > b.inithour ? 1 : -1));
+                activeAppointments.sort((a, b) =>
+                    a.inithour > b.inithour ? 1 : -1,
+                );
 
-                appointments.forEach((app) => {
+                activeAppointments.forEach((app) => {
                     grid.appendChild(createAppointmentCard(app));
                 });
             }
@@ -3394,12 +3402,9 @@ try {
 
                             statusApps = [
                                 ...normalize(futures, "future", "Próxima Cita"),
-                                ...normalize(canceled, "canceled", "Cancelada"),
-                                ...normalize(
-                                    noAssisted,
-                                    "no_assisted",
-                                    "No Asistió",
-                                ),
+                                // Users requested to hide canceled and no_assisted from this view
+                                // ...normalize(canceled, "canceled", "Cancelada"),
+                                // ...normalize(noAssisted, "no_assisted", "No Asistió"),
                             ];
                         } catch (e) {
                             console.error(
