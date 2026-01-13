@@ -1548,7 +1548,7 @@ try {
 						idemployed: finalPhysioId,
 						status,
 						reason,
-						idservice, // Send service ID if available
+						// idservice is handled separately in PATCH, do not include in main payload
 					};
 
 					try {
@@ -1758,10 +1758,13 @@ try {
 						patientResults.innerHTML = list
 							.map(
 								(p) => `
-                            <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-50"
-                                onclick="selectPatient('${p.id}', '${p.firstname} ${p.lastname}', ${p.havepackage})">
-                                <div class="font-bold text-sm">${p.firstname} ${p.lastname}</div>
-                                ${p.havepackage ? '<span class="text-[10px] text-purple-600 font-bold">Paquete Activo</span>' : ""}
+                            <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer transition-colors border-b border-gray-50 last:border-0"
+                                onclick="selectPatient('${p.id}', '${p.firstname} ${p.lastname}', ${p.havepackage === true}, '${p.idemployed || ""}')">
+                                <div class="font-bold text-sm text-gray-800 flex items-center gap-2">
+                                    ${p.firstname} ${p.lastname} ${p.motherlastname || ""}
+                                    ${p.havepackage ? '<span class="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] rounded-full border border-purple-200"><i class="fa-solid fa-box-open mr-1"></i>Paquete</span>' : ""}
+                                </div>
+                                <div class="text-xs text-gray-500">${p.email || "Sin email"}</div>
                             </div>
                         `,
 							)
@@ -1788,11 +1791,28 @@ try {
 				});
 			}
 
-			window.selectPatient = (id, name, hasPackage) => {
-				if (patientHiddenId) patientHiddenId.value = id;
+			window.selectPatient = (id, name, hasPackage, idEmployed) => {
+				if (patientHiddenId) {
+					patientHiddenId.value = id;
+					patientHiddenId.setAttribute(
+						"data-id-employed",
+						idEmployed || "",
+					);
+				}
 				if (patientInput) patientInput.value = name;
 				if (patientResults) patientResults.classList.add("hidden");
 				handlePackageUI(hasPackage);
+
+				// Auto-assign Employee
+				if (
+					idEmployed &&
+					document.getElementById("agregarIdEmployed")
+				) {
+					document.getElementById("agregarIdEmployed").value =
+						idEmployed;
+				}
+
+				updateHours();
 			};
 
 			window.handlePackageUI = (hasPackage) => {
@@ -1841,6 +1861,7 @@ try {
 			const agendaCurrentDay =
 				document.getElementById("agregarCurrentday");
 			const agendaHour = document.getElementById("agregarInitHour");
+			let isManualPhysioSearch = false;
 
 			// Modified to accept an optional selectedTime to preserve/set value after load
 			async function updateHours(selectedTime = null) {
@@ -1857,17 +1878,11 @@ try {
 					for (let i = 1; i <= 23; i++) {
 						const h = String(i).padStart(2, "0");
 						const t1 = `${h}:00`;
-						const t2 = `${h}:30`;
 
 						const opt1 = document.createElement("option");
 						opt1.value = t1;
 						opt1.textContent = t1;
 						agendaHour.appendChild(opt1);
-
-						const opt2 = document.createElement("option");
-						opt2.value = t2;
-						opt2.textContent = t2;
-						agendaHour.appendChild(opt2);
 					}
 					if (selectedTime) agendaHour.value = selectedTime;
 					return;
@@ -1875,7 +1890,27 @@ try {
 
 				const date = agendaCurrentDay.value;
 				const physioId = agendaPhysio.value;
-				if (!date) return;
+				const patientId =
+					document.getElementById("agregarIdPatient")?.value;
+
+				if (!date) {
+					if (agendaHour) {
+						agendaHour.innerHTML =
+							'<option value="">Seleccione una fecha</option>';
+						agendaHour.disabled = true;
+					}
+					return;
+				}
+
+				// Patient Dependency
+				if (!patientId) {
+					if (agendaHour) {
+						agendaHour.innerHTML =
+							'<option value="">Seleccione un paciente</option>';
+						agendaHour.disabled = true;
+					}
+					return;
+				}
 
 				// Save current selection if not provided
 				if (!selectedTime) selectedTime = agendaHour.value;
@@ -1884,9 +1919,16 @@ try {
 				agendaHour.disabled = true;
 
 				try {
-					const url = physioId
-						? `/api/v1/Agenda/${physioId}/${date}`
-						: `/api/v1/Agenda/slots/${date}`;
+					// Split Logic
+					let url = "";
+					if (physioId) {
+						isManualPhysioSearch = true;
+						url = `/api/v1/Agenda/${physioId}/${date}`;
+					} else {
+						isManualPhysioSearch = false;
+						url = `/api/v1/Agenda/slots/${date}?idPatient=${patientId}`;
+					}
+
 					const res = await fetch(url);
 					if (res.ok) {
 						const slots = await res.json();
@@ -1902,11 +1944,30 @@ try {
 									? slot.inithour.substring(0, 5)
 									: null;
 
-							if (time) {
+							// Availability check (Agenda uses is_available !== false)
+							// Admin previously didn't check?
+							const disponible = slot.is_available !== false;
+
+							if (time && disponible) {
 								const opt = document.createElement("option");
 								opt.value = time;
 								opt.textContent = time;
-								// Restore fallback attribute
+
+								// Metadata
+								if (slot.idemployed) {
+									opt.setAttribute(
+										"data-idemployed",
+										String(slot.idemployed),
+									);
+								}
+								if (slot.endhour) {
+									opt.setAttribute(
+										"data-endhour",
+										slot.endhour.substring(0, 5),
+									);
+								}
+
+								// Compatibility with old logic if needed
 								if (slot.random_physio_id) {
 									opt.setAttribute(
 										"data-random-physio",
@@ -1914,21 +1975,15 @@ try {
 									);
 								}
 
-								// Unlike before, we rely on latestSlots cache for random physio ID
 								agendaHour.appendChild(opt);
 							}
 						});
 
-						// Restore selection if it exists in new options, or if we are forced to render it (Edit Mode)
+						// Restore selection
 						if (selectedTime) {
-							// Check if exists
 							let exists = Array.from(agendaHour.options).some(
 								(o) => o.value === selectedTime,
 							);
-							// If it doesn't exist (maybe taken by this appointment itself), inject it?
-							// Or assuming backend returns it? Backend usually returns available.
-							// If editing, the current slot MIGHT be "occupied" by us, so it might NOT verify 'available'.
-							// Simple fix: always inject it if missing and editing.
 							if (!exists) {
 								const opt = document.createElement("option");
 								opt.value = selectedTime;
@@ -1938,7 +1993,15 @@ try {
 							agendaHour.value = selectedTime;
 						}
 
-						agendaHour.disabled = false;
+						if (agendaHour.options.length === 1 && !selectedTime) {
+							agendaHour.innerHTML =
+								'<option value="">Sin disponibilidad</option>';
+						} else {
+							agendaHour.disabled = false;
+						}
+					} else {
+						agendaHour.innerHTML =
+							'<option value="">Error al cargar</option>';
 					}
 				} catch (e) {
 					console.error(e);
@@ -1961,24 +2024,50 @@ try {
 
 			// Listener para asignar automaticamente el fisio cuando se selecciona una hora
 			// (Solo si la opcion tiene un data-random-physio y estamos en el contexto adecuado)
+			// Listener para asignar automaticamente el fisio cuando se selecciona una hora
 			if (agendaHour) {
 				agendaHour.addEventListener("change", function () {
+					const horaInicio = this.value;
 					const selectedOption = this.options[this.selectedIndex];
+					const datasetPhysio =
+						selectedOption?.getAttribute("data-idemployed"); // or data-random-physio
+					const datasetEndHour =
+						selectedOption?.getAttribute("data-endhour");
+					// Legacy/Fallback
 					const randomPhysioId =
-						selectedOption.getAttribute("data-random-physio");
+						selectedOption?.getAttribute("data-random-physio");
 
-					if (randomPhysioId) {
-						// Asignar el valor al select de fisio
-						if (agendaPhysio) {
-							agendaPhysio.value = randomPhysioId;
-							// Nota: No disparar updateHours() aqui para evitar recargar la lista de horas
-							// y perder la selección actual. El usuario ya eligió una hora válida.
+					const finalPhysio = datasetPhysio || randomPhysioId;
+
+					if (finalPhysio && agendaPhysio && !isManualPhysioSearch) {
+						agendaPhysio.value = finalPhysio;
+					}
+
+					// Auto-calc EndHour
+					const horaFinInput =
+						document.getElementById("agregarEndHour");
+
+					if (horaInicio && horaFinInput) {
+						if (datasetEndHour) {
+							horaFinInput.value = datasetEndHour;
+						} else {
+							// Default + 1h
+							const [h, m] = horaInicio.split(":").map(Number);
+							const d = new Date();
+							d.setHours(h);
+							d.setMinutes(m);
+							d.setHours(d.getHours() + 1);
+							const hf =
+								String(d.getHours()).padStart(2, "0") +
+								":" +
+								String(d.getMinutes()).padStart(2, "0");
+							horaFinInput.value = hf;
 						}
 					}
 				});
 			}
 
-			window.openEditModal = (app) => {
+			window.openEditModal = async (app) => {
 				const modal = document.getElementById("modalAgregarCita");
 				const form = document.getElementById("formAgregarCita");
 				const submitBtn = form?.querySelector('button[type="submit"]');
@@ -2062,10 +2151,24 @@ try {
 				const timeVal = app.inithour
 					? app.inithour.substring(0, 5)
 					: "";
+				const endTimeVal = app.endhour
+					? app.endhour.substring(0, 5)
+					: "";
+
 				if (dateVal) {
-					updateHours(timeVal);
+					// Await to ensure options are ready
+					await updateHours(timeVal);
+
+					const endHourInput =
+						document.getElementById("agregarEndHour");
+					if (endHourInput && endTimeVal) {
+						endHourInput.value = endTimeVal;
+					}
 				} else {
 					document.getElementById("agregarInitHour").value = timeVal;
+					if (endTimeVal)
+						document.getElementById("agregarEndHour").value =
+							endTimeVal;
 				}
 
 				// Show Modal
