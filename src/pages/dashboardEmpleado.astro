@@ -4548,7 +4548,7 @@ try {
                             .map(
                                 (p: any) => `
                             <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer transition-colors border-b border-gray-50 last:border-0" 
-                                 onclick="selectPatient('${p.id}', '${p.firstname} ${p.lastname}', ${p.havepackage === true})">
+                                 onclick="selectPatient('${p.id}', '${p.firstname} ${p.lastname}', ${p.havepackage === true}, '${p.idemployed || ""}')">
                                 <div class="font-bold text-sm text-gray-800 flex items-center gap-2">
                                     ${p.firstname} ${p.lastname} ${p.motherlastname || ""}
                                     ${p.havepackage ? '<span class="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] rounded-full border border-purple-200"><i class="fa-solid fa-box-open mr-1"></i>Paquete</span>' : ""}
@@ -4593,12 +4593,21 @@ try {
                 id: string,
                 name: string,
                 hasPackage: boolean,
+                idEmployed?: string,
             ) => {
                 if (patientHiddenId) patientHiddenId.value = id;
                 if (patientInput) patientInput.value = name;
                 if (patientResults) patientResults.classList.add("hidden");
 
                 handlePackageUI(hasPackage);
+
+                // Auto-assign Employee if patient has one linked (Special Patient)
+                if (idEmployed && agendaPhysio) {
+                    agendaPhysio.value = idEmployed;
+                }
+
+                // Trigger slot update on patient change (if date is already selected)
+                updateHours();
             };
 
             // Package UI Handler
@@ -4670,6 +4679,7 @@ try {
             };
 
             let latestSlots: any[] = []; // Cache for available slots
+            let isManualPhysioSearch = false; // Flag to control auto-assignment behavior
 
             async function updateHours() {
                 if (!agendaDate || !agendaHour) return;
@@ -4700,6 +4710,19 @@ try {
 
                 if (!date) return;
 
+                // Patient Dependency Check
+                const patientId = (
+                    document.getElementById(
+                        "agregarIdPatient",
+                    ) as HTMLInputElement
+                )?.value;
+                if (!patientId) {
+                    agendaHour.innerHTML =
+                        '<option value="">Seleccione un paciente</option>';
+                    agendaHour.disabled = true;
+                    return;
+                }
+
                 // Robust Date Formatting
                 let fechaFormateada = date;
                 if (date.includes("/")) {
@@ -4712,11 +4735,18 @@ try {
                 agendaHour.disabled = true;
 
                 try {
+                    // Update URL logic to Query Params as requested:
+                    // Split Logic: Specific vs General
                     let url = "";
+
                     if (physioId) {
+                        // Case A: Specific Physio selected manually
+                        isManualPhysioSearch = true;
                         url = `/api/v1/Agenda/${physioId}/${fechaFormateada}`;
                     } else {
-                        url = `/api/v1/Agenda/slots/${fechaFormateada}`;
+                        // Case B: General Search (Auto-assign mode)
+                        isManualPhysioSearch = false;
+                        url = `/api/v1/Agenda/slots/${fechaFormateada}?idPatient=${patientId}`;
                     }
 
                     const res = await fetch(url);
@@ -4737,7 +4767,8 @@ try {
                                     hora = item.hora_disponible.substring(0, 5);
                                 } else if (item.inithour) {
                                     hora = item.inithour.substring(0, 5);
-                                    disponible = item.is_available === true;
+                                    // New Payload logic (assume available if present or check flag if exists)
+                                    disponible = item.is_available !== false;
                                 }
 
                                 if (hora && disponible) {
@@ -4745,6 +4776,21 @@ try {
                                         document.createElement("option");
                                     option.value = hora;
                                     option.textContent = hora;
+
+                                    // New Attributes for Auto-Assignment
+                                    if (item.idemployed) {
+                                        option.setAttribute(
+                                            "data-idemployed",
+                                            String(item.idemployed),
+                                        );
+                                    }
+                                    if (item.endhour) {
+                                        option.setAttribute(
+                                            "data-endhour",
+                                            item.endhour.substring(0, 5),
+                                        );
+                                    }
+
                                     agendaHour.appendChild(option);
                                 }
                             });
@@ -4837,6 +4883,35 @@ try {
             if (agendaHour && agendaService) {
                 const updateEndHour = () => {
                     const start = agendaHour.value;
+                    const selectedOption =
+                        agendaHour.options[agendaHour.selectedIndex];
+
+                    // --- Auto-Assign Physio Logic ---
+                    const datasetPhysio =
+                        selectedOption?.getAttribute("data-idemployed");
+
+                    // Solo asignar si hay un physio en el dataset
+                    // Fix: Siempre actualizar si el dataset lo indica, pero SOLO si estamos en búsqueda general (no manual)
+                    if (
+                        agendaPhysio &&
+                        datasetPhysio &&
+                        !isManualPhysioSearch
+                    ) {
+                        agendaPhysio.value = datasetPhysio;
+                    }
+
+                    if (!start) return;
+
+                    // --- End Hour Logic ---
+                    // 1. Try from Payload (Visual)
+                    const datasetEndHour =
+                        selectedOption?.getAttribute("data-endhour");
+
+                    if (datasetEndHour && agendaEndHour) {
+                        agendaEndHour.value = datasetEndHour;
+                        return;
+                    }
+
                     const serviceOption =
                         agendaService.options[agendaService.selectedIndex];
                     // Parse duration from text like "Name (30 min)" or assume default
@@ -4845,7 +4920,6 @@ try {
                     // The diff view showed: {s.name} ({s.duration} min) in render.
                     // We need to fetch service duration.
                     // Let's assume 60 mins for now or try to get it from option text.
-                    if (!start) return;
 
                     // Helper to add minutes
                     const [h, m] = start.split(":").map(Number);
