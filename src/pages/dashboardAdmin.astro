@@ -115,8 +115,8 @@ try {
 				<div
 					class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:h-full h-auto"
 				>
-					<!-- Columna Izquierda: Gráficos y Estadísticas (8 columnas) -->
-					<div class="lg:col-span-8 flex flex-col gap-8">
+					<!-- Columna Izquierda: Gráficos y Estadísticas (9 columnas) -->
+					<div class="lg:col-span-9 flex flex-col gap-8 h-full">
 						<!-- Fila Superior: Gráfico Principal -->
 						<div
 							class="glass-panel rounded-3xl p-8 h-[400px] lg:h-[32rem] flex flex-col relative overflow-hidden group hover:shadow-2xl transition-all duration-500 border border-white/60 !bg-white shadow-sm"
@@ -187,135 +187,32 @@ try {
 							</div>
 						</div>
 
-						<!-- Fila Inferior: KPIs -->
-						<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-							<!-- Ingresos Card -->
+						<!-- Nueva Sección: Tabla de Transacciones -->
+						<div
+							class="glass-panel rounded-3xl p-6 border border-white/60 !bg-white shadow-lg min-h-[18rem] flex flex-col flex-1"
+						>
+							<!-- Header with Stats -->
 							<div
-								class="glass-panel rounded-3xl p-8 flex flex-col justify-between relative overflow-hidden group hover:-translate-y-2 transition-all duration-300 border border-white/60 !bg-white shadow-lg hover:shadow-2xl min-h-[18rem]"
+								class="flex flex-wrap justify-between items-center mb-6 gap-4 flex-shrink-0"
 							>
-								<div
-									class="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-all duration-500 transform group-hover:scale-110 group-hover:rotate-12"
-								>
-									<i
-										class="fa-solid fa-sack-dollar text-8xl text-[#2F5D50]"
-									></i>
+								<div>
+									<h2
+										class="text-xl font-bold text-[#2F5D50] flex items-center gap-2"
+									>
+										<i class="fa-solid fa-table-list"></i>
+										Detalle de Movimientos
+									</h2>
+									<p class="text-xs text-gray-500 ml-7">
+										Transacciones del día
+									</p>
 								</div>
 
-								<div class="z-10">
-									<div
-										class="flex justify-between items-start mb-3"
-									>
-										<div class="flex items-center gap-4">
-											<div
-												class="w-12 h-12 rounded-2xl bg-[#2F5D50]/10 flex items-center justify-center text-[#2F5D50] shadow-inner"
-											>
-												<i
-													class="fa-solid fa-chart-line text-xl"
-												></i>
-											</div>
-											<div>
-												<h3
-													class="text-lg font-bold text-gray-700"
-												>
-													Ingreso Actual
-												</h3>
-												<p
-													class="text-xs text-gray-500"
-												>
-													Basado en citas concluidas
-												</p>
-											</div>
-										</div>
-										<input
-											type="date"
-											id="ingresos-date"
-											class="glass-input rounded-lg px-2 py-1 text-xs font-bold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20 bg-white/50"
-										/>
-									</div>
-									<div class="mt-auto z-10 pt-4">
-										<div class="flex items-baseline gap-1">
-											<span
-												class="text-3xl font-bold text-[#2F5D50]"
-												>$</span
-											>
-											<span
-												id="ingresos-valor"
-												class="text-6xl font-black text-[#2F5D50] tracking-tighter counter-value"
-												data-target="450"
-											>
-												{
-													benefit[0]
-														?.total_ganancia || 0
-												}</span
-											>
-										</div>
-										<div
-											class="mt-6 w-full bg-gray-200/50 rounded-full h-3 overflow-hidden"
-										>
-											<div
-												class="bg-gradient-to-r from-[#2F5D50] to-[#4a9680] h-full rounded-full animate-pulse shadow-[0_0_10px_rgba(47,93,80,0.4)]"
-												style="width: 45%"
-											>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-
-							<!-- Resumen de Citas Card -->
-							<div
-								class="glass-panel rounded-3xl p-8 border border-white/60 !bg-white shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 min-h-[18rem] overflow-y-auto custom-scrollbar"
-							>
-								<div
-									class="flex flex-wrap justify-between items-center mb-6 gap-4"
-								>
-									<div
-										class="flex flex-wrap items-center gap-4"
-									>
-										<div
-											class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-inner"
-										>
-											<i
-												class="fa-solid fa-calendar-check text-xl"
-											></i>
-										</div>
-										<div>
-											<h3
-												class="text-lg font-bold text-gray-700"
-											>
-												Resumen
-											</h3>
-											<p class="text-xs text-gray-500">
-												Estado de citas hoy
-											</p>
-										</div>
-										<input
-											type="date"
-											id="account-appointment-date"
-											class="glass-input rounded-lg px-2 py-1 text-xs font-bold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20 bg-white/50 w-full sm:w-auto"
-										/>
-									</div>
-									<span
-										class="bg-[#2F5D50] text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg shadow-[#2F5D50]/20 flex items-center gap-2 ml-auto sm:ml-0"
-									>
-										Total: <span
-											id="account-appointment-total"
-											class="counter-value"
-											data-target="6"
-											>{
-												appointmentStatus[0].citas
-													.totalcitas || 0
-											}</span
-										>
-									</span>
-								</div>
-
-								<div class="space-y-3">
+								<!-- Status Indicators (moved from Resumen) -->
+								<div class="flex flex-wrap gap-3">
 									{
 										[
 											{
 												label: "Concluidas",
-												id: "account-appointment-concluidas",
 												count:
 													appointmentStatus[0].citas
 														.concluidas || 0,
@@ -324,7 +221,6 @@ try {
 											},
 											{
 												label: "Confirmadas",
-												id: "account-appointment-confirmadas",
 												count:
 													appointmentStatus[0].citas
 														.confirmada || 0,
@@ -333,7 +229,6 @@ try {
 											},
 											{
 												label: "Pendientes",
-												id: "account-appointment-pendientes",
 												count:
 													appointmentStatus[0].citas
 														.espera || 0,
@@ -342,7 +237,6 @@ try {
 											},
 											{
 												label: "Canceladas",
-												id: "account-appointment-canceladas",
 												count:
 													appointmentStatus[0].citas
 														.cancelada || 0,
@@ -350,33 +244,355 @@ try {
 												icon: "fa-xmark",
 											},
 										].map((item) => (
-											<div class="flex justify-between items-center p-3 hover:bg-white/60 rounded-xl transition-all cursor-default group border border-transparent hover:border-white/40">
-												<div class="flex items-center gap-4">
-													<div
-														class={`w-3 h-3 rounded-full bg-${item.color}-500 shadow-[0_0_8px_rgba(0,0,0,0.3)] shadow-${item.color}-500/50 group-hover:scale-125 transition-transform`}
-													/>
-													<span class="text-sm font-semibold text-gray-600 group-hover:text-gray-900 transition-colors">
-														{item.label}
-													</span>
-												</div>
+											<div
+												class={`px-3 py-1.5 rounded-lg bg-${item.color}-50 border border-${item.color}-100 flex items-center gap-2`}
+											>
+												<div
+													class={`w-2 h-2 rounded-full bg-${item.color}-500`}
+												/>
 												<span
-													class="font-bold text-gray-800 bg-white/80 px-3 py-1 rounded-lg shadow-sm border border-gray-100 counter-value min-w-[2rem] text-center"
-													data-target={item.count}
+													class={`text-xs font-bold text-${item.color}-700`}
 												>
-													<span id={item.id}>
-														{item.count}
-													</span>
+													{item.label}: {item.count}
 												</span>
 											</div>
 										))
 									}
 								</div>
 							</div>
+
+							<!-- Table -->
+							<div
+								class="overflow-x-auto custom-scrollbar rounded-2xl border border-[#2F5D50]/10"
+							>
+								<table class="w-full text-left border-collapse">
+									<thead>
+										<tr
+											class="bg-[#2F5D50]/5 text-[#2F5D50] border-b border-[#2F5D50]/10 text-xs uppercase"
+										>
+											<th class="p-3 font-bold"
+												>Paciente</th
+											>
+											<th class="p-3 font-bold"
+												>Servicio</th
+											>
+											<th class="p-3 font-bold"
+												>Adicionales</th
+											>
+											<th class="p-3 font-bold">Fisio</th>
+											<th class="p-3 font-bold text-right"
+												>Subtotal</th
+											>
+											<th class="p-3 font-bold text-right"
+												>Desc.</th
+											>
+											<th class="p-3 font-bold text-right"
+												>Total</th
+											>
+											<th
+												class="p-3 font-bold text-center"
+												>Pago</th
+											>
+										</tr>
+									</thead>
+									<tbody
+										class="divide-y divide-[#2F5D50]/5 text-sm text-gray-600"
+									>
+										<!-- Static Dummy Data with Inputs -->
+										<tr
+											class="group hover:bg-gray-50 transition-colors"
+										>
+											<td
+												class="p-3 font-bold text-gray-800"
+												>Juan Pérez</td
+											>
+											<td class="p-3">Consulta General</td
+											>
+											<td class="p-3">-</td>
+											<td class="p-3 text-[#2F5D50]"
+												>Dr. Ana</td
+											>
+											<td class="p-3 text-right font-mono"
+												>$500.00</td
+											>
+											<td class="p-3 text-right">
+												<div
+													class="relative w-24 ml-auto"
+												>
+													<input
+														type="text"
+														value="50.00"
+														class="w-full text-right bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-[#2F5D50]/20 focus:border-[#2F5D50] outline-none transition-all"
+														onblur="saveTransaction(this, 'discount', 1)"
+													/>
+													<div
+														class="save-indicator absolute -right-4 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity"
+													>
+														<i
+															class="fa-solid fa-check text-green-500"
+														></i>
+													</div>
+												</div>
+											</td>
+											<td
+												class="p-3 text-right font-bold text-gray-800 font-mono total-cell"
+												>$450.00</td
+											>
+											<td class="p-3 text-center">
+												<div
+													class="relative w-32 mx-auto"
+												>
+													<select
+														class="w-full bg-blue-50 text-blue-700 border border-blue-100 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-blue-500/20 outline-none appearance-none text-center cursor-pointer transition-all hover:bg-blue-100"
+														onchange="saveTransaction(this, 'payment_type', 1)"
+													>
+														<option
+															value="card"
+															selected
+															>Tarjeta</option
+														>
+														<option value="cash"
+															>Efectivo</option
+														>
+														<option value="transfer"
+															>Transferencia</option
+														>
+														<option value="pending"
+															>Pendiente</option
+														>
+													</select>
+													<div
+														class="save-indicator absolute -right-5 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity"
+													>
+														<i
+															class="fa-solid fa-check text-green-500"
+														></i>
+													</div>
+												</div>
+											</td>
+										</tr>
+
+										<tr
+											class="group hover:bg-gray-50 transition-colors"
+										>
+											<td
+												class="p-3 font-bold text-gray-800"
+												>María López</td
+											>
+											<td class="p-3">Terapia Física</td>
+											<td class="p-3">Venda</td>
+											<td class="p-3 text-[#2F5D50]"
+												>Dr. Carlos</td
+											>
+											<td class="p-3 text-right font-mono"
+												>$800.00</td
+											>
+											<td class="p-3 text-right">
+												<div
+													class="relative w-24 ml-auto"
+												>
+													<input
+														type="text"
+														value="0.00"
+														class="w-full text-right bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-[#2F5D50]/20 focus:border-[#2F5D50] outline-none transition-all"
+														onblur="saveTransaction(this, 'discount', 2)"
+													/>
+													<div
+														class="save-indicator absolute -right-4 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity"
+													>
+														<i
+															class="fa-solid fa-check text-green-500"
+														></i>
+													</div>
+												</div>
+											</td>
+											<td
+												class="p-3 text-right font-bold text-gray-800 font-mono total-cell"
+												>$800.00</td
+											>
+											<td class="p-3 text-center">
+												<div
+													class="relative w-32 mx-auto"
+												>
+													<select
+														class="w-full bg-green-50 text-green-700 border border-green-100 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-green-500/20 outline-none appearance-none text-center cursor-pointer transition-all hover:bg-green-100"
+														onchange="saveTransaction(this, 'payment_type', 2)"
+													>
+														<option value="card"
+															>Tarjeta</option
+														>
+														<option
+															value="cash"
+															selected
+															>Efectivo</option
+														>
+														<option value="transfer"
+															>Transferencia</option
+														>
+														<option value="pending"
+															>Pendiente</option
+														>
+													</select>
+													<div
+														class="save-indicator absolute -right-5 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity"
+													>
+														<i
+															class="fa-solid fa-check text-green-500"
+														></i>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr
+											class="group hover:bg-gray-50 transition-colors"
+										>
+											<td
+												class="p-3 font-bold text-gray-800"
+												>Pedro Sánchez</td
+											>
+											<td class="p-3">Masaje</td>
+											<td class="p-3">-</td>
+											<td class="p-3 text-[#2F5D50]"
+												>Dra. Sofia</td
+											>
+											<td class="p-3 text-right font-mono"
+												>$1200.00</td
+											>
+											<td class="p-3 text-right">
+												<div
+													class="relative w-24 ml-auto"
+												>
+													<input
+														type="text"
+														value="0.00"
+														class="w-full text-right bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-[#2F5D50]/20 focus:border-[#2F5D50] outline-none transition-all"
+														onblur="saveTransaction(this, 'discount', 3)"
+													/>
+													<div
+														class="save-indicator absolute -right-4 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity"
+													>
+														<i
+															class="fa-solid fa-check text-green-500"
+														></i>
+													</div>
+												</div>
+											</td>
+											<td
+												class="p-3 text-right font-bold text-gray-800 font-mono total-cell"
+												>$1200.00</td
+											>
+											<td class="p-3 text-center">
+												<div
+													class="relative w-32 mx-auto"
+												>
+													<select
+														class="w-full bg-purple-50 text-purple-700 border border-purple-100 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-purple-500/20 outline-none appearance-none text-center cursor-pointer transition-all hover:bg-purple-100"
+														onchange="saveTransaction(this, 'payment_type', 3)"
+													>
+														<option value="card"
+															>Tarjeta</option
+														>
+														<option value="cash"
+															>Efectivo</option
+														>
+														<option
+															value="transfer"
+															selected
+															>Transferencia</option
+														>
+														<option value="pending"
+															>Pendiente</option
+														>
+													</select>
+													<div
+														class="save-indicator absolute -right-5 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity"
+													>
+														<i
+															class="fa-solid fa-check text-green-500"
+														></i>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<!-- End Dummy Data -->
+									</tbody>
+								</table>
+							</div>
 						</div>
 					</div>
 
-					<!-- Columna Derecha: Citas en Curso (4 columnas) -->
-					<div class="lg:col-span-4 h-full min-h-[600px]">
+					<script is:inline>
+						function saveTransaction(element, field, id) {
+							const container = element.parentElement;
+							const indicator =
+								container.querySelector(".save-indicator");
+
+							// 1. Show Loading State (Spinner)
+							if (indicator) {
+								indicator.innerHTML =
+									'<i class="fa-solid fa-circle-notch fa-spin text-gray-400"></i>';
+								indicator.classList.remove("opacity-0");
+							}
+
+							// Simulating API Call
+							console.log(
+								`[Admin Save] Saving ${field} for Transaction #${id}: ${element.value}`,
+							);
+
+							// Mock Delay
+							setTimeout(() => {
+								// 2. Show Success
+								if (indicator) {
+									indicator.innerHTML =
+										'<i class="fa-solid fa-check text-green-500"></i>';
+
+									// Hide after 2 seconds
+									setTimeout(() => {
+										indicator.classList.add("opacity-0");
+									}, 2000);
+								}
+
+								// Special styling logic for selects (optional UI candy)
+								if (field === "payment_type") {
+									updateSelectStyle(element);
+								}
+							}, 800);
+						}
+
+						function updateSelectStyle(select) {
+							// Remove old color classes
+							select.className = select.className.replace(
+								/bg-\w+-50 text-\w+-700 border-\w+-100/g,
+								"",
+							);
+
+							// Add new based on value
+							let color = "gray";
+							switch (select.value) {
+								case "card":
+									color = "blue";
+									break;
+								case "cash":
+									color = "green";
+									break;
+								case "transfer":
+									color = "purple";
+									break;
+								case "pending":
+									color = "yellow";
+									break;
+							}
+
+							select.classList.add(
+								`bg-${color}-50`,
+								`text-${color}-700`,
+								`border-${color}-100`,
+							);
+						}
+					</script>
+
+					<!-- Columna Derecha: Citas en Curso (3 columnas) -->
+					<div class="lg:col-span-3 h-full min-h-[600px]">
 						<div
 							class="glass-panel rounded-3xl flex flex-col h-full overflow-hidden border border-white/60 !bg-white shadow-xl"
 						>
@@ -1220,6 +1436,13 @@ try {
 				);
 				if (!container) return;
 
+				// Filtrar canceladas (Solicitud Usuario)
+				if (appointments && Array.isArray(appointments)) {
+					appointments = appointments.filter(
+						(a) => a.status !== "canceled",
+					);
+				}
+
 				container.innerHTML = "";
 
 				if (!appointments || appointments.length === 0) {
@@ -1241,61 +1464,27 @@ try {
 
 			function createAppointmentCard(app) {
 				const div = document.createElement("div");
-				div.className =
-					"bg-white/60 hover:bg-white/90 backdrop-blur-sm p-4 sm:p-5 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 transform hover:-translate-y-1";
-				div.onclick = () => {
-					console.log("Click en cita:", app.id);
-				};
 
-				const statusConfig = {
-					confirmed: {
-						bgClass: "bg-green-500",
-						icon: "fa-thumbs-up",
-						label: "Confirmada",
-						color: "green",
-					},
-					pending: {
-						bgClass: "bg-yellow-500",
-						icon: "fa-clock",
-						label: "Pendiente",
-						color: "yellow",
-					},
-					canceled: {
-						bgClass: "bg-gray-500",
-						icon: "fa-xmark",
-						label: "Cancelada",
-						color: "gray",
-					},
-					concluded: {
-						bgClass: "bg-blue-500",
-						icon: "fa-check",
-						label: "Concluida",
-						color: "blue",
-					},
-					wait: {
-						bgClass: "bg-orange-500",
-						icon: "fa-clock",
-						label: "En espera",
-						color: "orange",
-					},
-					"no assisted": {
-						bgClass: "bg-red-500",
-						icon: "fa-user-xmark",
-						label: "No asistió",
-						color: "red",
-					},
-				};
+				// --- REFINED DESIGN (Physio Color + Photo Focus) ---
+				const normalize = (str) =>
+					(str || "")
+						.normalize("NFD")
+						.replace(/[\u0300-\u036f]/g, "")
+						.toLowerCase();
+				const status = normalize(app.status);
 
-				const status =
-					statusConfig[app.status?.toLowerCase()] ||
-					statusConfig.wait;
+				// 1. Get Physio Color
+				let pColor = "#9ca3af"; // Default Gray
+				if (typeof getPhysioColor === "function") {
+					pColor = getPhysioColor(app.idemployed);
+				}
 
+				// 2. Photo Logic
 				const hasPhoto =
 					app.photo &&
 					app.photo !== "default.png" &&
 					!String(app.photo).includes("default.png");
 				let photoContent;
-
 				if (hasPhoto) {
 					let finalUrl = app.photo;
 					if (!finalUrl.startsWith("http")) {
@@ -1308,16 +1497,16 @@ try {
 							finalUrl = `${backendUrl}/uploads/images/${finalUrl}`;
 						}
 					}
-					// On error fallback to initials
-					const fallbackHtml = `<div class='w-full h-full flex items-center justify-center text-[#2F5D50] font-bold text-xl bg-[#2F5D50]/10'>${(app.patient_name || "?").charAt(0).toUpperCase()}</div>`;
+					// Fallback to Initial with Physio Color
+					const fallbackHtml = `<div class='w-full h-full flex items-center justify-center font-bold text-xl' style='background-color: ${pColor}20; color: ${pColor}'>${(app.patient_name || "?").charAt(0).toUpperCase()}</div>`;
 					photoContent = `<img src="${finalUrl}" alt="${app.patient_name}" class="w-full h-full object-cover" onerror="this.parentNode.innerHTML=\`${fallbackHtml}\`">`;
 				} else {
-					photoContent = `<div class="w-full h-full flex items-center justify-center text-[#2F5D50] font-bold text-xl bg-[#2F5D50]/10">
-                                        ${(app.patient_name || "?").charAt(0).toUpperCase()}
-                                     </div>`;
+					// Initial with Physio Color
+					photoContent = `<div class="w-full h-full flex items-center justify-center font-bold text-xl" style="background-color: ${pColor}20; color: ${pColor}">
+                        ${(app.patient_name || "?").charAt(0).toUpperCase()}
+                    </div>`;
 				}
 
-				// Calcular Edad
 				const calcularEdad = (fechaNacimiento) => {
 					if (!fechaNacimiento) return "?";
 					const hoy = new Date();
@@ -1332,59 +1521,83 @@ try {
 					return edad;
 				};
 
-				// Encode app object safely for function call
 				const appData = JSON.stringify(app).replace(/"/g, "&quot;");
 
-				// Physio Color
-				const pColor = getPhysioColor(app.idemployed);
+				// --- CONTAINER STYLE (Border left matches physio color) ---
+				div.className = `p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden flex items-start gap-4 mb-3 bg-white`;
+				div.style.borderLeft = `4px solid ${pColor}`;
+				div.style.backgroundColor = `${pColor}05`; // Subtle tint
+
+				div.onclick = () => {
+					console.log("Click en cita:", app.id);
+				};
+
+				// Status Label Text (No Icon)
+				let statusLabel = app.status || "Programada";
+				if (status === "confirmed") statusLabel = "Confirmada";
+				if (status === "wait") statusLabel = "En Espera";
+				if (status === "canceled") statusLabel = "Cancelada";
 
 				div.innerHTML = `
-					<!-- Color Strip based on Physio ID -->
-                    <div class="absolute left-0 top-0 bottom-0 w-1.5" style="background-color: ${pColor};"></div>
-                    <div class="flex items-center gap-4 pl-3">
-                         <div class="relative w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform overflow-hidden cursor-pointer border border-gray-100"
-                              onclick="event.stopPropagation(); window.openPhoto('${hasPhoto ? app.photo : ""}', '${app.patient_name}')">
-                              ${photoContent}
-                         </div>
-                        <div>
-                             <h4 class="font-bold text-gray-800 text-base group-hover:text-[#2F5D50] transition-colors">
-                                ${app.patient_name || "Sin Nombre"}
-                                <span class="text-xs text-gray-500 font-normal">(${calcularEdad(app.birthday)} años)</span>
-                             </h4>
-                             <div class="flex flex-col gap-1 text-xs text-gray-500 mt-0.5">
-                                 <div class="flex items-center gap-2">
-                                    <i class="fa-solid fa-notes-medical text-[#2F5D50]/60"></i>
+                    
+                    <!-- Avatar Area -->
+                    <div class="relative z-10 flex-shrink-0">
+                        <div class="w-12 h-12 rounded-full overflow-hidden border border-white shadow-sm flex items-center justify-center cursor-pointer transition-transform group-hover:scale-105"
+                             style="border-color: ${pColor}40"
+                             onclick="event.stopPropagation(); window.openPhoto('${hasPhoto ? app.photo : ""}', '${app.patient_name}')">
+                             ${photoContent}
+                        </div>
+                    </div>
+
+                    <!-- Info Area -->
+                    <div class="flex-1 relative z-10 min-w-0">
+                        <div class="flex justify-between items-start">
+                            <div class="min-w-0">
+                                <h4 class="font-bold text-sm truncate text-gray-800">
+                                    ${app.patient_name || "Sin Nombre"}
+                                </h4>
+                                <div class="text-xs text-gray-500 font-medium flex items-center gap-1 mt-0.5">
+                                    <span>${calcularEdad(app.birthday)} años</span>
+                                    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
                                     <span>${app.service_name || app.servicio || "Consulta"}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Simple Text Badge (No Icon) -->
+                             <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-white/50 border border-gray-100 text-gray-500 flex-shrink-0 ml-2">
+                                ${statusLabel}
+                            </span>
+                        </div>
+
+                        <!-- Details Row -->
+                        <div class="mt-3 flex items-center justify-between text-xs text-gray-500">
+                             <div class="flex items-center gap-3">
+                                 <!-- Time -->
+                                 <div class="flex items-center gap-1.5">
+                                    <i class="fa-regular fa-clock text-gray-400"></i>
+                                    <span class="font-bold text-gray-700 font-mono">${(app.inithour || "00:00").substring(0, 5)}</span>
                                  </div>
-                                 <div class="flex items-center gap-2" style="color: ${pColor}">
-                                    <i class="fa-solid fa-user-doctor"></i>
-                                    <span class="font-bold">${app.employed_name || "Fiosioterapeuta"}</span>
+                                 <!-- Physio Name (Colored) -->
+                                 <div class="flex items-center gap-1.5 max-w-[120px] truncate">
+                                    <i class="fa-solid fa-user-doctor" style="color: ${pColor}"></i>
+                                    <span class="truncate font-medium" style="color: ${pColor}">${app.employed_name || "Fisio"}</span>
                                  </div>
+                             </div>
+
+                             <!-- Edit Button -->
+                             <div class="flex items-center">
+                                <button class="w-7 h-7 rounded-lg bg-white text-gray-400 hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 border border-gray-100"
+                                        style="--hover-color: ${pColor}"
+                                        onmouseover="this.style.backgroundColor=this.style.getPropertyValue('--hover-color')"
+                                        onmouseout="this.style.backgroundColor='white'"
+                                        onclick='event.stopPropagation(); window.openEditModal(${appData})'
+                                        title="Editar Cita">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
                              </div>
                         </div>
                     </div>
-                    
-                    <div class="flex items-center gap-4">
-                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-${status.color}-100 text-${status.color}-700 border border-${status.color}-200 flex items-center gap-1.5">
-                            <i class="fa-solid ${status.icon}"></i>
-                            ${status.label}
-                        </span>
-                         <!-- Botón Editar -->
-                         <button class="w-8 h-8 rounded-full bg-gray-50 text-gray-400 hover:bg-[#2F5D50] hover:text-white flex items-center justify-center transition-colors shadow-sm border border-gray-100"
-                                onclick='event.stopPropagation(); window.openEditModal(${appData})'
-                                title="Editar Cita">
-                            <i class="fa-solid fa-pencil text-xs"></i>
-                        </button>
-                         <div class="text-right">
-                             <p class="text-lg font-bold text-[#2F5D50]">${app.inithour ? app.inithour.substring(0, 5) : "--:--"}</p>
-                             <p class="text-xs text-gray-400 font-medium">Hora Inicio</p>
-                         </div>
-                    </div>
                 `;
-
-				// Apply subtle background tint
-				div.style.backgroundColor = `${pColor}08`; // Very light tint (hex alpha)
-				div.style.borderLeftColor = pColor;
 
 				return div;
 			}
