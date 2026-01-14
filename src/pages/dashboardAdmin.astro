@@ -173,6 +173,23 @@ try {
 												></i>
 											</div>
 										</div>
+										<div class="relative group">
+											<select
+												id="chart-additional-filter"
+												class="glass-input rounded-xl px-4 py-2 text-sm font-bold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20 bg-white/50 w-48 appearance-none cursor-pointer"
+												title="Filtrar por Adicional"
+											>
+												<option value=""
+													>Todos los Adicionales</option
+												>
+											</select>
+											<div
+												class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2F5D50]"
+											>
+												<i class="fa-solid fa-filter"
+												></i>
+											</div>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -673,32 +690,73 @@ try {
 		function initChart() {
 			const startDateInput = document.getElementById("chart-date-start");
 			const endDateInput = document.getElementById("chart-date-end");
+			const additionalSelect = document.getElementById(
+				"chart-additional-filter",
+			);
+
+			// Populate Select
+			if (additionalSelect && window.adicionalesData) {
+				window.adicionalesData.forEach((add) => {
+					const opt = document.createElement("option");
+					opt.value = add.id;
+					opt.textContent = add.name;
+					additionalSelect.appendChild(opt);
+				});
+			}
 
 			if (startDateInput && endDateInput) {
-				const today = new Date().toISOString().split("T")[0];
+				const today = new Date(
+					Date.now() - new Date().getTimezoneOffset() * 60000,
+				)
+					.toISOString()
+					.split("T")[0];
 				startDateInput.value = today;
 
 				// Initial draw
-				fetchAndDrawChart(today, today);
+				fetchAndDrawChart(today, today, "");
 
 				// Add listeners
 				startDateInput.addEventListener("change", () => {
-					fetchAndDrawChart(startDateInput.value, endDateInput.value);
+					fetchAndDrawChart(
+						startDateInput.value,
+						endDateInput.value,
+						additionalSelect?.value,
+					);
 				});
 
 				endDateInput.addEventListener("change", () => {
-					fetchAndDrawChart(startDateInput.value, endDateInput.value);
+					fetchAndDrawChart(
+						startDateInput.value,
+						endDateInput.value,
+						additionalSelect?.value,
+					);
+				});
+
+				additionalSelect?.addEventListener("change", () => {
+					fetchAndDrawChart(
+						startDateInput.value,
+						endDateInput.value,
+						additionalSelect.value,
+					);
 				});
 			}
 		}
 
-		async function fetchAndDrawChart(startDate, endDate) {
+		async function fetchAndDrawChart(
+			startDate,
+			endDate,
+			idAdditional = "",
+		) {
 			try {
 				let url = `/api/v1/AdditionalSales?start=${startDate}`;
 				if (endDate) {
 					url += `&end=${endDate}`;
 				} else {
 					url += `&end=${startDate}`;
+				}
+
+				if (idAdditional) {
+					url += `&idAdditional=${idAdditional}`;
 				}
 
 				const res = await fetch(url);
@@ -784,7 +842,11 @@ try {
 			const valorSpan = document.getElementById("ingresos-valor");
 
 			if (dateInput) {
-				const today = new Date().toISOString().split("T")[0];
+				const today = new Date(
+					Date.now() - new Date().getTimezoneOffset() * 60000,
+				)
+					.toISOString()
+					.split("T")[0];
 				dateInput.value = today;
 				dateInput.addEventListener("change", async (e) => {
 					const date = e.target.value;
@@ -831,7 +893,11 @@ try {
 			);
 
 			if (dateInput) {
-				const today = new Date().toISOString().split("T")[0];
+				const today = new Date(
+					Date.now() - new Date().getTimezoneOffset() * 60000,
+				)
+					.toISOString()
+					.split("T")[0];
 				dateInput.value = today;
 				dateInput.addEventListener("change", async (e) => {
 					const date = e.target.value;
@@ -879,11 +945,14 @@ try {
 		});
 	</script>
 	<!-- Injection Script -->
-	<script define:vars={{ pacientes, empleados, paquetes, servicios }}>
+	<script
+		define:vars={{ pacientes, empleados, paquetes, servicios, adicionales }}
+	>
 		window.pacientesData = pacientes;
 		window.empleadosData = empleados;
 		window.paquetesData = paquetes;
 		window.serviciosData = servicios;
+		window.adicionalesData = adicionales;
 	</script>
 
 	<!-- Modal Agregar Cita (Importado y adaptado) -->
@@ -1381,7 +1450,11 @@ try {
 
 			// --- Lógica de Agenda ---
 			if (agendaDateInput && agendaContainer) {
-				const today = new Date().toISOString().split("T")[0];
+				const today = new Date(
+					Date.now() - new Date().getTimezoneOffset() * 60000,
+				)
+					.toISOString()
+					.split("T")[0];
 				agendaDateInput.value = today;
 
 				fetchAgenda(today);
