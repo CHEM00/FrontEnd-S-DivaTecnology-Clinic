@@ -183,12 +183,6 @@ try {
 													>Todos los Adicionales</option
 												>
 											</select>
-											<div
-												class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2F5D50]"
-											>
-												<i class="fa-solid fa-filter"
-												></i>
-											</div>
 										</div>
 									</div>
 								</div>
@@ -232,9 +226,10 @@ try {
 												label: "Concluidas",
 												count:
 													appointmentStatus[0].citas
-														.concluidas || 0,
+														.concluida || 0,
 												color: "green",
 												icon: "fa-check",
+												id: "account-appointment-concluidas",
 											},
 											{
 												label: "Confirmadas",
@@ -243,6 +238,7 @@ try {
 														.confirmada || 0,
 												color: "blue",
 												icon: "fa-thumbs-up",
+												id: "account-appointment-confirmadas",
 											},
 											{
 												label: "Pendientes",
@@ -251,6 +247,7 @@ try {
 														.espera || 0,
 												color: "yellow",
 												icon: "fa-clock",
+												id: "account-appointment-pendientes",
 											},
 											{
 												label: "Canceladas",
@@ -259,6 +256,7 @@ try {
 														.cancelada || 0,
 												color: "red",
 												icon: "fa-xmark",
+												id: "account-appointment-canceladas",
 											},
 										].map((item) => (
 											<div
@@ -267,14 +265,30 @@ try {
 												<div
 													class={`w-2 h-2 rounded-full bg-${item.color}-500`}
 												/>
-												<span
-													class={`text-xs font-bold text-${item.color}-700`}
+												<div
+													class={`text-xs font-bold text-${item.color}-700 flex gap-1`}
 												>
-													{item.label}: {item.count}
-												</span>
+													<span>{item.label}:</span>
+													<span id={item.id}>
+														{item.count}
+													</span>
+												</div>
 											</div>
 										))
 									}
+									<!-- Date Filter Input Replacement -->
+									<div
+										class="px-2 py-0.5 rounded-lg bg-gray-50 border border-gray-200 flex items-center gap-2 shadow-sm focus-within:ring-2 focus-within:ring-[#2F5D50]/20 transition-all"
+									>
+										<i
+											class="fa-regular fa-calendar text-xs text-gray-400"
+										></i>
+										<input
+											type="date"
+											id="filter-date-stats"
+											class="bg-transparent border-none outline-none text-xs font-bold text-gray-700 w-24 p-0 cursor-pointer"
+										/>
+									</div>
 								</div>
 							</div>
 
@@ -313,225 +327,10 @@ try {
 										</tr>
 									</thead>
 									<tbody
+										id="transaction-table-body"
 										class="divide-y divide-[#2F5D50]/5 text-sm text-gray-600"
 									>
-										<!-- Static Dummy Data with Inputs -->
-										<tr
-											class="group hover:bg-gray-50 transition-colors"
-										>
-											<td
-												class="p-3 font-bold text-gray-800"
-												>Juan Pérez</td
-											>
-											<td class="p-3">Consulta General</td
-											>
-											<td class="p-3">-</td>
-											<td class="p-3 text-[#2F5D50]"
-												>Dr. Ana</td
-											>
-											<td class="p-3 text-right font-mono"
-												>$500.00</td
-											>
-											<td class="p-3 text-right">
-												<div
-													class="relative w-24 ml-auto"
-												>
-													<input
-														type="text"
-														value="50.00"
-														class="w-full text-right bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-[#2F5D50]/20 focus:border-[#2F5D50] outline-none transition-all"
-														onblur="saveTransaction(this, 'discount', 1)"
-													/>
-													<div
-														class="save-indicator absolute -right-4 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity"
-													>
-														<i
-															class="fa-solid fa-check text-green-500"
-														></i>
-													</div>
-												</div>
-											</td>
-											<td
-												class="p-3 text-right font-bold text-gray-800 font-mono total-cell"
-												>$450.00</td
-											>
-											<td class="p-3 text-center">
-												<div
-													class="relative w-32 mx-auto"
-												>
-													<select
-														class="w-full bg-blue-50 text-blue-700 border border-blue-100 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-blue-500/20 outline-none appearance-none text-center cursor-pointer transition-all hover:bg-blue-100"
-														onchange="saveTransaction(this, 'payment_type', 1)"
-													>
-														<option
-															value="card"
-															selected
-															>Tarjeta</option
-														>
-														<option value="cash"
-															>Efectivo</option
-														>
-														<option value="transfer"
-															>Transferencia</option
-														>
-														<option value="pending"
-															>Pendiente</option
-														>
-													</select>
-													<div
-														class="save-indicator absolute -right-5 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity"
-													>
-														<i
-															class="fa-solid fa-check text-green-500"
-														></i>
-													</div>
-												</div>
-											</td>
-										</tr>
-
-										<tr
-											class="group hover:bg-gray-50 transition-colors"
-										>
-											<td
-												class="p-3 font-bold text-gray-800"
-												>María López</td
-											>
-											<td class="p-3">Terapia Física</td>
-											<td class="p-3">Venda</td>
-											<td class="p-3 text-[#2F5D50]"
-												>Dr. Carlos</td
-											>
-											<td class="p-3 text-right font-mono"
-												>$800.00</td
-											>
-											<td class="p-3 text-right">
-												<div
-													class="relative w-24 ml-auto"
-												>
-													<input
-														type="text"
-														value="0.00"
-														class="w-full text-right bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-[#2F5D50]/20 focus:border-[#2F5D50] outline-none transition-all"
-														onblur="saveTransaction(this, 'discount', 2)"
-													/>
-													<div
-														class="save-indicator absolute -right-4 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity"
-													>
-														<i
-															class="fa-solid fa-check text-green-500"
-														></i>
-													</div>
-												</div>
-											</td>
-											<td
-												class="p-3 text-right font-bold text-gray-800 font-mono total-cell"
-												>$800.00</td
-											>
-											<td class="p-3 text-center">
-												<div
-													class="relative w-32 mx-auto"
-												>
-													<select
-														class="w-full bg-green-50 text-green-700 border border-green-100 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-green-500/20 outline-none appearance-none text-center cursor-pointer transition-all hover:bg-green-100"
-														onchange="saveTransaction(this, 'payment_type', 2)"
-													>
-														<option value="card"
-															>Tarjeta</option
-														>
-														<option
-															value="cash"
-															selected
-															>Efectivo</option
-														>
-														<option value="transfer"
-															>Transferencia</option
-														>
-														<option value="pending"
-															>Pendiente</option
-														>
-													</select>
-													<div
-														class="save-indicator absolute -right-5 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity"
-													>
-														<i
-															class="fa-solid fa-check text-green-500"
-														></i>
-													</div>
-												</div>
-											</td>
-										</tr>
-										<tr
-											class="group hover:bg-gray-50 transition-colors"
-										>
-											<td
-												class="p-3 font-bold text-gray-800"
-												>Pedro Sánchez</td
-											>
-											<td class="p-3">Masaje</td>
-											<td class="p-3">-</td>
-											<td class="p-3 text-[#2F5D50]"
-												>Dra. Sofia</td
-											>
-											<td class="p-3 text-right font-mono"
-												>$1200.00</td
-											>
-											<td class="p-3 text-right">
-												<div
-													class="relative w-24 ml-auto"
-												>
-													<input
-														type="text"
-														value="0.00"
-														class="w-full text-right bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-[#2F5D50]/20 focus:border-[#2F5D50] outline-none transition-all"
-														onblur="saveTransaction(this, 'discount', 3)"
-													/>
-													<div
-														class="save-indicator absolute -right-4 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity"
-													>
-														<i
-															class="fa-solid fa-check text-green-500"
-														></i>
-													</div>
-												</div>
-											</td>
-											<td
-												class="p-3 text-right font-bold text-gray-800 font-mono total-cell"
-												>$1200.00</td
-											>
-											<td class="p-3 text-center">
-												<div
-													class="relative w-32 mx-auto"
-												>
-													<select
-														class="w-full bg-purple-50 text-purple-700 border border-purple-100 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-purple-500/20 outline-none appearance-none text-center cursor-pointer transition-all hover:bg-purple-100"
-														onchange="saveTransaction(this, 'payment_type', 3)"
-													>
-														<option value="card"
-															>Tarjeta</option
-														>
-														<option value="cash"
-															>Efectivo</option
-														>
-														<option
-															value="transfer"
-															selected
-															>Transferencia</option
-														>
-														<option value="pending"
-															>Pendiente</option
-														>
-													</select>
-													<div
-														class="save-indicator absolute -right-5 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity"
-													>
-														<i
-															class="fa-solid fa-check text-green-500"
-														></i>
-													</div>
-												</div>
-											</td>
-										</tr>
-										<!-- End Dummy Data -->
+										<!-- Content will be injected via JS -->
 									</tbody>
 								</table>
 							</div>
@@ -539,6 +338,7 @@ try {
 					</div>
 
 					<script is:inline>
+						// Global function to save transaction (called from inline onchange)
 						function saveTransaction(element, field, id) {
 							const container = element.parentElement;
 							const indicator =
@@ -569,7 +369,7 @@ try {
 									}, 2000);
 								}
 
-								// Special styling logic for selects (optional UI candy)
+								// Special styling logic for selects
 								if (field === "payment_type") {
 									updateSelectStyle(element);
 								}
@@ -606,6 +406,95 @@ try {
 								`border-${color}-100`,
 							);
 						}
+
+						// Function to update the table
+						window.updateTransactionTable = async (date) => {
+							const tbody = document.getElementById(
+								"transaction-table-body",
+							);
+							if (!tbody) return;
+
+							tbody.innerHTML =
+								'<tr><td colspan="8" class="p-4 text-center"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-[#2F5D50]"></i></td></tr>';
+
+							try {
+								const res = await fetch(
+									`/api/v1/DashboardAdmin/DetailAppointments?date=${date}`,
+								);
+								if (!res.ok)
+									throw new Error(
+										"Failed to fetch transactions",
+									);
+								const data = await res.json();
+
+								tbody.innerHTML = "";
+
+								if (data && data.length > 0) {
+									data.forEach((item) => {
+										const tr = document.createElement("tr");
+										tr.className =
+											"group hover:bg-gray-50 transition-colors";
+
+										// Defaults requested by user
+										const discountVal = "0.00";
+										const paymentVal = "pending"; // Default pending
+										// For Subtotal, usually Total = Subtotal - Discount.
+										// Since Discount default is 0, Subtotal display = Total from API for now.
+										const subtotalDisplay = item.total;
+										const totalDisplay = item.total;
+
+										tr.innerHTML = `
+											<td class="p-3 font-bold text-gray-800">${item.patient_name}</td>
+											<td class="p-3">${item.service_name}</td>
+											<td class="p-3 text-xs">${item.additional_services || "-"}</td>
+											<td class="p-3 text-[#2F5D50] font-medium">${item.physio_name}</td>
+											<td class="p-3 text-right font-mono">$${subtotalDisplay}</td>
+											<td class="p-3 text-right">
+												<div class="relative w-24 ml-auto">
+													<input
+														type="text"
+														value="${discountVal}"
+														class="w-full text-right bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-[#2F5D50]/20 focus:border-[#2F5D50] outline-none transition-all"
+														onblur="saveTransaction(this, 'discount', '${item.appointment_id}')"
+													/>
+													<div class="save-indicator absolute -right-4 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity">
+														<i class="fa-solid fa-check text-green-500"></i>
+													</div>
+												</div>
+											</td>
+											<td class="p-3 text-right font-bold text-gray-800 font-mono total-cell">$${totalDisplay}</td>
+											<td class="p-3 text-center">
+												<div class="relative w-32 mx-auto">
+													<select
+														class="w-full bg-yellow-50 text-yellow-700 border border-yellow-100 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-yellow-500/20 outline-none appearance-none text-center cursor-pointer transition-all hover:bg-yellow-100"
+														onchange="saveTransaction(this, 'payment_type', '${item.appointment_id}')"
+													>
+														<option value="card">Tarjeta</option>
+														<option value="cash">Efectivo</option>
+														<option value="transfer">Transferencia</option>
+														<option value="pending" selected>Pendiente</option>
+													</select>
+													<div class="save-indicator absolute -right-5 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity">
+														<i class="fa-solid fa-check text-green-500"></i>
+													</div>
+												</div>
+											</td>
+										`;
+										tbody.appendChild(tr);
+									});
+								} else {
+									tbody.innerHTML =
+										'<tr><td colspan="8" class="p-4 text-center text-gray-400">No hay movimientos registrados</td></tr>';
+								}
+							} catch (error) {
+								console.error(
+									"Error loading transactions:",
+									error,
+								);
+								tbody.innerHTML =
+									'<tr><td colspan="8" class="p-4 text-center text-red-400">Error al cargar datos</td></tr>';
+							}
+						};
 					</script>
 
 					<!-- Columna Derecha: Citas en Curso (3 columnas) -->
@@ -659,11 +548,23 @@ try {
 										></i>
 									</div>
 								</div>
+								<div
+									id="appointment-search-results"
+									class="absolute top-full left-0 right-0 bg-white rounded-xl shadow-lg mt-2 max-h-48 overflow-y-auto hidden z-50 border border-gray-100"
+								>
+								</div>
 							</div>
-
 							<div
-								class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
+								class="flex-1 overflow-y-auto custom-scrollbar p-6 relative"
 							>
+								<div
+									id="loading-agenda"
+									class="absolute inset-0 flex items-center justify-center bg-white/80 z-10 hidden"
+								>
+									<i
+										class="fa-solid fa-circle-notch fa-spin text-3xl text-[#2F5D50]"
+									></i>
+								</div>
 								<div
 									id="agenda-list-container"
 									class="space-y-4"
@@ -695,7 +596,7 @@ try {
 			);
 
 			// Populate Select
-			if (additionalSelect && window.adicionalesData) {
+			if (additionalSelect) {
 				window.adicionalesData.forEach((add) => {
 					const opt = document.createElement("option");
 					opt.value = add.id;
@@ -802,12 +703,9 @@ try {
 				},
 				hAxis: { textStyle: { color: "#333", bold: true } },
 				height: "100%",
-				colors: ["#2F5D50", "#4ade80", "#22d3ee", "#facc15", "#f87171"],
+				colors: ["#2F5D50"],
 				backgroundColor: "transparent",
-				legend: {
-					position: "bottom",
-					textStyle: { color: "#333", fontSize: 12 },
-				},
+				legend: { position: "none" },
 				animation: {
 					startup: true,
 					duration: 1000,
@@ -828,7 +726,7 @@ try {
 		window.addEventListener("resize", () => {
 			clearTimeout(resizeTimeout);
 			resizeTimeout = setTimeout(() => {
-				if (cachedChartData) {
+				if (cachedChartData.length > 0) {
 					drawChart(cachedChartData);
 				}
 			}, 200);
@@ -870,12 +768,9 @@ try {
 			}
 		});
 	</script>
-	<!-- Este script se encarga de actualizar el numero de citas acorde a la fecha seleccionada. -->
+	<!-- Script para actualizar los contadores -->
 	<script is:inline>
 		document.addEventListener("DOMContentLoaded", () => {
-			const dateInput = document.getElementById(
-				"account-appointment-date",
-			);
 			const citasTotalSpan = document.getElementById(
 				"account-appointment-total",
 			);
@@ -892,56 +787,85 @@ try {
 				"account-appointment-canceladas",
 			);
 
-			if (dateInput) {
+			// Helper to update stats
+			window.updateAppointmentStats = async (date) => {
+				try {
+					const res = await fetch(
+						`/api/v1/AppointmentStatus?date=${date}`,
+					);
+					if (res.ok) {
+						const data = await res.json();
+						if (data && data.length > 0 && data[0].citas) {
+							const citas = data[0].citas;
+
+							if (citasTotalSpan)
+								citasTotalSpan.textContent =
+									citas.totalcitas || "0";
+
+							if (citasConcluidasSpan)
+								citasConcluidasSpan.textContent =
+									citas.concluida || "0";
+							if (citasConfirmadasSpan)
+								citasConfirmadasSpan.textContent =
+									citas.confirmada || "0";
+							if (citasPendientesSpan)
+								citasPendientesSpan.textContent =
+									citas.espera || "0";
+							if (citasCanceladasSpan)
+								citasCanceladasSpan.textContent =
+									citas.cancelada || "0";
+						} else {
+							// Reset
+							if (citasTotalSpan)
+								citasTotalSpan.textContent = "0";
+							if (citasConcluidasSpan)
+								citasConcluidasSpan.textContent = "0";
+							if (citasConfirmadasSpan)
+								citasConfirmadasSpan.textContent = "0";
+							if (citasPendientesSpan)
+								citasPendientesSpan.textContent = "0";
+							if (citasCanceladasSpan)
+								citasCanceladasSpan.textContent = "0";
+						}
+					}
+				} catch (err) {
+					console.error(err);
+				}
+			};
+
+			// Hook into the NEW Stats Date Filter
+			const statsDateInput = document.getElementById("filter-date-stats");
+			if (statsDateInput) {
+				// Initialize with Today
 				const today = new Date(
 					Date.now() - new Date().getTimezoneOffset() * 60000,
 				)
 					.toISOString()
 					.split("T")[0];
-				dateInput.value = today;
-				dateInput.addEventListener("change", async (e) => {
-					const date = e.target.value;
-					try {
-						const res = await fetch(
-							`/api/v1/AppointmentStatus?date=${date}`,
-						);
-						if (res.ok) {
-							const data = await res.json();
-							if (data && data.length > 0 && data[0].citas) {
-								const citas = data[0].citas;
-								if (citasTotalSpan)
-									citasTotalSpan.textContent =
-										citas.totalcitas || "0";
-								if (citasConcluidasSpan)
-									citasConcluidasSpan.textContent =
-										citas.concluida || "0";
-								if (citasConfirmadasSpan)
-									citasConfirmadasSpan.textContent =
-										citas.confirmada || "0";
-								if (citasPendientesSpan)
-									citasPendientesSpan.textContent =
-										citas.espera || "0";
-								if (citasCanceladasSpan)
-									citasCanceladasSpan.textContent =
-										citas.cancelada || "0";
-							} else {
-								if (citasTotalSpan)
-									citasTotalSpan.textContent = "0";
-								if (citasConcluidasSpan)
-									citasConcluidasSpan.textContent = "0";
-								if (citasConfirmadasSpan)
-									citasConfirmadasSpan.textContent = "0";
-								if (citasPendientesSpan)
-									citasPendientesSpan.textContent = "0";
-								if (citasCanceladasSpan)
-									citasCanceladasSpan.textContent = "0";
-							}
-						}
-					} catch (err) {
-						console.error(err);
-					}
+
+				statsDateInput.value = today;
+
+				// Initial Load
+				window.updateAppointmentStats(today);
+				window.updateTransactionTable(today);
+
+				// Listener
+				statsDateInput.addEventListener("change", (e) => {
+					window.updateAppointmentStats(e.target.value);
+					window.updateTransactionTable(e.target.value);
 				});
+			} else {
+				// Fallback if element not found (shouldn't happen)
+				const today = new Date(
+					Date.now() - new Date().getTimezoneOffset() * 60000,
+				)
+					.toISOString()
+					.split("T")[0];
+				window.updateAppointmentStats(today);
+				window.updateTransactionTable(today);
 			}
+
+			// Removed hook into chart-date-start for stats
 		});
 	</script>
 	<!-- Injection Script -->
