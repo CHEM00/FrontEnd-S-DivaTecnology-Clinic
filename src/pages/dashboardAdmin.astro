@@ -141,13 +141,17 @@ try {
 										Rendimiento del equipo en tiempo real
 									</p>
 								</div>
-								<div class="relative z-20">
-									<div class="flex gap-2">
-										<div class="relative group">
+								<div class="relative z-20 w-full sm:w-auto">
+									<div
+										class="flex flex-wrap sm:flex-nowrap gap-2"
+									>
+										<div
+											class="relative group flex-1 sm:flex-none"
+										>
 											<input
 												type="date"
 												id="chart-date-start"
-												class="glass-input rounded-xl px-4 py-2 text-sm font-bold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20 bg-white/50 w-36"
+												class="glass-input rounded-xl px-4 py-2 text-sm font-bold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20 bg-white/50 w-full sm:w-36"
 												title="Fecha Inicio"
 											/>
 											<div
@@ -158,11 +162,13 @@ try {
 												></i>
 											</div>
 										</div>
-										<div class="relative group">
+										<div
+											class="relative group flex-1 sm:flex-none"
+										>
 											<input
 												type="date"
 												id="chart-date-end"
-												class="glass-input rounded-xl px-4 py-2 text-sm font-bold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20 bg-white/50 w-36"
+												class="glass-input rounded-xl px-4 py-2 text-sm font-bold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20 bg-white/50 w-full sm:w-36"
 												title="Fecha Fin (Opcional)"
 											/>
 											<div
@@ -173,10 +179,12 @@ try {
 												></i>
 											</div>
 										</div>
-										<div class="relative group">
+										<div
+											class="relative group w-full sm:w-auto"
+										>
 											<select
 												id="chart-additional-filter"
-												class="glass-input rounded-xl px-4 py-2 text-sm font-bold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20 bg-white/50 w-48 appearance-none cursor-pointer"
+												class="glass-input rounded-xl px-4 py-2 text-sm font-bold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20 bg-white/50 w-full sm:w-48 appearance-none cursor-pointer"
 												title="Filtrar por Adicional"
 											>
 												<option value=""
@@ -583,7 +591,7 @@ try {
 		type="text/javascript"
 		src="https://www.gstatic.com/charts/loader.js"></script>
 	<script is:inline type="text/javascript">
-		google.charts.load("current", { packages: ["bar"] });
+		google.charts.load("current", { packages: ["corechart", "bar"] });
 		google.charts.setOnLoadCallback(initChart);
 
 		let cachedChartData = []; // Cache for resize events
@@ -672,53 +680,81 @@ try {
 			}
 		}
 
+		const physioColorsChart = [];
+
+		function getPhysioColor(name, id) {
+			// Try to use ID first to match Cards
+			if (id) {
+				const numId = parseInt(id, 10);
+				if (!isNaN(numId)) {
+					return physioColorsChart[numId % physioColorsChart.length];
+				}
+			}
+
+			// Fallback: Hash name if no ID
+			if (!name) return "#9ca3af";
+			let hash = 0;
+			for (let i = 0; i < name.length; i++) {
+				hash = name.charCodeAt(i) + ((hash << 5) - hash);
+			}
+			const index = Math.abs(hash) % physioColorsChart.length;
+			return physioColorsChart[index];
+		}
+
 		function drawChart(apiData) {
-			const headerRow = [""];
-			const dataRow = ["Ventas"];
+			// Change format to: [Label, Value, Style]
+			// This puts names on Axis and allows individual bar colors
+			const dataArray = [["Fisioterapeuta", "Ventas", { role: "style" }]];
 
 			if (apiData && apiData.length > 0) {
 				apiData.forEach((item) => {
-					headerRow.push(item.empleado_nombre || "Desconocido");
-					dataRow.push(Number(item.total_adicionales) || 0);
+					const name = item.empleado_nombre || "Desconocido";
+					const val = Number(item.total_adicionales) || 0;
+					const color = getPhysioColor(name);
+					dataArray.push([name, val, color]);
 				});
 			} else {
-				headerRow.push("Sin datos");
-				dataRow.push(0);
+				dataArray.push(["Sin datos", 0, "#e5e7eb"]);
 			}
 
-			var data = google.visualization.arrayToDataTable([
-				headerRow,
-				dataRow,
-			]);
+			var data = google.visualization.arrayToDataTable(dataArray);
 
 			var options = {
-				chart: {
-					title: "",
-					subtitle: "",
-				},
-				bars: "vertical",
+				title: "",
+				bar: { groupWidth: "50%" },
+				legend: { position: "none" },
 				vAxis: {
 					format: "decimal",
-					textStyle: { color: "#333", bold: true },
+					textStyle: {
+						color: "#6b7280",
+						fontName: "Inter",
+						fontSize: 12,
+					},
+					gridlines: { color: "#f3f4f6" },
 				},
-				hAxis: { textStyle: { color: "#333", bold: true } },
+				hAxis: {
+					textStyle: {
+						color: "#374151",
+						fontName: "Inter",
+						fontSize: 12,
+						bold: true,
+					},
+				},
 				height: "100%",
-				colors: ["#2F5D50"],
 				backgroundColor: "transparent",
-				legend: { position: "none" },
 				animation: {
 					startup: true,
-					duration: 1000,
+					duration: 800,
 					easing: "out",
 				},
-				chartArea: { width: "85%", height: "75%" },
+				chartArea: { width: "90%", height: "80%", bottom: 40 },
 			};
 
-			var chart = new google.charts.Bar(
+			var chart = new google.visualization.ColumnChart(
 				document.getElementById("columnchart_material"),
 			);
 
-			chart.draw(data, google.charts.Bar.convertOptions(options));
+			chart.draw(data, options);
 		}
 
 		// Debounced Resize Listener that uses CACHE
