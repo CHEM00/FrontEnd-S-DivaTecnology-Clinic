@@ -284,6 +284,29 @@ try {
 											</div>
 										))
 									}
+
+									<!-- Vertical Divider -->
+									<div class="h-6 w-px bg-gray-200 mx-1">
+									</div>
+
+									<!-- Total del Día Badge -->
+									<div
+										class="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center gap-2"
+									>
+										<div
+											class="w-2 h-2 rounded-full bg-emerald-500"
+										>
+										</div>
+										<div
+											class="text-xs font-bold text-emerald-700 flex gap-1"
+										>
+											<span>Total:</span>
+											<span id="total-income-display"
+												>$0.00</span
+											>
+										</div>
+									</div>
+
 									<!-- Date Filter Input Replacement -->
 									<div
 										class="px-2 py-0.5 rounded-lg bg-gray-50 border border-gray-200 flex items-center gap-2 shadow-sm focus-within:ring-2 focus-within:ring-[#2F5D50]/20 transition-all"
@@ -438,6 +461,19 @@ try {
 								tbody.innerHTML = "";
 
 								if (data && data.length > 0) {
+									// Calcular Total del Día
+									const totalDay = data.reduce(
+										(acc, item) =>
+											acc + parseFloat(item.total || 0),
+										0,
+									);
+									const totalDisplayEl =
+										document.getElementById(
+											"total-income-display",
+										);
+									if (totalDisplayEl)
+										totalDisplayEl.textContent = `$${totalDay.toFixed(2)}`;
+
 									data.forEach((item) => {
 										const tr = document.createElement("tr");
 										tr.className =
@@ -493,6 +529,13 @@ try {
 								} else {
 									tbody.innerHTML =
 										'<tr><td colspan="8" class="p-4 text-center text-gray-400">No hay movimientos registrados</td></tr>';
+									// Reset total
+									const totalDisplayEl =
+										document.getElementById(
+											"total-income-display",
+										);
+									if (totalDisplayEl)
+										totalDisplayEl.textContent = `$0.00`;
 								}
 							} catch (error) {
 								console.error(
@@ -501,6 +544,11 @@ try {
 								);
 								tbody.innerHTML =
 									'<tr><td colspan="8" class="p-4 text-center text-red-400">Error al cargar datos</td></tr>';
+								const totalDisplayEl = document.getElementById(
+									"total-income-display",
+								);
+								if (totalDisplayEl)
+									totalDisplayEl.textContent = `$0.00`;
 							}
 						};
 					</script>
@@ -2446,5 +2494,5 @@ try {
 				window.showFormModal("modalCrearPaciente");
 			});
 		});
-	</script></Layout
->
+	</script>
+</Layout>
