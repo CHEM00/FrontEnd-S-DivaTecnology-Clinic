@@ -3447,15 +3447,22 @@ try {
 
                             let dateObj;
                             // Fix: Parse YYYY-MM-DD as local date to prevent timezone shift
-                            if (
-                                dateStr &&
-                                typeof dateStr === "string" &&
-                                /^\d{4}-\d{2}-\d{2}$/.test(dateStr)
-                            ) {
-                                const [y, m, d] = dateStr
-                                    .split("-")
-                                    .map(Number);
-                                dateObj = new Date(y, m - 1, d);
+                            // Fix: Parse YYYY-MM-DD (even from ISO strings) as local date to prevent timezone shift
+                            if (dateStr && typeof dateStr === "string") {
+                                // Match YYYY-MM-DD at the start of the string
+                                const match = dateStr.match(
+                                    /^(\d{4})-(\d{2})-(\d{2})/,
+                                );
+                                if (match) {
+                                    const [_, y, m, d] = match;
+                                    dateObj = new Date(
+                                        Number(y),
+                                        Number(m) - 1,
+                                        Number(d),
+                                    );
+                                } else {
+                                    dateObj = new Date(dateStr);
+                                }
                             } else {
                                 dateObj = dateStr
                                     ? new Date(dateStr)
