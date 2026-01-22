@@ -2079,6 +2079,14 @@ try {
                         return;
                     }
 
+                    // Fix: Mandatory Date Validation
+                    if (!data.currentday) {
+                        alert(
+                            "Error: La fecha es obligatoria. Por favor cierre y vuelva a intentar la edición.",
+                        );
+                        return;
+                    }
+
                     // Package Check
                     const usePackage = (
                         document.getElementById(
@@ -2389,9 +2397,20 @@ try {
                 const dateInput = document.getElementById(
                     "agregarCurrentday",
                 ) as HTMLInputElement;
-                const dateVal = app.currentday
-                    ? app.currentday.toString().substring(0, 10)
+
+                // Fix: Check multiple fields for date (currentday or appointment_date)
+                const rawDate =
+                    app.currentday || app.appointment_date || app.date;
+                const dateVal = rawDate
+                    ? rawDate.toString().substring(0, 10)
                     : "";
+
+                console.log("Edit Modal Date Source:", {
+                    app,
+                    rawDate,
+                    dateVal,
+                }); // Debug
+
                 if (dateInput) dateInput.value = dateVal;
 
                 // Populate Empleado
