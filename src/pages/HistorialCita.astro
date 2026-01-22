@@ -615,7 +615,23 @@ try {
 
 		const formatDate = (dateString, timeString) => {
 			if (!dateString) return "-";
-			const d = new Date(dateString);
+			// console.log("Formatting Date:", dateString, typeof dateString);
+
+			let d;
+			// Check if it's YYYY-MM-DD or starts with it (like ISO)
+			if (
+				typeof dateString === "string" &&
+				/^\d{4}-\d{2}-\d{2}/.test(dateString)
+			) {
+				const [y, m, day] = dateString
+					.substring(0, 10)
+					.split("-")
+					.map(Number);
+				d = new Date(y, m - 1, day);
+			} else {
+				d = new Date(dateString);
+			}
+
 			const dateStr = d.toLocaleDateString("es-MX", {
 				day: "2-digit",
 				month: "2-digit",

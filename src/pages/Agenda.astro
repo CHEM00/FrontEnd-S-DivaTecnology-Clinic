@@ -699,11 +699,39 @@ try {
                         c.id === updatedAppointment.id ||
                         c.idappointment === updatedAppointment.id,
                 );
+
+                // Get current view month/year
+                const currentMonth = fechaActual.getMonth();
+                const currentYear = fechaActual.getFullYear();
+
+                // Check if updated appointment belongs to this month
+                let belongsToMonth = false;
+                if (updatedAppointment.currentday) {
+                    // Extract parts from YYYY-MM-DD
+                    const parts = updatedAppointment.currentday.split("-");
+                    if (parts.length >= 3) {
+                        const appYear = parseInt(parts[0]);
+                        const appMonth = parseInt(parts[1]) - 1; // 0-indexed
+                        if (
+                            appYear === currentYear &&
+                            appMonth === currentMonth
+                        ) {
+                            belongsToMonth = true;
+                        }
+                    }
+                }
+
                 if (index !== -1) {
+                    // Update existing
                     citasDelMes[index] = {
                         ...citasDelMes[index],
                         ...updatedAppointment,
                     };
+                    procesarCitas();
+                    actualizarPanelSiEsNecesario(updatedAppointment.currentday);
+                } else if (belongsToMonth) {
+                    // It was moved TO this month from another month (or created silently)
+                    citasDelMes.push(updatedAppointment);
                     procesarCitas();
                     actualizarPanelSiEsNecesario(updatedAppointment.currentday);
                 }
