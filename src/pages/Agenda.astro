@@ -693,12 +693,30 @@ try {
             });
 
             socket.on("appointment_updated", (updatedAppointment: Cita) => {
-                console.log("Cita actualizada:", updatedAppointment);
+                console.log("Cita actualizada (Socket):", updatedAppointment);
+
+                // DATA INTEGRITY CHECK
+                console.log(
+                    "IDs en memoria antes de update:",
+                    citasDelMes.map((c) => ({
+                        id: c.id,
+                        idapp: c.idappointment,
+                        patient: c.patientname,
+                    })),
+                );
+
                 const index = citasDelMes.findIndex(
                     (c) =>
                         c.id === updatedAppointment.id ||
                         c.idappointment === updatedAppointment.id,
                 );
+
+                console.log(
+                    `Buscando ID ${updatedAppointment.id} (o ${updatedAppointment.idappointment}) -> Encontrado Index: ${index}`,
+                );
+                if (index !== -1) {
+                    console.log("Reemplazando cita:", citasDelMes[index]);
+                }
 
                 // Get current view month/year
                 const currentMonth = fechaActual.getMonth();
