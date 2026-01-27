@@ -5047,6 +5047,15 @@ try {
 
                             // Open Appointment Modal
                             setTimeout(() => {
+                                // Fix: Restablecer estado del formulario de citas para evitar sobrescritura (Bug Fix)
+                                const formCita =
+                                    document.getElementById("formAgregarCita");
+                                if (formCita) {
+                                    delete formCita.dataset.mode;
+                                    delete formCita.dataset.editId;
+                                    (formCita as HTMLFormElement).reset();
+                                }
+
                                 showFormModal("modalAgregarCita");
 
                                 // Auto-select Patient
