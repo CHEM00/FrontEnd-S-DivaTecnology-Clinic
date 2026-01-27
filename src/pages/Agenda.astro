@@ -970,6 +970,26 @@ try {
 
                             // Auto-select in Agenda Modal
                             setTimeout(() => {
+                                // CRITICAL FIX: Reset Appointment Form State to prevent overwrite
+                                const formCita =
+                                    document.getElementById("formAgregarCita");
+                                if (formCita) {
+                                    delete formCita.dataset.mode;
+                                    delete formCita.dataset.editId;
+                                    formCita.reset();
+
+                                    // Reset submit button text
+                                    const btn = formCita.querySelector(
+                                        'button[type="submit"]',
+                                    );
+                                    if (btn) btn.textContent = "GUARDAR";
+
+                                    const title = document
+                                        .getElementById("modalAgregarCita")
+                                        ?.querySelector("h2");
+                                    if (title) title.innerText = "NUEVA CITA";
+                                }
+
                                 window.abrirModalAgregar(); // Re-open if needed (it stays open usually, but we need to ensure we focus back)
                                 if (window.selectPatient) {
                                     window.selectPatient(
