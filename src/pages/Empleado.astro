@@ -460,11 +460,9 @@ try {
 		</div>
 	</div>
 
-	<script
-		define:vars={{ empleados, SERVER_BACKEND_URL, PUBLIC_IMAGE_BASE_URL }}
-	>
+	<script define:vars={{ table, SERVER_BACKEND_URL, PUBLIC_IMAGE_BASE_URL }}>
 		// Datos y Estado
-		let allData = empleados || [];
+		let allData = table || [];
 		let filteredData = [...allData];
 		let currentPage = 1;
 		let rowsPerPage = 10;
