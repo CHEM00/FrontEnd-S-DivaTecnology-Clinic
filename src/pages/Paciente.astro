@@ -16,6 +16,9 @@ interface Paciente {
 	photo: string;
 	created_at: string;
 	updated_at: string;
+	sesiones_de_paquete: number | null;
+	sesiones_usadas: number | null;
+	is_active_package: boolean | null;
 }
 
 let pacientes: Paciente[] = [];
@@ -478,6 +481,109 @@ try {
 				</label>
 			</div>
 		</div>
+
+		<!-- Package Details Section (Hidden by default, shown when Package is active) -->
+		<div id="packageDetails" class="hidden animate-fade-in-up mt-4 mb-2">
+			<div
+				class="p-5 bg-[#F0F7FF] rounded-xl border border-blue-100 relative overflow-hidden"
+			>
+				<!-- Background decoration -->
+				<div
+					class="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl pointer-events-none -mr-8 -mt-8"
+				>
+				</div>
+
+				<h4
+					class="text-[#2F5D50] font-bold text-sm mb-4 flex items-center gap-2"
+				>
+					<i class="fa-solid fa-box-open text-blue-500"></i>
+					Detalles del Paquete
+				</h4>
+
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<!-- Total Sessions (Read-only) -->
+					<div class="flex flex-col">
+						<label
+							class="text-xs font-bold text-gray-500 mb-1 ml-1 uppercase tracking-wide"
+							>Sesiones Totales</label
+						>
+						<div class="relative group">
+							<input
+								type="number"
+								id="packageSessionsTotal"
+								class="glass-input w-full rounded-xl px-4 py-2.5 bg-white/50 text-gray-400 font-bold focus:ring-0 outline-none cursor-not-allowed"
+								readonly
+								value="0"
+							/>
+							<i
+								class="fa-solid fa-lock absolute right-4 top-1/2 -translate-y-1/2 text-gray-300"
+							></i>
+						</div>
+					</div>
+
+					<!-- Used Sessions (Editable) -->
+					<div class="flex flex-col">
+						<label
+							class="text-xs font-bold text-blue-600 mb-1 ml-1 uppercase tracking-wide"
+							>Sesiones Usadas</label
+						>
+						<div class="relative">
+							<input
+								type="number"
+								name="sesiones_usadas"
+								id="packageSessionsUsed"
+								class="glass-input w-full rounded-xl px-4 py-2.5 font-bold text-gray-800 bg-white focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+								min="0"
+								value="0"
+							/>
+							<div
+								class="absolute right-0 top-0 bottom-0 flex flex-col border-l border-gray-100"
+							>
+								<button
+									type="button"
+									class="flex-1 px-2 hover:bg-blue-50 text-blue-600 rounded-tr-xl transition-colors"
+									onclick="adjustSessions(1)"
+								>
+									<i
+										class="fa-solid fa-chevron-up text-[10px]"
+									></i>
+								</button>
+								<button
+									type="button"
+									class="flex-1 px-2 hover:bg-blue-50 text-blue-600 rounded-br-xl transition-colors"
+									onclick="adjustSessions(-1)"
+								>
+									<i
+										class="fa-solid fa-chevron-down text-[10px]"
+									></i>
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Remaining Sessions (Calculated) -->
+					<div class="flex flex-col">
+						<label
+							class="text-xs font-bold text-gray-500 mb-1 ml-1 uppercase tracking-wide"
+							>Restantes</label
+						>
+						<div class="relative">
+							<input
+								type="number"
+								id="packageSessionsRemaining"
+								class="glass-input w-full rounded-xl px-4 py-2.5 bg-white/50 text-[#2F5D50] font-black text-lg focus:ring-0 outline-none cursor-not-allowed text-center"
+								readonly
+								value="0"
+							/>
+							<div
+								class="absolute inset-0 rounded-xl border-2 border-[#2F5D50]/10 pointer-events-none"
+							>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 	</FormModal>
 </Layout>
 
@@ -780,7 +886,14 @@ try {
 				if (statsSection) statsSection.classList.add("hidden");
 				// Reset switches
 				document.getElementById("sanction").checked = false;
-				document.getElementById("havepackage").checked = false;
+				const packageCheck = document.getElementById("havepackage");
+				packageCheck.checked = false;
+				togglePackageDetails(false);
+
+				// Reset package inputs
+				document.getElementById("packageSessionsTotal").value = 0;
+				document.getElementById("packageSessionsUsed").value = 0;
+				document.getElementById("packageSessionsRemaining").value = 0;
 			}
 		}
 	};
@@ -840,10 +953,25 @@ try {
 				p.idemployed || "";
 
 			// Switches
-			document.getElementById("sanction").checked =
-				p.sanction === "true" || p.sanction === true;
-			document.getElementById("havepackage").checked =
-				p.havepackage === "true" || p.havepackage === true;
+			const sancionCheck = document.getElementById("sanction");
+			const packageCheck = document.getElementById("havepackage");
+
+			sancionCheck.checked = p.sanction === "true" || p.sanction === true;
+			packageCheck.checked =
+				p.is_active_package === true || p.is_active_package === 1;
+
+			// Package Details Population
+			const total = p.sesiones_de_paquete || 0;
+			const used = p.sesiones_usadas || 0;
+			const remaining = total - used;
+
+			document.getElementById("packageSessionsTotal").value = total;
+			document.getElementById("packageSessionsUsed").value = used;
+			document.getElementById("packageSessionsRemaining").value =
+				remaining;
+
+			// Toggle Visibility based on package active status
+			togglePackageDetails(packageCheck.checked);
 
 			// Stats
 			const statsSection = document.getElementById("statsSection");
@@ -923,6 +1051,59 @@ try {
 		placeholder.classList.remove("hidden");
 	}
 
+	// --- Package & Sessions Logic ---
+
+	function togglePackageDetails(show) {
+		const details = document.getElementById("packageDetails");
+		if (show) {
+			details.classList.remove("hidden");
+		} else {
+			details.classList.add("hidden");
+		}
+	}
+
+	// Listen for package switch changes
+	document.getElementById("havepackage")?.addEventListener("change", (e) => {
+		togglePackageDetails(e.target.checked);
+	});
+
+	// Listen for Used Sessions changes to update Remaining
+	const usedInput = document.getElementById("packageSessionsUsed");
+
+	const updateRemainingSessions = () => {
+		const total =
+			parseInt(document.getElementById("packageSessionsTotal").value) ||
+			0;
+		let used = parseInt(usedInput.value) || 0;
+
+		// Prevent negative used
+		if (used < 0) {
+			used = 0;
+			usedInput.value = 0;
+		}
+
+		// Prevent used > total
+		if (used > total) {
+			used = total;
+			usedInput.value = total;
+		}
+
+		const remaining = total - used;
+		document.getElementById("packageSessionsRemaining").value = remaining;
+	};
+
+	usedInput?.addEventListener("input", updateRemainingSessions);
+
+	// Global function for +/- buttons
+	window.adjustSessions = (amount) => {
+		const input = document.getElementById("packageSessionsUsed");
+		let val = parseInt(input.value) || 0;
+		val += amount;
+		input.value = val;
+		// Trigger manual update
+		updateRemainingSessions();
+	};
+
 	// --- API Calls ---
 
 	async function cargarEmpleados() {
@@ -967,7 +1148,12 @@ try {
 				email: formData.get("email"),
 				idemployed: formData.get("idEmpleado") || null,
 				sanction: formData.get("sanction") === "on",
-				havepackage: formData.get("havepackage") === "on",
+				havepackage: formData.get("havepackage") === "on", // Tells backend active/inactive
+				is_active_package: formData.get("havepackage") === "on",
+				sesiones_usadas:
+					formData.get("havepackage") === "on"
+						? parseInt(formData.get("sesiones_usadas"))
+						: null,
 				is_active: true,
 			};
 
