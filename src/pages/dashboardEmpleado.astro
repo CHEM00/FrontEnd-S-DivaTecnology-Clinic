@@ -1,4 +1,4 @@
-﻿---
+---
 export const prerender = false;
 import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
@@ -1295,6 +1295,23 @@ try {
                     }
                 }
 
+                // Detect package appointment and store idpatientpackage
+                if (app.salepackage || app.idpatientpackage) {
+                    // Store on form dataset for PATCH payload
+                    const formEl = document.getElementById("formAgregarCita");
+                    if (formEl) {
+                        (formEl as HTMLElement).dataset.isPackage = "true";
+                        (formEl as HTMLElement).dataset.idpatientpackage = String(app.idpatientpackage || '');
+                    }
+                    // Visual: check the usePackage checkbox
+                    const pkgCheckbox = document.getElementById("usePackageCheckbox") as HTMLInputElement;
+                    if (pkgCheckbox) pkgCheckbox.checked = true;
+                    const pkgContainer = document.getElementById("packageOptionContainer");
+                    if (pkgContainer) pkgContainer.classList.remove("hidden");
+                    // Disable package/service selects when editing a package appointment
+                    if (packageSelect) packageSelect.disabled = true;
+                }
+
                 // Time (Complex part: needs to fetch available slots OR just inject the current time as a valid option)
                 // Since this is editing, we should likely just Set the value if it exists in the list (already fetched?)
                 // OR we have to allow the user to keep the current time even if "taken" (by self).
@@ -1585,6 +1602,11 @@ try {
                                 );
                                 return; // Stop execution
                             }
+                        }
+
+                        // Preserve package link for package appointments during edit
+                        if (editId && formAgregarCita.dataset.idpatientpackage) {
+                            payload.idpatientpackage = Number(formAgregarCita.dataset.idpatientpackage);
                         }
 
                         // Also check global vars as backup or sync

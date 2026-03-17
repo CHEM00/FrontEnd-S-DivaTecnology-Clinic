@@ -1619,8 +1619,15 @@ try {
 				if (status === "wait") statusLabel = "En Espera";
 				if (status === "canceled") statusLabel = "Cancelada";
 
+				// Package Info
+				const pkgBadge = app.salepackage
+					? `<div class="mt-1 flex items-center gap-1 text-[10px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
+						<i class="fa-solid fa-box-open"></i>
+						<span>Paquete</span>
+					</div>`
+					: "";
+
 				div.innerHTML = `
-                    
                     <!-- Avatar Area -->
                     <div class="relative z-10 flex-shrink-0">
                         <div class="w-12 h-12 rounded-full overflow-hidden border border-white shadow-sm flex items-center justify-center cursor-pointer transition-transform group-hover:scale-105"
@@ -1632,40 +1639,43 @@ try {
 
                     <!-- Info Area -->
                     <div class="flex-1 relative z-10 min-w-0">
+                        <!-- Row 1: Name + Status -->
                         <div class="flex justify-between items-start">
-                            <div class="min-w-0">
-                                <h4 class="font-bold text-sm truncate text-gray-800">
-                                    ${app.patient_name || "Sin Nombre"}
-                                </h4>
-                                <div class="text-xs text-gray-500 font-medium flex items-center gap-1 mt-0.5">
-                                    <span>${calcularEdad(app.birthday)} años</span>
-                                    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                                    <span>${app.service_name || app.servicio || "Consulta"}</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Simple Text Badge (No Icon) -->
-                             <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-white/50 border border-gray-100 text-gray-500 flex-shrink-0 ml-2">
+                            <h4 class="font-bold text-sm truncate text-gray-800 flex-1 min-w-0">
+                                ${app.patient_name || "Sin Nombre"}
+                                <span class="text-[10px] text-gray-400 font-normal ml-1">(${calcularEdad(app.birthday)} años)</span>
+                            </h4>
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-white/50 border border-gray-100 text-gray-500 flex-shrink-0 ml-2">
                                 ${statusLabel}
-                                    <i class="fa-solid fa-user-doctor" style="color: ${pColor}"></i>
-                                    <span class="truncate font-medium" style="color: ${pColor}">${app.employed_name || "Fisio"}</span>
-                                 </div>
-                             </div>
-
-                             <!-- Edit Button -->
-                             <div class="flex items-center">
-                                <button class="w-7 h-7 rounded-lg bg-white text-gray-400 hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 border border-gray-100"
-                                        style="--hover-color: ${pColor}"
-                                        onmouseover="this.style.backgroundColor=this.style.getPropertyValue('--hover-color')"
-                                        onmouseout="this.style.backgroundColor='white'"
-                                        onclick='event.stopPropagation(); window.openEditModal(${appData})'
-                                        title="Editar Cita">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </button>
-                             </div>
+                            </span>
+                        </div>
+                        <!-- Row 2: Service + Physio details -->
+                        <div class="flex flex-col gap-0.5 text-xs text-gray-500 mt-1">
+                            <div class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-notes-medical text-[#2F5D50]/60 text-[10px] min-w-[12px]"></i>
+                                <span class="truncate">${app.service_name || app.servicio || "Consulta"}</span>
+                            </div>
+                            <div class="flex items-center gap-1.5" style="color: ${pColor}">
+                                <i class="fa-solid fa-user-doctor text-[10px] min-w-[12px]"></i>
+                                <span class="truncate font-bold">${app.employed_name || "Fisio"}</span>
+                            </div>
+                        </div>
+                        ${pkgBadge}
+                        <!-- Row 3: Time + Edit -->
+                        <div class="flex items-center justify-between mt-1.5 pt-1 border-t border-black/5">
+                            <span class="text-xs font-bold text-gray-600 font-mono">${app.inithour?.substring(0, 5) || "--:--"}</span>
+                            <button class="w-6 h-6 rounded-lg bg-white text-gray-400 hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 border border-gray-100"
+                                    style="--hover-color: ${pColor}"
+                                    onmouseover="this.style.backgroundColor=this.style.getPropertyValue('--hover-color')"
+                                    onmouseout="this.style.backgroundColor='white'"
+                                    onclick='event.stopPropagation(); window.openEditModal(${appData})'
+                                    title="Editar Cita">
+                                <i class="fa-solid fa-pen-to-square text-[10px]"></i>
+                            </button>
                         </div>
                     </div>
                 `;
+
 
 				return div;
 			}
@@ -1831,6 +1841,11 @@ try {
 						reason,
 						// idservice is handled separately in PATCH, do not include in main payload
 					};
+
+					// Preserve package link for package appointments during edit
+					if (isEdit && formAgregar.dataset.idpatientpackage) {
+						payload.idpatientpackage = Number(formAgregar.dataset.idpatientpackage);
+					}
 
 					try {
 						let citaId = editId;
@@ -2425,8 +2440,26 @@ try {
 					}
 				}
 
-				// Package UI (Assume no package logic change for edit currently, simplified)
-				handlePackageUI(false);
+				// Package UI
+				if (app.salepackage || app.idpatientpackage) {
+					form.dataset.isPackage = "true";
+					form.dataset.idpatientpackage = String(app.idpatientpackage || '');
+					handlePackageUI(true);
+					// Check the usePackage checkbox
+					const pkgCheckbox = document.getElementById("usePackageCheckbox");
+					if (pkgCheckbox) pkgCheckbox.checked = true;
+					// Disable service and package selects
+					const svcEl = document.getElementById("agregarIdService");
+					if (svcEl) { svcEl.value = ''; svcEl.disabled = true; svcEl.classList.add('bg-gray-100', 'cursor-not-allowed'); }
+					const pkgEl = document.getElementById("agregarIdPackage");
+					if (pkgEl) pkgEl.disabled = true;
+				} else {
+					delete form.dataset.isPackage;
+					delete form.dataset.idpatientpackage;
+					handlePackageUI(false);
+					const svcEl = document.getElementById("agregarIdService");
+					if (svcEl) { svcEl.disabled = false; svcEl.classList.remove('bg-gray-100', 'cursor-not-allowed'); }
+				}
 
 				// Trigger Hours Update (and select current hour)
 				const timeVal = app.inithour
