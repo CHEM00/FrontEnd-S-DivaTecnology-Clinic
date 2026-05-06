@@ -372,39 +372,66 @@ try {
 						// Global function to save transaction (called from inline onchange)
 						function saveTransaction(element, field, id) {
 							const container = element.parentElement;
-							const indicator =
-								container.querySelector(".save-indicator");
+							const indicator = container.querySelector(".save-indicator");
+							const row = element.closest("tr");
 
-							// 1. Show Loading State (Spinner)
 							if (indicator) {
-								indicator.innerHTML =
-									'<i class="fa-solid fa-circle-notch fa-spin text-gray-400"></i>';
+								indicator.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-gray-400"></i>';
 								indicator.classList.remove("opacity-0");
 							}
 
-							// Simulating API Call
-							console.log(
-								`[Admin Save] Saving ${field} for Transaction #${id}: ${element.value}`,
-							);
+							let url, body;
 
-							// Mock Delay
-							setTimeout(() => {
-								// 2. Show Success
+							if (field === "discount") {
+								const discountVal = parseFloat(element.value) || 0;
+								const subtotalVal = parseFloat(row ? row.dataset.subtotal : "0") || 0;
+								const newTotal    = Math.max(0, subtotalVal - discountVal);
+
+								url  = `/api/v1/Citas/detalle/${id}`;
+								body = { discount: discountVal, total: newTotal };
+
+								// Actualizar celda total en la misma fila
+								if (row) {
+									const totalCell = row.querySelector(".total-cell");
+									if (totalCell) totalCell.textContent = `$${newTotal.toFixed(2)}`;
+								}
+
+								// Recalcular total del día
+								const allTotalCells = document.querySelectorAll(".total-cell");
+								let dayTotal = 0;
+								allTotalCells.forEach(function(cell) {
+									dayTotal += parseFloat(cell.textContent.replace("$", "")) || 0;
+								});
+								const totalDisplayEl = document.getElementById("total-income-display");
+								if (totalDisplayEl) totalDisplayEl.textContent = `$${dayTotal.toFixed(2)}`;
+
+							} else if (field === "payment_type") {
+								url  = `/api/v1/Citas/${id}/payment`;
+								body = { payment_type_name: element.value };
+							} else {
+								return;
+							}
+
+							fetch(url, {
+								method: "PATCH",
+								headers: { "Content-Type": "application/json" },
+								body: JSON.stringify(body),
+							})
+							.then(function(res) {
+								if (!res.ok) throw new Error("Error al guardar");
 								if (indicator) {
-									indicator.innerHTML =
-										'<i class="fa-solid fa-check text-green-500"></i>';
-
-									// Hide after 2 seconds
-									setTimeout(() => {
-										indicator.classList.add("opacity-0");
-									}, 2000);
+									indicator.innerHTML = '<i class="fa-solid fa-check text-green-500"></i>';
+									setTimeout(function() { indicator.classList.add("opacity-0"); }, 2000);
 								}
-
-								// Special styling logic for selects
-								if (field === "payment_type") {
-									updateSelectStyle(element);
+								if (field === "payment_type") updateSelectStyle(element);
+							})
+							.catch(function(err) {
+								console.error("[Admin Save] Error:", err);
+								if (indicator) {
+									indicator.innerHTML = '<i class="fa-solid fa-xmark text-red-500"></i>';
+									setTimeout(function() { indicator.classList.add("opacity-0"); }, 3000);
 								}
-							}, 800);
+							});
 						}
 
 						function updateSelectStyle(select) {
@@ -476,20 +503,24 @@ try {
 
 									data.forEach((item) => {
 										const tr = document.createElement("tr");
-										tr.className =
-											"group hover:bg-gray-50 transition-colors";
+										tr.className = "group hover:bg-gray-50 transition-colors";
 
-										// Defaults requested by user
-										const discountVal = "0.00";
-										const paymentVal = "pending"; // Default pending
-										// For Subtotal, usually Total = Subtotal - Discount.
-										// Since Discount default is 0, Subtotal display = Total from API for now.
-										const subtotalDisplay = item.total;
-										const totalDisplay = item.total;
+										// Calcular valores reales desde la BD
+										const subtotalNum  = parseFloat(item.subtotal ?? item.total ?? 0);
+										const discountNum  = parseFloat(item.discount ?? 0);
+										const totalNum     = parseFloat(item.total    ?? 0);
+										const subtotalDisplay = subtotalNum.toFixed(2);
+										const discountDisplay = discountNum.toFixed(2);
+										const totalDisplay    = totalNum.toFixed(2);
+
+										// Guardar subtotal como data attribute para recalcular al editar descuento
+										tr.dataset.subtotal = subtotalNum.toFixed(2);
+
+										const pm = item.payment_method || "";
 
 										tr.innerHTML = `
 											<td class="p-3 font-bold text-gray-800">${item.patient_name}</td>
-											<td class="p-3">${item.service_name}</td>
+											<td class="p-3">${item.service_name || "-"}</td>
 											<td class="p-3 text-xs">${item.additional_services || "-"}</td>
 											<td class="p-3 text-[#2F5D50] font-medium">${item.physio_name}</td>
 											<td class="p-3 text-right font-mono">$${subtotalDisplay}</td>
@@ -497,7 +528,7 @@ try {
 												<div class="relative w-24 ml-auto">
 													<input
 														type="text"
-														value="${discountVal}"
+														value="${discountDisplay}"
 														class="w-full text-right bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-[#2F5D50]/20 focus:border-[#2F5D50] outline-none transition-all"
 														onblur="saveTransaction(this, 'discount', '${item.appointment_id}')"
 													/>
@@ -513,10 +544,10 @@ try {
 														class="w-full bg-yellow-50 text-yellow-700 border border-yellow-100 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-yellow-500/20 outline-none appearance-none text-center cursor-pointer transition-all hover:bg-yellow-100"
 														onchange="saveTransaction(this, 'payment_type', '${item.appointment_id}')"
 													>
-														<option value="card">Tarjeta</option>
-														<option value="cash">Efectivo</option>
-														<option value="transfer">Transferencia</option>
-														<option value="pending" selected>Pendiente</option>
+														<option value="card"     ${pm === "card"     ? "selected" : ""}>Tarjeta</option>
+														<option value="cash"     ${pm === "cash"     ? "selected" : ""}>Efectivo</option>
+														<option value="transfer" ${pm === "transfer" ? "selected" : ""}>Transferencia</option>
+														<option value="pending"  ${!pm || pm === "pending" ? "selected" : ""}>Pendiente</option>
 													</select>
 													<div class="save-indicator absolute -right-5 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity">
 														<i class="fa-solid fa-check text-green-500"></i>
@@ -1684,6 +1715,20 @@ try {
 			if (formPaciente) {
 				formPaciente.addEventListener("submit", async (e) => {
 					e.preventDefault();
+
+					if (formPaciente.dataset.submitting === "true") return;
+					formPaciente.dataset.submitting = "true";
+
+					const submitBtnPac = document.querySelector(
+						'button[type="submit"][form="formCrearPaciente"]',
+					);
+					const originalTextPac = submitBtnPac?.textContent?.trim();
+					if (submitBtnPac) {
+						submitBtnPac.disabled = true;
+						submitBtnPac.innerHTML =
+							'<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+					}
+
 					const formData = new FormData(formPaciente);
 					const photoFile = formData.get("photo");
 					formData.delete("photo");
@@ -1733,6 +1778,18 @@ try {
 
 							// Abrir modal de cita y pre-seleccionar
 							setTimeout(() => {
+								// CRITICAL FIX: Reset appointment form to CREATE mode
+								// to prevent inheriting a previous PATCH/edit state
+								if (formAgregar) {
+									formAgregar.reset();
+									delete formAgregar.dataset.mode;
+									delete formAgregar.dataset.editId;
+									const submitBtnCita = document.querySelector(
+										'button[type="submit"][form="formAgregarCita"]',
+									);
+									if (submitBtnCita)
+										submitBtnCita.textContent = "Guardar Cita";
+								}
 								window.showFormModal("modalAgregarCita");
 								window.selectPatient(
 									result.id,
@@ -1746,6 +1803,15 @@ try {
 					} catch (e) {
 						console.error(e);
 						alert("Error de conexión");
+					} finally {
+						setTimeout(() => {
+							if (submitBtnPac) {
+								submitBtnPac.disabled = false;
+								submitBtnPac.textContent =
+									originalTextPac || "Guardar";
+							}
+							formPaciente.dataset.submitting = "false";
+						}, 350);
 					}
 				});
 			}
@@ -1758,6 +1824,19 @@ try {
 			if (formAgregar) {
 				formAgregar.addEventListener("submit", async (e) => {
 					e.preventDefault();
+
+					if (formAgregar.dataset.submitting === "true") return;
+					formAgregar.dataset.submitting = "true";
+
+					const submitBtnCita = document.querySelector(
+						'button[type="submit"][form="formAgregarCita"]',
+					);
+					const originalBtnText = submitBtnCita?.textContent?.trim();
+					if (submitBtnCita) {
+						submitBtnCita.disabled = true;
+						submitBtnCita.innerHTML =
+							'<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+					}
 
 					const isEdit = formAgregar.dataset.mode === "edit";
 					const editId = formAgregar.dataset.editId;
@@ -2029,6 +2108,15 @@ try {
 					} catch (e) {
 						console.error(e);
 						alert("Error: " + e.message);
+					} finally {
+						setTimeout(() => {
+							if (submitBtnCita) {
+								submitBtnCita.disabled = false;
+								submitBtnCita.textContent =
+									originalBtnText || "Guardar Cita";
+							}
+							formAgregar.dataset.submitting = "false";
+						}, 350);
 					}
 				});
 			}
@@ -2366,7 +2454,9 @@ try {
 			window.openEditModal = async (app) => {
 				const modal = document.getElementById("modalAgregarCita");
 				const form = document.getElementById("formAgregarCita");
-				const submitBtn = form?.querySelector('button[type="submit"]');
+				const submitBtn = document.querySelector(
+					'button[type="submit"][form="formAgregarCita"]',
+				) ?? form?.querySelector('button[type="submit"]');
 				const title = document.getElementById("modalAgregarCita-title");
 
 				if (!modal || !form) return;

@@ -720,6 +720,20 @@ try {
 			.addEventListener("submit", async (e) => {
 				e.preventDefault();
 				const form = e.target;
+
+				if (form.dataset.submitting === "true") return;
+				form.dataset.submitting = "true";
+
+				const submitBtn = document.querySelector(
+					'button[type="submit"][form="empleadoForm"]',
+				);
+				const originalText = submitBtn?.textContent?.trim();
+				if (submitBtn) {
+					submitBtn.disabled = true;
+					submitBtn.innerHTML =
+						'<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+				}
+
 				const formData = new FormData(form);
 				const id = formData.get("Id");
 				const isEdit = !!id;
@@ -732,7 +746,7 @@ try {
 					Email: formData.get("Email"),
 					BirthDate: formData.get("BirthDate"),
 					Photo: formData.get("Photo"),
-					idrol: 2, // Default role
+					idrol: 2,
 				};
 
 				const password = formData.get("Password");
@@ -768,6 +782,12 @@ try {
 					}
 				} catch (error) {
 					mostrarError("Error de conexión");
+				} finally {
+					if (submitBtn) {
+						submitBtn.disabled = false;
+						submitBtn.textContent = originalText || "Guardar";
+					}
+					form.dataset.submitting = "false";
 				}
 			});
 

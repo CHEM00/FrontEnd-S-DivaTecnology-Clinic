@@ -1138,22 +1138,21 @@ try {
 			const id = formData.get("id");
 			const isEdit = !!id;
 
-			// Construct JSON payload for text data to preserve types (Fixes backend type errors)
+			const havePackageActive = formData.get("havepackage") === "on";
+			const sesionesUsadas = havePackageActive
+				? parseInt(formData.get("sesiones_usadas"))
+				: null;
+
 			const data = {
 				firstname: formData.get("firstname"),
 				lastname: formData.get("lastname"),
 				motherlastname: formData.get("motherlastname"),
-				birthday: formData.get("birthdate"), // Backend expects 'birthday'
+				birthday: formData.get("birthdate"),
 				phone: formData.get("phone"),
 				email: formData.get("email"),
 				idemployed: formData.get("idEmpleado") || null,
 				sanction: formData.get("sanction") === "on",
-				havepackage: formData.get("havepackage") === "on", // Tells backend active/inactive
-				is_active_package: formData.get("havepackage") === "on",
-				sesiones_usadas:
-					formData.get("havepackage") === "on"
-						? parseInt(formData.get("sesiones_usadas"))
-						: null,
+				havepackage: havePackageActive,
 				is_active: true,
 			};
 
@@ -1195,6 +1194,22 @@ try {
 							);
 						} catch (photoErr) {
 							console.error("Error updating photo:", photoErr);
+						}
+					}
+
+					// Step 3: Update Package Sessions if active
+					if (havePackageActive && sesionesUsadas !== null) {
+						try {
+							await fetch(
+								`${backendUrl}/api/v1/Pacientes/${patientId}/paquete/sesiones`,
+								{
+									method: "PATCH",
+									headers: { "Content-Type": "application/json" },
+									body: JSON.stringify({ sessions_used: sesionesUsadas }),
+								}
+							);
+						} catch (pkgErr) {
+							console.error("Error updating package sessions:", pkgErr);
 						}
 					}
 

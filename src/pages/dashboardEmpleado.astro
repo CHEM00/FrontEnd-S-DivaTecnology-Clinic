@@ -3152,6 +3152,8 @@ try {
                                 body: JSON.stringify({
                                     therapeuticnote: noteElem?.value || "",
                                     pain_intensity: pain_intensity,
+                                    subtotal: total,
+                                    discount: 0,
                                     total: total,
                                 }),
                             },
@@ -3166,6 +3168,8 @@ try {
                         const payload = {
                             therapeuticnote: noteElem?.value || "",
                             pain_intensity: pain_intensity,
+                            subtotal: total,
+                            discount: 0,
                             total: total,
                         };
 

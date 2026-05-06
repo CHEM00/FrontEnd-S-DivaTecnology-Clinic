@@ -891,9 +891,9 @@ try {
                     if (form.dataset.submitting === "true") return; // Prevenir doble submit
                     form.dataset.submitting = "true";
 
-                    const submitBtn = formPaciente.querySelector(
-                        'button[type="submit"]',
-                    ) as HTMLButtonElement;
+                    const submitBtn = (document.querySelector(
+                        'button[type="submit"][form="formCrearPaciente"]',
+                    ) ?? formPaciente.querySelector('button[type="submit"]')) as HTMLButtonElement;
                     if (submitBtn) {
                         submitBtn.disabled = true;
                         submitBtn.innerHTML =
@@ -979,9 +979,9 @@ try {
                                     formCita.reset();
 
                                     // Reset submit button text
-                                    const btn = formCita.querySelector(
-                                        'button[type="submit"]',
-                                    );
+                                    const btn = document.querySelector(
+                                        'button[type="submit"][form="formAgregarCita"]',
+                                    ) ?? formCita.querySelector('button[type="submit"]');
                                     if (btn) btn.textContent = "GUARDAR";
 
                                     const title = document
@@ -1005,12 +1005,14 @@ try {
                         console.error(e);
                         alert("Error de conexión");
                     } finally {
-                        if (submitBtn) {
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = "Guardar";
-                        }
-                        (formPaciente as HTMLFormElement).dataset.submitting =
-                            "false"; // Liberar bloqueo
+                        setTimeout(() => {
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = "Guardar";
+                            }
+                            (formPaciente as HTMLFormElement).dataset.submitting =
+                                "false";
+                        }, 350);
                     }
                 });
             }
@@ -2098,9 +2100,9 @@ try {
                 if (form.dataset.submitting === "true") return;
                 form.dataset.submitting = "true";
 
-                const submitBtn = form.querySelector(
-                    'button[type="submit"]',
-                ) as HTMLButtonElement;
+                const submitBtn = (document.querySelector(
+                    'button[type="submit"][form="formAgregarCita"]',
+                ) ?? form.querySelector('button[type="submit"]')) as HTMLButtonElement;
                 const originalBtnText = submitBtn
                     ? submitBtn.textContent
                     : "GUARDAR";
@@ -2391,18 +2393,15 @@ try {
                     console.error(error);
                     alert("Error: " + (error as Error).message);
                 } finally {
-                    // Re-enable button if modal is still open (error case)
-                    // If success, modal closes and button state resets on next open
-                    if (
-                        submitBtn &&
-                        document
-                            .getElementById("modalAgregarCita")
-                            ?.classList.contains("hidden") === false
-                    ) {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = originalBtnText || "GUARDAR";
-                    }
-                    form.dataset.submitting = "false";
+                    // Delay matches the 300ms modal close animation to prevent
+                    // clicks during the closing transition from triggering duplicates
+                    setTimeout(() => {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = originalBtnText || "GUARDAR";
+                        }
+                        form.dataset.submitting = "false";
+                    }, 350);
                 }
             });
         }
@@ -2512,7 +2511,9 @@ try {
                     "formAgregarCita",
                 ) as HTMLFormElement;
                 const title = modal?.querySelector("h2");
-                const submitBtn = form?.querySelector('button[type="submit"]');
+                const submitBtn = (document.querySelector(
+                    'button[type="submit"][form="formAgregarCita"]',
+                ) ?? form?.querySelector('button[type="submit"]')) as HTMLButtonElement;
 
                 if (!modal || !form) return;
 
