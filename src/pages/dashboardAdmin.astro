@@ -307,6 +307,26 @@ try {
 										</div>
 									</div>
 
+									<!-- Filtro Método de Pago -->
+									<div
+										class="px-2 py-0.5 rounded-lg bg-gray-50 border border-gray-200 flex items-center gap-2 shadow-sm focus-within:ring-2 focus-within:ring-[#2F5D50]/20 transition-all"
+									>
+										<i
+											class="fa-solid fa-credit-card text-xs text-gray-400"
+										></i>
+										<select
+											id="filter-payment-method"
+											class="bg-transparent border-none outline-none text-xs font-bold text-gray-700 p-0 cursor-pointer pr-1"
+											title="Filtrar por método de pago"
+										>
+											<option value="">Todos</option>
+											<option value="Tarjeta">Tarjeta</option>
+											<option value="Efectivo">Efectivo</option>
+											<option value="Transferencia">Transferencia</option>
+											<option value="Pendiente">Pendiente</option>
+										</select>
+									</div>
+
 									<!-- Date Filter Input Replacement -->
 									<div
 										class="px-2 py-0.5 rounded-lg bg-gray-50 border border-gray-200 flex items-center gap-2 shadow-sm focus-within:ring-2 focus-within:ring-[#2F5D50]/20 transition-all"
@@ -396,7 +416,18 @@ try {
 									if (totalCell) totalCell.textContent = `$${newTotal.toFixed(2)}`;
 								}
 
-								// Recalcular total del día
+								// Sincronizar cache para que el filtro siga consistente
+								if (Array.isArray(window._transactionsCache)) {
+									const cached = window._transactionsCache.find(
+										(it) => String(it.appointment_id) === String(id)
+									);
+									if (cached) {
+										cached.discount = discountVal;
+										cached.total    = newTotal;
+									}
+								}
+
+								// Recalcular total del día (solo filas visibles → respeta filtro)
 								const allTotalCells = document.querySelectorAll(".total-cell");
 								let dayTotal = 0;
 								allTotalCells.forEach(function(cell) {
@@ -408,6 +439,16 @@ try {
 							} else if (field === "payment_type") {
 								url  = `/api/v1/Citas/${id}/payment`;
 								body = { payment_type_name: element.value };
+
+								// Sincronizar cache: si el filtro está activo y ya no coincide, ocultar la fila
+								if (Array.isArray(window._transactionsCache)) {
+									const cached = window._transactionsCache.find(
+										(it) => String(it.appointment_id) === String(id)
+									);
+									if (cached) {
+										cached.payment_method = element.value === "Pendiente" ? null : element.value;
+									}
+								}
 							} else {
 								return;
 							}
@@ -423,7 +464,14 @@ try {
 									indicator.innerHTML = '<i class="fa-solid fa-check text-green-500"></i>';
 									setTimeout(function() { indicator.classList.add("opacity-0"); }, 2000);
 								}
-								if (field === "payment_type") updateSelectStyle(element);
+								if (field === "payment_type") {
+									updateSelectStyle(element);
+									// Si hay filtro activo, re-renderizar para que la lista refleje el cambio
+									const pmFilter = document.getElementById("filter-payment-method");
+									if (pmFilter && pmFilter.value && typeof window.renderTransactions === "function") {
+										window.renderTransactions();
+									}
+								}
 							})
 							.catch(function(err) {
 								console.error("[Admin Save] Error:", err);
@@ -444,16 +492,16 @@ try {
 							// Add new based on value
 							let color = "gray";
 							switch (select.value) {
-								case "card":
+								case "Tarjeta":
 									color = "blue";
 									break;
-								case "cash":
+								case "Efectivo":
 									color = "green";
 									break;
-								case "transfer":
+								case "Transferencia":
 									color = "purple";
 									break;
-								case "pending":
+								case "Pendiente":
 									color = "yellow";
 									break;
 							}
@@ -465,121 +513,130 @@ try {
 							);
 						}
 
+						// Cache of last fetched transactions for current date
+						window._transactionsCache = [];
+						
+						function getPaymentMethodFilter() {
+							const el = document.getElementById("filter-payment-method");
+							return el ? el.value : "";
+						}
+						
+						function applyPaymentMethodFilter(data) {
+							const pmFilter = getPaymentMethodFilter();
+							if (!pmFilter) return data;
+							if (pmFilter === "Pendiente") {
+								return data.filter((it) => !it.payment_method);
+							}
+							return data.filter((it) => it.payment_method === pmFilter);
+						}
+						
+						window.renderTransactions = function () {
+							const tbody = document.getElementById("transaction-table-body");
+							if (!tbody) return;
+							const totalDisplayEl = document.getElementById("total-income-display");
+							const data = applyPaymentMethodFilter(window._transactionsCache || []);
+							
+							tbody.innerHTML = "";
+							
+							if (!data.length) {
+								tbody.innerHTML =
+									'<tr><td colspan="8" class="p-4 text-center text-gray-400">No hay movimientos registrados</td></tr>';
+								if (totalDisplayEl) totalDisplayEl.textContent = `$0.00`;
+								return;
+							}
+							
+							const totalDay = data.reduce(
+								(acc, item) => acc + parseFloat(item.total || 0),
+								0,
+							);
+							if (totalDisplayEl)
+								totalDisplayEl.textContent = `$${totalDay.toFixed(2)}`;
+							
+							data.forEach((item) => {
+								const tr = document.createElement("tr");
+								tr.className = "group hover:bg-gray-50 transition-colors";
+								
+								const subtotalNum  = parseFloat(item.subtotal ?? item.total ?? 0);
+								const discountNum  = parseFloat(item.discount ?? 0);
+								const totalNum     = parseFloat(item.total    ?? 0);
+								const subtotalDisplay = subtotalNum.toFixed(2);
+								const discountDisplay = discountNum.toFixed(2);
+								const totalDisplay    = totalNum.toFixed(2);
+								
+								tr.dataset.subtotal = subtotalNum.toFixed(2);
+								tr.dataset.appointmentId = item.appointment_id;
+								
+								const pm = item.payment_method || "";
+								
+								tr.innerHTML = `
+									<td class="p-3 font-bold text-gray-800">${item.patient_name}</td>
+									<td class="p-3">${item.service_name || "-"}</td>
+									<td class="p-3 text-xs">${item.additional_services || "-"}</td>
+									<td class="p-3 text-[#2F5D50] font-medium">${item.physio_name}</td>
+									<td class="p-3 text-right font-mono">$${subtotalDisplay}</td>
+									<td class="p-3 text-right">
+										<div class="relative w-24 ml-auto">
+											<input
+												type="text"
+												value="${discountDisplay}"
+												class="w-full text-right bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-[#2F5D50]/20 focus:border-[#2F5D50] outline-none transition-all"
+												onblur="saveTransaction(this, 'discount', '${item.appointment_id}')"
+											/>
+											<div class="save-indicator absolute -right-4 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity">
+												<i class="fa-solid fa-check text-green-500"></i>
+											</div>
+										</div>
+									</td>
+									<td class="p-3 text-right font-bold text-gray-800 font-mono total-cell">$${totalDisplay}</td>
+									<td class="p-3 text-center">
+										<div class="relative w-32 mx-auto">
+											<select
+												class="w-full bg-yellow-50 text-yellow-700 border border-yellow-100 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-yellow-500/20 outline-none appearance-none text-center cursor-pointer transition-all hover:bg-yellow-100"
+												onchange="saveTransaction(this, 'payment_type', '${item.appointment_id}')"
+											>
+											<option value="Tarjeta"       ${pm === "Tarjeta"       ? "selected" : ""}>Tarjeta</option>
+											<option value="Efectivo"      ${pm === "Efectivo"      ? "selected" : ""}>Efectivo</option>
+											<option value="Transferencia" ${pm === "Transferencia" ? "selected" : ""}>Transferencia</option>
+											<option value="Pendiente"     ${!pm                       ? "selected" : ""}>Pendiente</option>
+											</select>
+											<div class="save-indicator absolute -right-5 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity">
+												<i class="fa-solid fa-check text-green-500"></i>
+											</div>
+										</div>
+									</td>
+								`;
+								
+								// Aplicar color al select recién creado
+								const sel = tr.querySelector("select");
+								if (sel) updateSelectStyle(sel);
+								
+								tbody.appendChild(tr);
+							});
+						};
+						
 						// Function to update the table
 						window.updateTransactionTable = async (date) => {
-							const tbody = document.getElementById(
-								"transaction-table-body",
-							);
+							const tbody = document.getElementById("transaction-table-body");
 							if (!tbody) return;
-
+							
 							tbody.innerHTML =
 								'<tr><td colspan="8" class="p-4 text-center"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-[#2F5D50]"></i></td></tr>';
-
+							
 							try {
 								const res = await fetch(
 									`/api/v1/DashboardAdmin/DetailAppointments?date=${date}`,
 								);
-								if (!res.ok)
-									throw new Error(
-										"Failed to fetch transactions",
-									);
+								if (!res.ok) throw new Error("Failed to fetch transactions");
 								const data = await res.json();
-
-								tbody.innerHTML = "";
-
-								if (data && data.length > 0) {
-									// Calcular Total del Día
-									const totalDay = data.reduce(
-										(acc, item) =>
-											acc + parseFloat(item.total || 0),
-										0,
-									);
-									const totalDisplayEl =
-										document.getElementById(
-											"total-income-display",
-										);
-									if (totalDisplayEl)
-										totalDisplayEl.textContent = `$${totalDay.toFixed(2)}`;
-
-									data.forEach((item) => {
-										const tr = document.createElement("tr");
-										tr.className = "group hover:bg-gray-50 transition-colors";
-
-										// Calcular valores reales desde la BD
-										const subtotalNum  = parseFloat(item.subtotal ?? item.total ?? 0);
-										const discountNum  = parseFloat(item.discount ?? 0);
-										const totalNum     = parseFloat(item.total    ?? 0);
-										const subtotalDisplay = subtotalNum.toFixed(2);
-										const discountDisplay = discountNum.toFixed(2);
-										const totalDisplay    = totalNum.toFixed(2);
-
-										// Guardar subtotal como data attribute para recalcular al editar descuento
-										tr.dataset.subtotal = subtotalNum.toFixed(2);
-
-										const pm = item.payment_method || "";
-
-										tr.innerHTML = `
-											<td class="p-3 font-bold text-gray-800">${item.patient_name}</td>
-											<td class="p-3">${item.service_name || "-"}</td>
-											<td class="p-3 text-xs">${item.additional_services || "-"}</td>
-											<td class="p-3 text-[#2F5D50] font-medium">${item.physio_name}</td>
-											<td class="p-3 text-right font-mono">$${subtotalDisplay}</td>
-											<td class="p-3 text-right">
-												<div class="relative w-24 ml-auto">
-													<input
-														type="text"
-														value="${discountDisplay}"
-														class="w-full text-right bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-[#2F5D50]/20 focus:border-[#2F5D50] outline-none transition-all"
-														onblur="saveTransaction(this, 'discount', '${item.appointment_id}')"
-													/>
-													<div class="save-indicator absolute -right-4 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity">
-														<i class="fa-solid fa-check text-green-500"></i>
-													</div>
-												</div>
-											</td>
-											<td class="p-3 text-right font-bold text-gray-800 font-mono total-cell">$${totalDisplay}</td>
-											<td class="p-3 text-center">
-												<div class="relative w-32 mx-auto">
-													<select
-														class="w-full bg-yellow-50 text-yellow-700 border border-yellow-100 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-yellow-500/20 outline-none appearance-none text-center cursor-pointer transition-all hover:bg-yellow-100"
-														onchange="saveTransaction(this, 'payment_type', '${item.appointment_id}')"
-													>
-														<option value="card"     ${pm === "card"     ? "selected" : ""}>Tarjeta</option>
-														<option value="cash"     ${pm === "cash"     ? "selected" : ""}>Efectivo</option>
-														<option value="transfer" ${pm === "transfer" ? "selected" : ""}>Transferencia</option>
-														<option value="pending"  ${!pm || pm === "pending" ? "selected" : ""}>Pendiente</option>
-													</select>
-													<div class="save-indicator absolute -right-5 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity">
-														<i class="fa-solid fa-check text-green-500"></i>
-													</div>
-												</div>
-											</td>
-										`;
-										tbody.appendChild(tr);
-									});
-								} else {
-									tbody.innerHTML =
-										'<tr><td colspan="8" class="p-4 text-center text-gray-400">No hay movimientos registrados</td></tr>';
-									// Reset total
-									const totalDisplayEl =
-										document.getElementById(
-											"total-income-display",
-										);
-									if (totalDisplayEl)
-										totalDisplayEl.textContent = `$0.00`;
-								}
+								window._transactionsCache = Array.isArray(data) ? data : [];
+								window.renderTransactions();
 							} catch (error) {
-								console.error(
-									"Error loading transactions:",
-									error,
-								);
+								console.error("Error loading transactions:", error);
+								window._transactionsCache = [];
 								tbody.innerHTML =
 									'<tr><td colspan="8" class="p-4 text-center text-red-400">Error al cargar datos</td></tr>';
-								const totalDisplayEl = document.getElementById(
-									"total-income-display",
-								);
-								if (totalDisplayEl)
-									totalDisplayEl.textContent = `$0.00`;
+								const totalDisplayEl = document.getElementById("total-income-display");
+								if (totalDisplayEl) totalDisplayEl.textContent = `$0.00`;
 							}
 						};
 					</script>
@@ -950,6 +1007,14 @@ try {
 
 			// Hook into the NEW Stats Date Filter
 			const statsDateInput = document.getElementById("filter-date-stats");
+			const paymentMethodFilter = document.getElementById("filter-payment-method");
+			if (paymentMethodFilter) {
+				paymentMethodFilter.addEventListener("change", () => {
+					if (typeof window.renderTransactions === "function") {
+						window.renderTransactions();
+					}
+				});
+			}
 			if (statsDateInput) {
 				// Initialize with Today
 				const today = new Date(
