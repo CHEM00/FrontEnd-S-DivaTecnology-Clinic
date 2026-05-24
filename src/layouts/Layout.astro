@@ -1,10 +1,11 @@
 ---
 interface Props {
 	title: string;
+	description?: string;
 	showSpeedDial?: boolean;
 }
 
-const { title, showSpeedDial = true } = Astro.props;
+const { title, description, showSpeedDial = true } = Astro.props;
 
 import "../styles/global.css";
 
@@ -31,6 +32,7 @@ import SpeedDial from "../components/SpeedDial.astro";
 			referrerpolicy="no-referrer"
 		/>
 		<title>{title || "Clínica"}</title>
+		{description && <meta name="description" content={description} />}
 
 		<!-- GSAP & Axios -->
 		<script
