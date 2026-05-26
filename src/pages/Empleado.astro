@@ -738,20 +738,33 @@ try {
 				const id = formData.get("Id");
 				const isEdit = !!id;
 
+				// La API espera los campos en minúsculas (firstname, email,
+				// birthday...), igual que el resto de endpoints. Enviar
+				// PascalCase hacía que la API los recibiera como undefined.
 				const data = {
-					FirstName: formData.get("FirstName"),
-					LastName: formData.get("LastName"),
-					MotherLastName: formData.get("MotherLastName"),
-					Phone: formData.get("Phone"),
-					Email: formData.get("Email"),
-					BirthDate: formData.get("BirthDate"),
-					Photo: formData.get("Photo"),
+					firstname: formData.get("FirstName"),
+					lastname: formData.get("LastName"),
+					motherlastname: formData.get("MotherLastName"),
+					phone: formData.get("Phone"),
+					email: formData.get("Email"),
 					idrol: 2,
 				};
 
+				// Campos opcionales: solo se envían si tienen valor, porque la
+				// API rechaza con error cualquier campo presente que esté vacío.
+				const birthday = formData.get("BirthDate");
+				if (birthday) {
+					data.birthday = birthday;
+				}
+
+				const photo = formData.get("Photo");
+				if (photo) {
+					data.photo = photo;
+				}
+
 				const password = formData.get("Password");
 				if (password) {
-					data.Password = password;
+					data.password = password;
 				}
 
 				const url = isEdit
@@ -777,7 +790,9 @@ try {
 					} else {
 						const err = await res.json();
 						mostrarError(
-							err.message || "Error al guardar empleado",
+							err.error ||
+								err.message ||
+								"Error al guardar empleado",
 						);
 					}
 				} catch (error) {
