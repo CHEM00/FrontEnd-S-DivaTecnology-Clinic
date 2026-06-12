@@ -231,7 +231,7 @@ try {
             class="fixed inset-0 flex items-center justify-center p-4 sm:p-6 z-[60]"
         >
             <div
-                class="bg-white rounded-3xl shadow-2xl w-[95%] sm:w-full sm:max-w-lg transform transition-all scale-95 opacity-0 flex flex-col max-h-[90vh] overflow-hidden"
+                class="bg-white rounded-3xl shadow-2xl w-[95%] sm:w-full sm:max-w-lg transform transition-all scale-95 opacity-0 flex flex-col max-h-[90dvh] overflow-hidden"
                 id="modalContent"
             >
                 <!-- Modal Header -->
@@ -3816,12 +3816,22 @@ try {
             function initCanvas() {
                 if (!placeholder || !canvas) return;
                 const rect = placeholder.getBoundingClientRect();
-                // Only set dimensions if they are 0 or changed significantly
-                if (canvas.width !== rect.width) canvas.width = rect.width;
-                if (canvas.height !== rect.height) canvas.height = rect.height;
+                // Si la sección de firma aún está oculta el rect es 0x0; no inicializar
+                // (evita un canvas de tamaño 0 donde no se puede dibujar en móvil).
+                if (rect.width === 0 || rect.height === 0) return;
+
+                // Escala por devicePixelRatio para que la firma no se vea borrosa/pixelada
+                // en pantallas retina (móviles). El buffer es físico; el dibujo se hace en
+                // px CSS gracias a setTransform.
+                const dpr = window.devicePixelRatio || 1;
+                const targetW = Math.round(rect.width * dpr);
+                const targetH = Math.round(rect.height * dpr);
+                if (canvas.width !== targetW) canvas.width = targetW;
+                if (canvas.height !== targetH) canvas.height = targetH;
 
                 ctx = canvas.getContext("2d");
                 if (ctx) {
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // escala sin acumular en re-inits
                     ctx.lineWidth = 2;
                     ctx.lineCap = "round";
                     ctx.strokeStyle = "#000";
@@ -3872,8 +3882,11 @@ try {
                 canvas.addEventListener("mousemove", draw);
                 canvas.addEventListener("mouseup", endDraw);
                 canvas.addEventListener("mouseleave", endDraw);
-                canvas.addEventListener("touchstart", startDraw);
-                canvas.addEventListener("touchmove", draw);
+                // passive:false permite que preventDefault() bloquee el scroll de la modal
+                // mientras se firma (en móvil los listeners touch son passive por defecto y
+                // el preventDefault se ignoraría, provocando scroll en vez de trazo).
+                canvas.addEventListener("touchstart", startDraw, { passive: false });
+                canvas.addEventListener("touchmove", draw, { passive: false });
                 canvas.addEventListener("touchend", endDraw);
             }
 
@@ -4358,6 +4371,14 @@ try {
                         const id = target.value;
                         const price = target.getAttribute("data-price");
 
+                        // Guard anti doble-disparo / doble-click: bloquea la casilla
+                        // mientras la petición está en vuelo. Evita enviar dos veces el
+                        // mismo adicional (el backend ya deduplica con ON CONFLICT, pero
+                        // así no hay peticiones redundantes ni parpadeo de estado).
+                        if (target.dataset.busy === "1") return;
+                        target.dataset.busy = "1";
+                        target.disabled = true;
+                        try {
                         if (target.checked) {
                             if (
                                 !savedAdditionals.has(parseInt(id)) &&
@@ -4471,6 +4492,35 @@ try {
                                 }
                             }
                         }
+                        } finally {
+                            // Re-habilita la casilla pase lo que pase (éxito, error o red caída).
+                            target.disabled = false;
+                            delete target.dataset.busy;
+                        }
+                    }
+                });
+            }
+
+            // --- Teclado virtual (móvil): mantener visible el campo enfocado ---
+            // En pantallas pequeñas el teclado tapa el input/textarea activo; al recibir
+            // foco lo centramos en el área scrolleable de la modal tras un breve delay.
+            const modalContentEl = document.getElementById("modalContent");
+            if (modalContentEl) {
+                modalContentEl.addEventListener("focusin", (e) => {
+                    if (window.innerWidth >= 640) return; // solo móvil
+                    const t = e.target as HTMLElement;
+                    if (
+                        t &&
+                        (t.tagName === "INPUT" || t.tagName === "TEXTAREA")
+                    ) {
+                        setTimeout(
+                            () =>
+                                t.scrollIntoView({
+                                    block: "center",
+                                    behavior: "smooth",
+                                }),
+                            300,
+                        );
                     }
                 });
             }

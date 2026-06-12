@@ -222,6 +222,7 @@ h3 {
     width: 90%;
     max-width: 32rem;
     max-height: 90vh;
+    max-height: 90dvh; /* móvil: respeta barra de URL y teclado (fallback a vh arriba) */
     overflow-y: auto;
     display: flex;
     flex-direction: column;
