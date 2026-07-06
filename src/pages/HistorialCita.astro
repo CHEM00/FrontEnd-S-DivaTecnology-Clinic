@@ -79,7 +79,7 @@ try {
 								<input
 									type="text"
 									id="searchInput"
-									placeholder="Buscar paciente, fisio..."
+									placeholder="Buscar paciente, teléfono, fisio..."
 									class="glass-input w-full rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
 								/>
 								<i
@@ -1141,12 +1141,26 @@ try {
 
 		// Event Listeners
 		searchInput.addEventListener("input", (e) => {
-			const term = e.target.value.toLowerCase();
+			const term = e.target.value.trim().toLowerCase();
+			// Solo dígitos del término, para comparar contra teléfonos sin
+			// importar el formato (espacios, guiones, paréntesis, etc.)
+			const digits = term.replace(/\D/g, "");
+
 			filteredData = allData.filter((item) => {
 				const patient = (item.patientname || "").toLowerCase();
 				const service = (item.name || "").toLowerCase();
-				// Add more fields if needed, e.g. status
-				return patient.includes(term) || service.includes(term);
+				const phone = String(
+					item.patientphone ||
+						item.phone ||
+						item.patient?.phone ||
+						"",
+				).replace(/\D/g, "");
+
+				const coincidePatient = patient.includes(term);
+				const coincideService = service.includes(term);
+				const coincidePhone = digits.length > 0 && phone.includes(digits);
+
+				return coincidePatient || coincideService || coincidePhone;
 			});
 			currentPage = 1; // Resetear a primera página
 			renderTable();
