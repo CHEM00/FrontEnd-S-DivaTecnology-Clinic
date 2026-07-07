@@ -694,8 +694,9 @@ try {
 				// Determine endpoint based on known patterns or user hint.
 				// Assuming /api/v1/Citas/detalle/:id or similar.
 				// Using a fallback/test URL or the most likely one.
+				// Vía el proxy /api del front para que viaje la cookie de sesión.
 				const response = await fetch(
-					`${backendUrl}/api/v1/Agenda/${id}`,
+					`/api/v1/Agenda/${id}`,
 				);
 				if (!response.ok) throw new Error("Error fetching details");
 

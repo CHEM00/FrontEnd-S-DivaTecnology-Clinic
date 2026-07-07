@@ -1522,7 +1522,7 @@ try {
                             // Fix: Fetch active package details to get ID
                             try {
                                 const pkgRes = await fetch(
-                                    `${backendUrl}/api/v1/Pacientes/${idpatient}/paquete/activo`,
+                                    `/api/v1/Pacientes/${idpatient}/paquete/activo`,
                                 );
                                 if (pkgRes.ok) {
                                     const pkgData = await pkgRes.json();
@@ -1611,7 +1611,7 @@ try {
 
                         // Also check global vars as backup or sync
                         const res = await fetch(
-                            `${backendUrl}/api/v1/Citas${editId ? "/" + editId : ""}`,
+                            `/api/v1/Citas${editId ? "/" + editId : ""}`,
                             {
                                 method: editId ? "PATCH" : "POST",
                                 headers: {
@@ -1673,7 +1673,7 @@ try {
                             if (citaId && idservice) {
                                 try {
                                     await fetch(
-                                        `${backendUrl}/api/v1/Agenda/${citaId}/services`,
+                                        `/api/v1/Agenda/${citaId}/services`,
                                         {
                                             method: editId ? "PATCH" : "POST",
                                             headers: {
@@ -3343,14 +3343,12 @@ try {
                 historyList.innerHTML = `<div class="flex flex-col items-center justify-center py-8"><i class="fa-solid fa-spinner fa-spin text-[#2F5D50] text-2xl mb-2"></i><span class="text-xs text-gray-500">Cargando historial...</span></div>`;
 
                 try {
-                    // Use backendUrl if using external backend, or relative if proxied.
-                    const url = backendUrl.startsWith("http")
-                        ? `${backendUrl}/api/v1/HistorialClinico/${patientId}`
-                        : `/api/v1/HistorialClinico/${patientId}`;
+                    // Siempre vía el proxy /api del front: el proxy reenvía la
+                    // cookie auth_token, así la API puede validar la sesión.
+                    // (Ir directo al backend dejaba estas llamadas sin credenciales.)
+                    const url = `/api/v1/HistorialClinico/${patientId}`;
 
-                    const statusUrl = backendUrl.startsWith("http")
-                        ? `${backendUrl}/api/v1/medical_history/${patientId}/statusappointments`
-                        : `/api/v1/medical_history/${patientId}/statusappointments`;
+                    const statusUrl = `/api/v1/medical_history/${patientId}/statusappointments`;
 
                     // Fetch Parallel
                     const [resHistory, resStatus] = await Promise.all([
@@ -5068,7 +5066,7 @@ try {
                     // ... fetch logic ...
                     try {
                         const res = await fetch(
-                            `${backendUrl}/api/v1/Pacientes`,
+                            `/api/v1/Pacientes`,
                             {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
@@ -5085,7 +5083,7 @@ try {
                                     photoData.append("photo", photoFile);
 
                                     await fetch(
-                                        `${backendUrl}/api/v1/Pacientes/${result.id}`,
+                                        `/api/v1/Pacientes/${result.id}`,
                                         {
                                             method: "PATCH", // Endpoint provided by user
                                             body: photoData,

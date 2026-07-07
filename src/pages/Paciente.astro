@@ -1156,9 +1156,11 @@ try {
 				is_active: true,
 			};
 
+			// Vía el proxy /api del front: reenvía la cookie auth_token para que
+			// la API valide la sesión (directo al backend iba sin credenciales).
 			const url = isEdit
-				? `${backendUrl}/api/v1/Pacientes/${id}`
-				: `${backendUrl}/api/v1/Pacientes`;
+				? `/api/v1/Pacientes/${id}`
+				: `/api/v1/Pacientes`;
 
 			const method = isEdit ? "PATCH" : "POST";
 
@@ -1186,7 +1188,7 @@ try {
 							photoData.append("photo", photoFile);
 
 							await fetch(
-								`${backendUrl}/api/v1/Pacientes/${patientId}`,
+								`/api/v1/Pacientes/${patientId}`,
 								{
 									method: "PATCH",
 									body: photoData,
@@ -1201,7 +1203,7 @@ try {
 					if (havePackageActive && sesionesUsadas !== null) {
 						try {
 							await fetch(
-								`${backendUrl}/api/v1/Pacientes/${patientId}/paquete/sesiones`,
+								`/api/v1/Pacientes/${patientId}/paquete/sesiones`,
 								{
 									method: "PATCH",
 									headers: { "Content-Type": "application/json" },

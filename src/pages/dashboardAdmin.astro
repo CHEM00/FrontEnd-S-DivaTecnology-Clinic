@@ -2470,8 +2470,9 @@ try {
 				}
 
 				try {
+					// Vía el proxy /api del front para que viaje la cookie de sesión.
 					const res = await fetch(
-						`${backendUrl}/api/v1/medical_history/${idpatient}/appointments`,
+						`/api/v1/medical_history/${idpatient}/appointments`,
 					);
 					if (!res.ok) throw new Error("Error " + res.status);
 					historialCitasData = await res.json();
