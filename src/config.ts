@@ -1,7 +1,15 @@
 export const IS_SERVER = import.meta.env.SSR;
 export const IS_DEV = import.meta.env.DEV;
 
-const PRODUCTION_API_URL = import.meta.env.BACKEND_URL || "https://api.jesstherapy.cloud";
+const DEFAULT_BACKEND_URL = "https://api.jesstherapy.cloud";
+
+// process.env: runtime del server en producción (permite cambiar la URL sin rebuild).
+// import.meta.env: `astro dev`, que carga el .env local. El typeof protege al navegador,
+// donde `process` no existe.
+const PRODUCTION_API_URL =
+    (typeof process !== "undefined" ? process.env.BACKEND_URL : undefined) ??
+    import.meta.env.BACKEND_URL ??
+    DEFAULT_BACKEND_URL;
 
 /**
  * Returns the base URL for API requests.

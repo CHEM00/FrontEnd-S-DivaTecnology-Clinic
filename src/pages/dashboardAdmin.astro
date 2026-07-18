@@ -8,10 +8,10 @@ import { SERVER_BACKEND_URL } from "../config";
 const today = new Date().toISOString().split("T")[0];
 const backendUrl = SERVER_BACKEND_URL;
 const token = Astro.cookies.get("auth_token")?.value;
-const userRole = Astro.cookies.get("user_role")?.value;
+const userRole = Astro.locals.user?.idrol;
 
-// RBAC: If Employee (3) tries to access Admin Dashboard, redirect to their dashboard
-if (userRole === "3") {
+// RBAC: si un empleado (3) intenta entrar al dashboard de admin, va al suyo
+if (userRole === 3) {
 	return Astro.redirect("/dashboardEmpleado");
 }
 

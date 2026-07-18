@@ -40,8 +40,14 @@ const { titulo = "Dashboard Empleado", nombreUsuario = "EMPLEADO" } =
 
 <script>
     // @ts-nocheck
-    window.logout = function () {
-        localStorage.removeItem("token");
+    window.logout = async function () {
+        try {
+            // La cookie de sesión es httpOnly: solo el backend puede borrarla.
+            await fetch("/api/v1/auth/logout", { method: "POST" });
+        } catch (e) {
+            console.error("Error cerrando sesión en el servidor:", e);
+        }
+        localStorage.removeItem("user");
         localStorage.removeItem("userRole");
         window.location.href = "/";
     };

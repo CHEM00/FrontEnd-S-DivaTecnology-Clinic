@@ -369,12 +369,16 @@ const currentPath = Astro.url.pathname;
         }
     }
 
-    function logout() {
-        if (confirm("¿Estás seguro de que deseas cerrar sesión?")) {
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            window.location.href = "/";
+    async function logout() {
+        if (!confirm("¿Estás seguro de que deseas cerrar sesión?")) return;
+        try {
+            // La cookie de sesión es httpOnly: solo el backend puede borrarla.
+            await fetch("/api/v1/auth/logout", { method: "POST" });
+        } catch (e) {
+            console.error("Error cerrando sesión en el servidor:", e);
         }
+        localStorage.removeItem("user");
+        window.location.href = "/";
     }
 
     window.addEventListener("resize", () => {

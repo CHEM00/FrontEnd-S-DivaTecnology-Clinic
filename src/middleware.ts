@@ -1,9 +1,15 @@
 import { defineMiddleware } from "astro:middleware";
 import { jwtVerify } from "jose";
 
-// Clave secreta para verificar el token (DEBE COINCIDIR CON EL BACKEND)
-// En producción, usa variables de entorno: import.meta.env.JWT_SECRET
-const SECRET_KEY = new TextEncoder().encode("secret_dev_key_change_in_prod");
+// Debe ser idéntico al JWT_SECRET del backend. process.env cubre el runtime en
+// producción; import.meta.env cubre `astro dev` (carga el .env local).
+const JWT_SECRET = process.env.JWT_SECRET ?? import.meta.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error(
+        "JWT_SECRET no está definido",
+    );
+}
+const SECRET_KEY = new TextEncoder().encode(JWT_SECRET);
 
 export const onRequest = defineMiddleware(async (context, next) => {
     const { url, cookies, redirect } = context;
@@ -36,13 +42,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
 
     try {
-        // Verificar y decodificar el token
         const { payload } = await jwtVerify(token, SECRET_KEY);
-
-        // Debug: Ver qué hay en el token
-        console.log("Middleware Decoded Payload:", payload);
-
         const userRole = Number(payload.idrol);
+
+        // Identidad verificada para las páginas: a diferencia de una cookie
+        // escrita por el cliente, este rol no se puede falsificar.
+        context.locals.user = {
+            id: Number(payload.id),
+            email: String(payload.email ?? ""),
+            idrol: userRole,
+            firstname: String(payload.firstname ?? ""),
+            lastname: String(payload.lastname ?? ""),
+        };
 
         // Rutas de Administrador (Rol 2)
         const adminRoutes = ["/dashboardAdmin", "/configuracion", "/Empleado", "/Agenda", "/HistorialCita", "/Pago", "/Paciente", "/ProductoServicio", "/Roles", "/RolesPermiso"];

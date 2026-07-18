@@ -100,36 +100,21 @@ import Layout from "../layouts/Layout.astro";
         const data = await response.json();
 
         if (data.token) {
-          // 1. Guardar Token en Cookie (CRÍTICO para el Middleware)
-          // Usamos path=/ para que esté disponible en toda la app
-          // Max-age 86400 = 1 día
-          document.cookie = `auth_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
-          if (data.user?.idrol) {
-            console.log("Setting role cookie:", data.user.idrol);
-            document.cookie = `user_role=${data.user.idrol}; path=/; max-age=86400; SameSite=Lax`;
-          }
-
-          // 2. Guardar datos en localStorage (Opcional, para uso cliente)
-          localStorage.setItem("token", data.token);
+          // La sesión llega en una cookie httpOnly creada por el backend en esta
+          // misma respuesta; aquí solo se guardan datos de UI.
           if (data.user) {
             localStorage.setItem("user", JSON.stringify(data.user));
           }
 
-          // 3. Redirección basada en Rol
           const roleId = Number(data.user?.idrol);
-
-          // Pequeño delay para asegurar que el navegador procese la cookie
-          setTimeout(() => {
-            if (roleId === 3) {
-              window.location.href = "/dashboardEmpleado";
-            } else if (roleId === 2) {
-              window.location.href = "/dashboardAdmin";
-            } else {
-              // Si no coincide, mandamos al admin por defecto o mostramos error
-              console.warn("Rol desconocido, redirigiendo a Admin");
-              window.location.href = "/dashboardAdmin";
-            }
-          }, 100);
+          if (roleId === 3) {
+            window.location.href = "/dashboardEmpleado";
+          } else if (roleId === 2) {
+            window.location.href = "/dashboardAdmin";
+          } else {
+            console.warn("Rol desconocido, redirigiendo a Admin");
+            window.location.href = "/dashboardAdmin";
+          }
         } else {
           alert(data.message || "Credenciales incorrectas");
         }

@@ -5,11 +5,11 @@ import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
 import axios from "axios";
+import { SERVER_BACKEND_URL } from "../config";
 
 let table = [];
 try {
-    const backendUrl = import.meta.env.BACKEND_URL;
-    const response = await axios.get(`${backendUrl}/api/v1/Permisos/Clinica/1`);
+    const response = await axios.get(`${SERVER_BACKEND_URL}/api/v1/Permisos/Clinica/1`);
     table = response.data;
 } catch (error) {
     console.error("Error fetching data:", error);

@@ -13,8 +13,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# environment variables
+# environment variables (solo se commitea la plantilla .env.example)
 .env
+.env.*
+!.env.example
 
 
 
@@ -23,3 +25,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# claude code local settings
+.claude/

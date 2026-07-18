@@ -4,31 +4,18 @@ import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
-import { jwtVerify } from "jose";
 
 const token = Astro.cookies.get("auth_token")?.value;
-// NOTA: En producción, usa variables de entorno
-const SECRET_KEY = new TextEncoder().encode("secret_dev_key_change_in_prod");
 
-let currentUser = null;
-
-if (token) {
-    try {
-        const { payload } = await jwtVerify(token, SECRET_KEY);
-        currentUser = payload;
-    } catch (error) {
-        console.error("Error validando sesión:", error);
-        return Astro.redirect("/");
-    }
-} else {
+// El middleware ya verificó el JWT; aquí solo se consume la identidad.
+const currentUser = Astro.locals.user;
+if (!currentUser) {
     return Astro.redirect("/");
 }
 
-const userName = currentUser
-    ? `${currentUser.firstname} ${currentUser.lastname}`
-    : "Empleado";
+const userName = `${currentUser.firstname} ${currentUser.lastname}`;
 import { SERVER_BACKEND_URL } from "../config";
-const userId = currentUser?.id;
+const userId = currentUser.id;
 
 const backendUrl = SERVER_BACKEND_URL;
 // Re-use headers logic if possible, or create new headers
