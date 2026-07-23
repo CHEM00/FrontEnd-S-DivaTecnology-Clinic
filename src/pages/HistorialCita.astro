@@ -575,6 +575,27 @@ try {
 											</tfoot>
 										</table>
 									</div>
+
+									<!-- Fotos de la cita -->
+									<div
+										id="detailPhotosBlock"
+										class="hidden bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
+									>
+										<div
+											class="bg-gray-50 px-5 py-3 border-b border-gray-200"
+										>
+											<h4
+												class="font-bold text-gray-700 text-sm"
+											>
+												Fotografías de la sesión
+											</h4>
+										</div>
+										<div
+											id="detailPhotosGrid"
+											class="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3"
+										>
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -582,6 +603,20 @@ try {
 				</div>
 			</div>
 		</div>
+	</div>
+
+	<!-- Visor de foto ampliada -->
+	<div
+		id="photoViewer"
+		class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 cursor-zoom-out"
+		onclick="this.classList.add('hidden')"
+	>
+		<img
+			id="photoViewerImg"
+			src=""
+			alt="Foto de la sesión"
+			class="max-w-full max-h-full rounded-2xl shadow-2xl object-contain"
+		/>
 	</div>
 
 	<!-- Script Cliente para Paginación y Filtro -->
@@ -710,7 +745,7 @@ try {
 
 				if (detail) {
 					populateModal(detail);
-					// ... (rest of function)
+					loadAppointmentPhotos(id);
 					modalLoading.classList.add("hidden");
 					modalContent.classList.remove("hidden");
 				} else {
@@ -722,6 +757,38 @@ try {
 				console.error(error);
 				alert("No se pudo cargar el detalle de la cita.");
 				toggleModal(false);
+			}
+		}
+
+		async function loadAppointmentPhotos(appointmentId) {
+			const block = document.getElementById("detailPhotosBlock");
+			const grid = document.getElementById("detailPhotosGrid");
+			block.classList.add("hidden");
+			grid.innerHTML = "";
+			try {
+				const res = await fetch(`/api/v1/Citas/${appointmentId}/photos`);
+				if (!res.ok) return;
+				const photos = await res.json();
+				if (!Array.isArray(photos) || photos.length === 0) return;
+				photos.forEach((photo) => {
+					const url = `${backendUrl}/${photo.path.replace(/^\//, "")}`;
+					const img = document.createElement("img");
+					img.src = url;
+					img.alt = "Foto de la sesión";
+					img.loading = "lazy";
+					img.className =
+						"w-full h-28 object-cover rounded-xl border border-gray-100 cursor-zoom-in hover:opacity-90 transition-opacity";
+					img.onclick = () => {
+						document.getElementById("photoViewerImg").src = url;
+						document
+							.getElementById("photoViewer")
+							.classList.remove("hidden");
+					};
+					grid.appendChild(img);
+				});
+				block.classList.remove("hidden");
+			} catch (err) {
+				console.error("Error loading appointment photos:", err);
 			}
 		}
 

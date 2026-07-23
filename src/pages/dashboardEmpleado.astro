@@ -708,6 +708,51 @@ try {
                             ></textarea>
                         </div>
 
+                        <!-- Fotografías de la sesión -->
+                        <div
+                            class="bg-teal-50 p-4 rounded-2xl border border-teal-100"
+                        >
+                            <div class="flex items-center justify-between mb-2">
+                                <label
+                                    class="block text-xs font-bold text-teal-700 uppercase"
+                                    >Fotografías <span
+                                        id="sessionPhotosCount"
+                                        class="text-teal-500">(0/4)</span
+                                    ></label
+                                >
+                                <button
+                                    type="button"
+                                    id="addSessionPhotoBtn"
+                                    class="text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed px-3 py-1.5 rounded-lg transition-colors"
+                                >
+                                    <i class="fa-solid fa-camera mr-1"></i>Agregar
+                                </button>
+                            </div>
+                            <div
+                                id="sessionPhotosGrid"
+                                class="grid grid-cols-2 sm:grid-cols-4 gap-2"
+                            >
+                            </div>
+                            <p
+                                id="sessionPhotosEmpty"
+                                class="text-xs text-gray-400 text-center py-3"
+                            >
+                                Sin fotografías de esta cita
+                            </p>
+                            <p
+                                id="sessionPhotosError"
+                                class="hidden text-xs text-red-600 font-semibold mt-2"
+                            >
+                            </p>
+                            <input
+                                type="file"
+                                id="sessionPhotoInput"
+                                accept="image/jpeg,image/png,image/webp"
+                                multiple
+                                class="hidden"
+                            />
+                        </div>
+
                         <!-- Additionals Section -->
                         <div
                             class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100"
@@ -2624,9 +2669,110 @@ try {
             let savedAdditionals = new Set();
             let hasDetails = false;
 
+            // ---- Fotografías de la sesión (máx. 4, el backend las convierte a WebP) ----
+            const MAX_SESSION_PHOTOS = 4;
+            let currentPhotosAppointmentId: string | null = null;
+
+            async function loadAppointmentPhotos(appointmentId: string) {
+                currentPhotosAppointmentId = appointmentId;
+                const grid = document.getElementById("sessionPhotosGrid");
+                const empty = document.getElementById("sessionPhotosEmpty");
+                const count = document.getElementById("sessionPhotosCount");
+                const addBtn = document.getElementById(
+                    "addSessionPhotoBtn",
+                ) as HTMLButtonElement;
+                const errorEl = document.getElementById("sessionPhotosError");
+                if (!grid || !empty || !count || !addBtn) return;
+                errorEl?.classList.add("hidden");
+                grid.innerHTML = "";
+                try {
+                    const res = await fetch(
+                        `/api/v1/Citas/${appointmentId}/photos`,
+                    );
+                    const photos = res.ok ? await res.json() : [];
+                    count.textContent = `(${photos.length}/${MAX_SESSION_PHOTOS})`;
+                    addBtn.disabled = photos.length >= MAX_SESSION_PHOTOS;
+                    empty.classList.toggle("hidden", photos.length > 0);
+                    photos.forEach((photo: any) => {
+                        const url = `${backendUrl}/${String(photo.path).replace(/^\//, "")}`;
+                        const wrap = document.createElement("div");
+                        wrap.className = "relative group";
+                        const img = document.createElement("img");
+                        img.src = url;
+                        img.loading = "lazy";
+                        img.alt = "Foto de la sesión";
+                        img.className =
+                            "w-full h-20 object-cover rounded-lg border border-teal-100 cursor-pointer";
+                        img.onclick = () => window.open(url, "_blank");
+                        const del = document.createElement("button");
+                        del.type = "button";
+                        del.innerHTML =
+                            '<i class="fa-solid fa-xmark text-[10px]"></i>';
+                        del.className =
+                            "absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow";
+                        del.onclick = async () => {
+                            if (!confirm("¿Eliminar esta fotografía?")) return;
+                            await fetch(
+                                `/api/v1/Citas/${appointmentId}/photos/${photo.id}`,
+                                { method: "DELETE" },
+                            );
+                            loadAppointmentPhotos(appointmentId);
+                        };
+                        wrap.appendChild(img);
+                        wrap.appendChild(del);
+                        grid.appendChild(wrap);
+                    });
+                } catch (err) {
+                    console.error("Error loading session photos:", err);
+                }
+            }
+
+            document
+                .getElementById("addSessionPhotoBtn")
+                ?.addEventListener("click", () =>
+                    document.getElementById("sessionPhotoInput")?.click(),
+                );
+
+            document
+                .getElementById("sessionPhotoInput")
+                ?.addEventListener("change", async (e) => {
+                    const input = e.target as HTMLInputElement;
+                    const errorEl =
+                        document.getElementById("sessionPhotosError");
+                    if (
+                        !input.files?.length ||
+                        !currentPhotosAppointmentId
+                    )
+                        return;
+                    const formData = new FormData();
+                    [...input.files].forEach((file) =>
+                        formData.append("photos", file),
+                    );
+                    input.value = "";
+                    try {
+                        const res = await fetch(
+                            `/api/v1/Citas/${currentPhotosAppointmentId}/photos`,
+                            { method: "POST", body: formData },
+                        );
+                        if (!res.ok) {
+                            const json = await res.json().catch(() => ({}));
+                            throw new Error(
+                                json.error || "Error al subir las fotos",
+                            );
+                        }
+                    } catch (err: any) {
+                        if (errorEl) {
+                            errorEl.textContent = err.message;
+                            errorEl.classList.remove("hidden");
+                        }
+                    }
+                    loadAppointmentPhotos(currentPhotosAppointmentId);
+                });
+
             async function loadDraft(appointmentId: string) {
                 savedAdditionals.clear();
                 hasDetails = false;
+                loadAppointmentPhotos(appointmentId);
                 // Reset checkboxes
                 const checkboxes = document.querySelectorAll(
                     "input[name='additional_service']",

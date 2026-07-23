@@ -1,13 +1,16 @@
 # frontend/Dockerfile
-FROM node:18-alpine AS builder
+# Node 22 LTS: Astro 5 con Vite 7 requiere Node >= 20.19.
+FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+# npm ci: instala exactamente el lockfile; npm install podía resolver
+# versiones nuevas en cada build y romper el deploy sin cambiar código.
+RUN npm ci
 COPY . .
 RUN npm run build
 
 # Stage 2: Run
-FROM node:18-alpine
+FROM node:22-alpine
 WORKDIR /app
 
 COPY --from=builder /app/dist/server ./dist/server

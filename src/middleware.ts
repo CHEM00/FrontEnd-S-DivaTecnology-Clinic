@@ -56,7 +56,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
         };
 
         // Rutas de Administrador (Rol 2)
-        const adminRoutes = ["/dashboardAdmin", "/configuracion", "/Empleado", "/Agenda", "/HistorialCita", "/Pago", "/Paciente", "/ProductoServicio", "/Roles", "/RolesPermiso"];
+        const adminRoutes = ["/dashboardAdmin", "/configuracion", "/Empleado", "/Agenda", "/HistorialCita", "/Pago", "/Paciente", "/ProductoServicio", "/Roles", "/RolesPermiso", "/Permisos", "/GestionHorarios"];
 
         // Rutas de Empleado (Rol 3)
         const empleadoRoutes = [
@@ -65,11 +65,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
             "/Agenda",
             "/ProductoServicio",
             "/HistorialCita",
-            "/Pago",
-            "/Roles",
-            "/Empleado",
-            "/configuracion",
-            "/RolesPermiso"
+            "/Pago"
         ];
 
         // 1. Validar acceso a rutas exclusivas de Admin

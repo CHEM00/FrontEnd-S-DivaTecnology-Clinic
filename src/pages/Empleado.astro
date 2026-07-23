@@ -6,6 +6,7 @@ import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
 
 let table = [];
+let roles = [];
 
 import { SERVER_BACKEND_URL, PUBLIC_IMAGE_BASE_URL } from "../config";
 const backendUrl = SERVER_BACKEND_URL;
@@ -40,6 +41,19 @@ try {
 } catch (error) {
 	console.error("Error fetching data:", error);
 	table = [];
+}
+
+try {
+	// @ts-ignore
+	const rolesRes = await fetch(`${backendUrl}/api/v1/Roles`, { headers, agent });
+	if (rolesRes.ok) {
+		const rolesData = await rolesRes.json();
+		roles = (Array.isArray(rolesData) ? rolesData : []).filter(
+			(r) => Number(r.id) !== 1,
+		);
+	}
+} catch (error) {
+	console.error("Error fetching roles:", error);
 }
 ---
 
@@ -142,6 +156,10 @@ try {
 									<th
 										class="p-4 font-bold whitespace-nowrap hidden md:table-cell"
 										>Apellidos</th
+									>
+									<th
+										class="p-4 font-bold whitespace-nowrap hidden sm:table-cell"
+										>Rol</th
 									>
 									<th
 										class="p-4 font-bold whitespace-nowrap hidden lg:table-cell"
@@ -336,6 +354,28 @@ try {
 						class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
 					/>
 				</div>
+				<div>
+					<label class="block text-sm font-bold text-gray-700 mb-1"
+						>Rol *</label
+					>
+					<select
+						name="Rol"
+						id="Rol"
+						required
+						class="glass-input w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all cursor-pointer"
+					>
+						{
+							roles.map((rol) => (
+								<option
+									value={rol.id}
+									selected={Number(rol.id) === 3}
+								>
+									{rol.name}
+								</option>
+							))
+						}
+					</select>
+				</div>
 			</div>
 
 			<div class="space-y-4">
@@ -460,13 +500,18 @@ try {
 		</div>
 	</div>
 
-	<script define:vars={{ table, SERVER_BACKEND_URL, PUBLIC_IMAGE_BASE_URL }}>
+	<script
+		define:vars={{ table, roles, SERVER_BACKEND_URL, PUBLIC_IMAGE_BASE_URL }}
+	>
 		// Datos y Estado
 		let allData = table || [];
 		let filteredData = [...allData];
 		let currentPage = 1;
 		let rowsPerPage = 10;
 		let selectedEmpleadoId = null;
+		const roleNameById = new Map(
+			(roles || []).map((r) => [Number(r.id), r.name]),
+		);
 
 		// Elementos DOM
 		const tableBody = document.getElementById("tableBody");
@@ -532,6 +577,11 @@ try {
                     </td>
                     <td class="p-4 hidden md:table-cell text-sm text-gray-700 font-medium">
                         ${empleado.LastName} ${empleado.MotherLastName}
+                    </td>
+                    <td class="p-4 hidden sm:table-cell">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-[#2F5D50]/10 text-[#2F5D50]">
+                            ${roleNameById.get(Number(empleado.idrol)) || "Sin rol"}
+                        </span>
                     </td>
                     <td class="p-4 hidden lg:table-cell">
                         <div class="flex flex-col gap-0.5">
@@ -637,6 +687,7 @@ try {
 					if (title) title.textContent = "Nuevo Empleado";
 					form.reset();
 					document.getElementById("empleadoId").value = "";
+					document.getElementById("Rol").value = "3";
 					if (passwordHint) passwordHint.classList.add("hidden");
 					document.getElementById("Password").required = true;
 				} else if (modo === "editar") {
@@ -686,6 +737,7 @@ try {
 				: "";
 			document.getElementById("Photo").value = empleado.Photo || "";
 			document.getElementById("Password").value = "";
+			document.getElementById("Rol").value = String(empleado.idrol ?? 3);
 		};
 
 		window.confirmarEliminacion = function (id, nombre) {
@@ -747,7 +799,7 @@ try {
 					motherlastname: formData.get("MotherLastName"),
 					phone: formData.get("Phone"),
 					email: formData.get("Email"),
-					idrol: 2,
+					idrol: Number(formData.get("Rol")),
 				};
 
 				// Campos opcionales: solo se envían si tienen valor, porque la

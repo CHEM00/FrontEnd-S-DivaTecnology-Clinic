@@ -1377,9 +1377,10 @@ try {
             empleadoSelect?.addEventListener("change", () =>
                 buscarHorariosDisponibles(),
             );
-            fechaInput?.addEventListener("change", () =>
-                buscarHorariosDisponibles(),
-            );
+            fechaInput?.addEventListener("change", async () => {
+                await cargarEmpleados(fechaInput.value);
+                buscarHorariosDisponibles();
+            });
             fechaInput?.addEventListener("blur", () =>
                 buscarHorariosDisponibles(),
             );
@@ -1472,23 +1473,34 @@ try {
             });
         });
 
-        async function cargarEmpleados() {
+        async function cargarEmpleados(fecha?: string) {
             const select = document.getElementById(
                 "agregarIdEmployed",
             ) as HTMLSelectElement;
-            if (!select || select.options.length > 1) return;
+            if (!select) return;
+            if (!fecha && select.options.length > 1) return;
 
+            const seleccionPrevia = select.value;
             try {
-                const res = await fetch("/api/v1/Agenda/fisio");
+                const res = await fetch(
+                    `/api/v1/Agenda/fisio${fecha ? `?date=${fecha}` : ""}`,
+                );
                 if (res.ok) {
                     const empleados = await res.json();
-                    console.log("Datos de empleados recibidos:", empleados); // DEBUG: Ver estructura
+                    select.innerHTML =
+                        '<option value="">Seleccionar fisio...</option>';
                     empleados.forEach((emp: Empleado) => {
                         const option = document.createElement("option");
                         option.value = String(emp.id);
                         option.textContent = `${emp.firstname} ${emp.lastname}`;
                         select.appendChild(option);
                     });
+                    if (seleccionPrevia) {
+                        const sigueDisponible = Array.from(
+                            select.options,
+                        ).some((o) => o.value === seleccionPrevia);
+                        select.value = sigueDisponible ? seleccionPrevia : "";
+                    }
                 }
             } catch (e) {
                 console.error("Error cargando empleados:", e);

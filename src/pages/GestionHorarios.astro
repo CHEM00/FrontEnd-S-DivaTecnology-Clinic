@@ -1,0 +1,456 @@
+---
+export const prerender = false;
+import Layout from "../layouts/Layout.astro";
+import NavBar from "../components/NavBar.astro";
+import TopTag from "../components/TopTag.astro";
+
+import { SERVER_BACKEND_URL } from "../config";
+const backendUrl = SERVER_BACKEND_URL;
+const token = Astro.cookies.get("auth_token")?.value;
+const headers = {
+    "Content-Type": "application/json",
+    ...(token && { Cookie: `auth_token=${token}` }),
+};
+const { Agent } = await import("node:https");
+const agent = new Agent({ rejectUnauthorized: false });
+
+let fisios = [];
+try {
+    // @ts-ignore
+    const response = await fetch(`${backendUrl}/api/v1/Agenda/fisio`, { headers, agent });
+    if (response.ok) {
+        const data = await response.json();
+        fisios = Array.isArray(data) ? data : [];
+    }
+} catch (error) {
+    console.error("Error fetching fisios:", error);
+}
+---
+
+<Layout title="Gestión de Horarios">
+    <div class="flex h-screen overflow-hidden bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8]">
+        <NavBar />
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+            <div class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#2F5D50]/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-[#2F5D50]/5 rounded-full blur-3xl pointer-events-none"></div>
+
+            <TopTag titulo="Gestión de Horarios" nombreUsuario="Administrador" />
+
+            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative z-10 space-y-6">
+                <!-- Selector de fisioterapeuta -->
+                <div class="glass-panel rounded-3xl border border-white/40 shadow-xl p-6 animate-fade-in-up">
+                    <label class="block text-xs font-bold text-[#2F5D50] uppercase mb-2">Fisioterapeuta</label>
+                    <select id="fisioSelect" class="glass-input w-full sm:w-96 rounded-xl px-4 py-2.5 text-sm font-semibold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20 cursor-pointer">
+                        <option value="">Selecciona un fisioterapeuta...</option>
+                    </select>
+                </div>
+
+                <div id="panelesHorario" class="hidden space-y-6">
+                    <!-- Horario semanal -->
+                    <div class="glass-panel rounded-3xl border border-white/40 shadow-xl overflow-hidden animate-fade-in-up">
+                        <div class="p-6 border-b border-[#2F5D50]/10 bg-white/40 flex items-center justify-between">
+                            <h2 class="text-xl font-bold text-[#2F5D50] flex items-center gap-2">
+                                <i class="fa-solid fa-calendar-week"></i>
+                                Horario semanal
+                            </h2>
+                            <span class="text-xs text-gray-500 hidden sm:inline">Sin horario propio, el fisio usa el horario general de la clínica</span>
+                        </div>
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left border-collapse min-w-[640px]">
+                                <thead class="bg-white/60">
+                                    <tr class="text-[#2F5D50] border-b border-[#2F5D50]/10 text-sm">
+                                        <th class="p-4 font-bold">Día</th>
+                                        <th class="p-4 font-bold">Origen</th>
+                                        <th class="p-4 font-bold">Horario</th>
+                                        <th class="p-4 font-bold">Descanso</th>
+                                        <th class="p-4 font-bold text-center w-32">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="semanaBody" class="text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Excepciones / ausencias -->
+                    <div class="glass-panel rounded-3xl border border-white/40 shadow-xl overflow-hidden animate-fade-in-up">
+                        <div class="p-6 border-b border-[#2F5D50]/10 bg-white/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <h2 class="text-xl font-bold text-[#2F5D50] flex items-center gap-2">
+                                <i class="fa-solid fa-user-clock"></i>
+                                Ausencias y días especiales
+                            </h2>
+                            <button onclick="abrirModalExcepcion()" class="glass-button px-4 py-2 rounded-xl flex items-center gap-2 text-white bg-[#2F5D50] hover:bg-[#234D20] transition-all shadow-lg">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                                <span class="font-semibold text-sm">Registrar</span>
+                            </button>
+                        </div>
+                        <div id="excepcionesLista" class="divide-y divide-[#2F5D50]/5"></div>
+                        <div id="excepcionesVacio" class="hidden p-8 text-center text-sm text-gray-400">
+                            <i class="fa-solid fa-calendar-check text-3xl mb-2 block text-[#2F5D50]/20"></i>
+                            Sin ausencias ni días especiales próximos
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal: personalizar día -->
+    <div id="modalDia" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="cerrarModalDia()"></div>
+        <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
+            <h3 class="text-lg font-bold text-[#2F5D50]" id="modalDiaTitulo">Personalizar día</h3>
+            <div class="flex gap-3">
+                <label class="flex-1 flex items-center gap-2 p-3 rounded-xl border border-gray-200 cursor-pointer has-[:checked]:border-[#2F5D50] has-[:checked]:bg-[#2F5D50]/5">
+                    <input type="radio" name="diaLabora" value="si" checked class="accent-[#2F5D50]" onchange="toggleHorasDia()" />
+                    <span class="text-sm font-semibold text-gray-700">Labora</span>
+                </label>
+                <label class="flex-1 flex items-center gap-2 p-3 rounded-xl border border-gray-200 cursor-pointer has-[:checked]:border-[#2F5D50] has-[:checked]:bg-[#2F5D50]/5">
+                    <input type="radio" name="diaLabora" value="no" class="accent-[#2F5D50]" onchange="toggleHorasDia()" />
+                    <span class="text-sm font-semibold text-gray-700">No labora</span>
+                </label>
+            </div>
+            <div id="diaHoras" class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Entrada</label>
+                    <input type="time" id="diaOpen" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2F5D50]/20" />
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Salida</label>
+                    <input type="time" id="diaClose" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2F5D50]/20" />
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Descanso inicio</label>
+                    <input type="time" id="diaBreakStart" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2F5D50]/20" />
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Descanso fin</label>
+                    <input type="time" id="diaBreakEnd" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2F5D50]/20" />
+                </div>
+            </div>
+            <p id="modalDiaError" class="hidden text-sm text-red-600 font-semibold"></p>
+            <div class="flex gap-3 pt-2">
+                <button onclick="cerrarModalDia()" class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">Cancelar</button>
+                <button onclick="guardarDia()" id="btnGuardarDia" class="flex-1 py-2.5 rounded-xl bg-[#2F5D50] text-white text-sm font-semibold hover:bg-[#234D20] transition-colors">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: registrar excepción -->
+    <div id="modalExcepcion" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="cerrarModalExcepcion()"></div>
+        <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <h3 class="text-lg font-bold text-[#2F5D50]">Registrar ausencia o día especial</h3>
+            <div class="flex gap-3">
+                <label class="flex-1 flex items-center gap-2 p-3 rounded-xl border border-gray-200 cursor-pointer has-[:checked]:border-[#2F5D50] has-[:checked]:bg-[#2F5D50]/5">
+                    <input type="radio" name="excTipo" value="ausencia" checked class="accent-[#2F5D50]" onchange="toggleHorasExcepcion()" />
+                    <span class="text-sm font-semibold text-gray-700">Ausencia</span>
+                </label>
+                <label class="flex-1 flex items-center gap-2 p-3 rounded-xl border border-gray-200 cursor-pointer has-[:checked]:border-[#2F5D50] has-[:checked]:bg-[#2F5D50]/5">
+                    <input type="radio" name="excTipo" value="especial" class="accent-[#2F5D50]" onchange="toggleHorasExcepcion()" />
+                    <span class="text-sm font-semibold text-gray-700">Horario especial</span>
+                </label>
+            </div>
+            <label class="flex items-center gap-2 text-sm text-gray-600 font-semibold cursor-pointer select-none">
+                <input type="checkbox" id="excRango" class="accent-[#2F5D50] w-4 h-4" onchange="toggleRangoExcepcion()" />
+                Aplicar a varios días (rango)
+            </label>
+            <div class="grid grid-cols-2 gap-3">
+                <div id="excFechaWrap" class="col-span-2">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha</label>
+                    <input type="date" id="excFecha" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2F5D50]/20" />
+                </div>
+                <div id="excDesdeWrap" class="hidden">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Desde</label>
+                    <input type="date" id="excDesde" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2F5D50]/20" />
+                </div>
+                <div id="excHastaWrap" class="hidden">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Hasta</label>
+                    <input type="date" id="excHasta" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2F5D50]/20" />
+                </div>
+            </div>
+            <div id="excHoras" class="hidden grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Entrada</label>
+                    <input type="time" id="excOpen" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2F5D50]/20" />
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Salida</label>
+                    <input type="time" id="excClose" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2F5D50]/20" />
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Motivo (opcional)</label>
+                <input type="text" id="excMotivo" maxlength="200" placeholder="Ej. incapacidad, asunto personal..." class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2F5D50]/20" />
+            </div>
+            <p id="modalExcError" class="hidden text-sm text-red-600 font-semibold"></p>
+            <div class="flex gap-3 pt-2">
+                <button onclick="cerrarModalExcepcion()" class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">Cancelar</button>
+                <button onclick="guardarExcepcion()" id="btnGuardarExc" class="flex-1 py-2.5 rounded-xl bg-[#2F5D50] text-white text-sm font-semibold hover:bg-[#234D20] transition-colors">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: citas afectadas tras registrar excepción -->
+    <div id="modalAfectadas" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+                </div>
+                <h3 class="text-lg font-bold text-amber-700">Citas que quedan fuera del horario</h3>
+            </div>
+            <p class="text-sm text-gray-600">Estas citas ya estaban agendadas y ahora quedan fuera de la disponibilidad del fisio. <strong>No se cancelan automáticamente</strong>: hay que reagendarlas o cancelarlas desde la Agenda.</p>
+            <div id="afectadasLista" class="divide-y divide-gray-100 border border-gray-100 rounded-xl"></div>
+            <button onclick="document.getElementById('modalAfectadas').classList.add('hidden')" class="w-full py-2.5 rounded-xl bg-[#2F5D50] text-white text-sm font-semibold hover:bg-[#234D20] transition-colors">Entendido</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 z-[60] px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold text-white"></div>
+
+    <script define:vars={{ fisios }}>
+        const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+        let fisioActual = null;
+        let diaEditando = null;
+
+        const $ = (id) => document.getElementById(id);
+        const hhmm = (t) => (t ? t.substring(0, 5) : "");
+
+        function toast(mensaje, esError = false) {
+            const el = $("toast");
+            el.textContent = mensaje;
+            el.className = `fixed bottom-6 right-6 z-[60] px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold text-white ${esError ? "bg-red-600" : "bg-[#2F5D50]"}`;
+            el.classList.remove("hidden");
+            setTimeout(() => el.classList.add("hidden"), 3500);
+        }
+
+        // ---- Selector de fisio ----
+        const select = $("fisioSelect");
+        fisios.forEach((f) => {
+            const opt = document.createElement("option");
+            opt.value = f.id;
+            opt.textContent = `${f.firstname} ${f.lastname} ${f.motherlastname ?? ""}`.trim();
+            select.appendChild(opt);
+        });
+        select.addEventListener("change", () => {
+            fisioActual = select.value ? Number(select.value) : null;
+            $("panelesHorario").classList.toggle("hidden", !fisioActual);
+            if (fisioActual) cargarTodo();
+        });
+
+        async function cargarTodo() {
+            await Promise.all([cargarSemana(), cargarExcepciones()]);
+        }
+
+        // ---- Horario semanal ----
+        async function cargarSemana() {
+            const res = await fetch(`/api/v1/EmployeeSchedule/${fisioActual}`);
+            if (!res.ok) return toast("Error al cargar el horario", true);
+            const semana = await res.json();
+            const body = $("semanaBody");
+            body.innerHTML = "";
+            semana.forEach((dia) => {
+                const esPropio = dia.source === "employee";
+                const badge = esPropio
+                    ? '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">Propio</span>'
+                    : dia.source === "clinic"
+                      ? '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">Clínica</span>'
+                      : '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">—</span>';
+                const horario = dia.is_working
+                    ? `${hhmm(dia.openhour)} – ${hhmm(dia.closehour)}`
+                    : '<span class="text-gray-400">No labora</span>';
+                const descanso = dia.is_working && dia.break_start
+                    ? `${hhmm(dia.break_start)} – ${hhmm(dia.break_end)}`
+                    : '<span class="text-gray-300">—</span>';
+                const tr = document.createElement("tr");
+                tr.className = "border-b border-[#2F5D50]/5 hover:bg-white/50 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-gray-700">${DIAS[dia.dayofweek]}</td>
+                    <td class="p-4">${badge}</td>
+                    <td class="p-4 text-gray-700">${horario}</td>
+                    <td class="p-4 text-gray-700">${descanso}</td>
+                    <td class="p-4 text-center">
+                        <button title="Personalizar" class="w-8 h-8 rounded-lg text-[#2F5D50] hover:bg-[#2F5D50]/10 transition-colors" onclick="abrirModalDia(${dia.dayofweek})">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        ${esPropio ? `<button title="Restaurar horario de clínica" class="w-8 h-8 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors" onclick="restaurarDia(${dia.dayofweek})"><i class="fa-solid fa-rotate-left text-xs"></i></button>` : ""}
+                    </td>`;
+                tr.dataset.dia = JSON.stringify(dia);
+                body.appendChild(tr);
+            });
+        }
+
+        window.abrirModalDia = (dayofweek) => {
+            diaEditando = dayofweek;
+            const fila = [...$("semanaBody").children].find((tr) => JSON.parse(tr.dataset.dia).dayofweek === dayofweek);
+            const dia = fila ? JSON.parse(fila.dataset.dia) : null;
+            $("modalDiaTitulo").textContent = `${DIAS[dayofweek]} — horario propio`;
+            document.querySelector(`input[name="diaLabora"][value="${dia && !dia.is_working ? "no" : "si"}"]`).checked = true;
+            $("diaOpen").value = dia?.is_working ? hhmm(dia.openhour) : "";
+            $("diaClose").value = dia?.is_working ? hhmm(dia.closehour) : "";
+            $("diaBreakStart").value = dia?.is_working ? hhmm(dia.break_start) : "";
+            $("diaBreakEnd").value = dia?.is_working ? hhmm(dia.break_end) : "";
+            $("modalDiaError").classList.add("hidden");
+            toggleHorasDia();
+            $("modalDia").classList.remove("hidden");
+        };
+        window.cerrarModalDia = () => $("modalDia").classList.add("hidden");
+        window.toggleHorasDia = () => {
+            const labora = document.querySelector('input[name="diaLabora"]:checked').value === "si";
+            $("diaHoras").classList.toggle("hidden", !labora);
+        };
+
+        window.guardarDia = async () => {
+            const labora = document.querySelector('input[name="diaLabora"]:checked').value === "si";
+            const body = labora
+                ? { is_working: true, openhour: $("diaOpen").value, closehour: $("diaClose").value,
+                    break_start: $("diaBreakStart").value || null, break_end: $("diaBreakEnd").value || null }
+                : { is_working: false };
+            $("btnGuardarDia").disabled = true;
+            try {
+                const res = await fetch(`/api/v1/EmployeeSchedule/${fisioActual}/${diaEditando}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
+                });
+                const json = await res.json();
+                if (!res.ok) throw new Error(json.error || "Error al guardar");
+                cerrarModalDia();
+                toast("Horario guardado");
+                cargarSemana();
+            } catch (err) {
+                const el = $("modalDiaError");
+                el.textContent = err.message;
+                el.classList.remove("hidden");
+            } finally {
+                $("btnGuardarDia").disabled = false;
+            }
+        };
+
+        window.restaurarDia = async (dayofweek) => {
+            if (!confirm(`¿Restaurar ${DIAS[dayofweek]} al horario general de la clínica?`)) return;
+            const res = await fetch(`/api/v1/EmployeeSchedule/${fisioActual}/${dayofweek}`, { method: "DELETE" });
+            if (res.ok || res.status === 404) {
+                toast("Día restaurado al horario de clínica");
+                cargarSemana();
+            } else {
+                toast("Error al restaurar", true);
+            }
+        };
+
+        // ---- Excepciones ----
+        async function cargarExcepciones() {
+            const hoy = new Date().toLocaleDateString("sv-SE");
+            const res = await fetch(`/api/v1/EmployeeSchedule/${fisioActual}/exceptions?from=${hoy}`);
+            if (!res.ok) return toast("Error al cargar ausencias", true);
+            const lista = await res.json();
+            const cont = $("excepcionesLista");
+            cont.innerHTML = "";
+            $("excepcionesVacio").classList.toggle("hidden", lista.length > 0);
+            lista.forEach((exc) => {
+                const fecha = exc.exception_date.substring(0, 10);
+                const [y, m, d] = fecha.split("-").map(Number);
+                const fechaTxt = new Date(y, m - 1, d).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
+                const tipo = exc.is_working
+                    ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">Especial ${hhmm(exc.openhour)}–${hhmm(exc.closehour)}</span>`
+                    : '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600">Ausencia</span>';
+                const row = document.createElement("div");
+                row.className = "p-4 flex items-center justify-between gap-3 hover:bg-white/50 transition-colors";
+                row.innerHTML = `
+                    <div class="min-w-0">
+                        <p class="font-semibold text-gray-700 text-sm capitalize">${fechaTxt}</p>
+                        <div class="flex items-center gap-2 mt-1 flex-wrap">${tipo}
+                            ${exc.reason ? `<span class="text-xs text-gray-400 truncate">${exc.reason}</span>` : ""}
+                        </div>
+                    </div>
+                    <button title="Eliminar" class="w-8 h-8 rounded-lg text-red-500 hover:bg-red-50 transition-colors flex-shrink-0" onclick="eliminarExcepcion(${exc.id})">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>`;
+                cont.appendChild(row);
+            });
+        }
+
+        window.abrirModalExcepcion = () => {
+            const hoy = new Date().toLocaleDateString("sv-SE");
+            ["excFecha", "excDesde", "excHasta"].forEach((id) => { $(id).value = ""; $(id).min = hoy; });
+            $("excMotivo").value = "";
+            $("excRango").checked = false;
+            document.querySelector('input[name="excTipo"][value="ausencia"]').checked = true;
+            $("modalExcError").classList.add("hidden");
+            toggleRangoExcepcion();
+            toggleHorasExcepcion();
+            $("modalExcepcion").classList.remove("hidden");
+        };
+        window.cerrarModalExcepcion = () => $("modalExcepcion").classList.add("hidden");
+        window.toggleHorasExcepcion = () => {
+            const especial = document.querySelector('input[name="excTipo"]:checked').value === "especial";
+            $("excHoras").classList.toggle("hidden", !especial);
+        };
+        window.toggleRangoExcepcion = () => {
+            const rango = $("excRango").checked;
+            $("excFechaWrap").classList.toggle("hidden", rango);
+            $("excDesdeWrap").classList.toggle("hidden", !rango);
+            $("excHastaWrap").classList.toggle("hidden", !rango);
+        };
+
+        window.guardarExcepcion = async () => {
+            const especial = document.querySelector('input[name="excTipo"]:checked').value === "especial";
+            const rango = $("excRango").checked;
+            const body = {
+                is_working: especial,
+                reason: $("excMotivo").value || undefined,
+                ...(especial && { openhour: $("excOpen").value, closehour: $("excClose").value }),
+                ...(rango
+                    ? { start_date: $("excDesde").value, end_date: $("excHasta").value }
+                    : { date: $("excFecha").value }),
+            };
+            $("btnGuardarExc").disabled = true;
+            try {
+                const res = await fetch(`/api/v1/EmployeeSchedule/${fisioActual}/exceptions`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
+                });
+                const json = await res.json();
+                if (!res.ok) throw new Error(json.error || "Error al guardar");
+                cerrarModalExcepcion();
+                toast("Registrado correctamente");
+                cargarExcepciones();
+                if (json.affected_appointments?.length) mostrarAfectadas(json.affected_appointments);
+            } catch (err) {
+                const el = $("modalExcError");
+                el.textContent = err.message;
+                el.classList.remove("hidden");
+            } finally {
+                $("btnGuardarExc").disabled = false;
+            }
+        };
+
+        function mostrarAfectadas(citas) {
+            const cont = $("afectadasLista");
+            cont.innerHTML = citas
+                .map((c) => `
+                    <div class="p-3 flex items-center justify-between gap-3 text-sm">
+                        <div>
+                            <p class="font-semibold text-gray-700">${c.patientname}</p>
+                            <p class="text-xs text-gray-400">${c.currentday.substring(0, 10)} · ${hhmm(c.inithour)}–${hhmm(c.endhour)}</p>
+                        </div>
+                        <span class="text-xs font-bold text-amber-600 uppercase">${c.status}</span>
+                    </div>`)
+                .join("");
+            $("modalAfectadas").classList.remove("hidden");
+        }
+
+        window.eliminarExcepcion = async (id) => {
+            if (!confirm("¿Eliminar este registro? El fisio volverá a su horario normal ese día.")) return;
+            const res = await fetch(`/api/v1/EmployeeSchedule/exceptions/${id}`, { method: "DELETE" });
+            if (res.ok) {
+                toast("Eliminado");
+                cargarExcepciones();
+            } else {
+                toast("Error al eliminar", true);
+            }
+        };
+    </script>
+</Layout>

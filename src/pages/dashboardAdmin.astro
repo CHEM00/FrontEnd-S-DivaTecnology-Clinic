@@ -816,26 +816,18 @@ try {
 			}
 		}
 
-		const physioColorsChart = [];
-
-		function getPhysioColor(name, id) {
-			// Try to use ID first to match Cards
-			if (id) {
-				const numId = parseInt(id, 10);
-				if (!isNaN(numId)) {
-					return physioColorsChart[numId % physioColorsChart.length];
-				}
-			}
-
-			// Fallback: Hash name if no ID
-			if (!name) return "#9ca3af";
-			let hash = 0;
-			for (let i = 0; i < name.length; i++) {
-				hash = name.charCodeAt(i) + ((hash << 5) - hash);
-			}
-			const index = Math.abs(hash) % physioColorsChart.length;
-			return physioColorsChart[index];
-		}
+		const physioColorsChart = [
+			"#2F5D50",
+			"#C2703D",
+			"#4A7BA6",
+			"#8E5DA6",
+			"#B0413E",
+			"#D9A404",
+			"#3E8E6E",
+			"#A65D74",
+			"#5D6FA6",
+			"#7A8B3D",
+		];
 
 		function drawChart(apiData) {
 			// Change format to: [Label, Value, Style]
@@ -843,10 +835,11 @@ try {
 			const dataArray = [["Fisioterapeuta", "Ventas", { role: "style" }]];
 
 			if (apiData && apiData.length > 0) {
-				apiData.forEach((item) => {
+				apiData.forEach((item, index) => {
 					const name = item.empleado_nombre || "Desconocido";
 					const val = Number(item.total_adicionales) || 0;
-					const color = getPhysioColor(name);
+					const color =
+						physioColorsChart[index % physioColorsChart.length];
 					dataArray.push([name, val, color]);
 				});
 			} else {
