@@ -349,12 +349,6 @@ try {
                             <h4 class="font-bold text-gray-800 text-sm">
                                 Revisión de Documento
                             </h4>
-                            <button
-                                id="clearSignatureBtn"
-                                class="text-xs text-red-500 hover:text-red-700 font-medium underline"
-                            >
-                                Limpiar firma
-                            </button>
                         </div>
 
                         <!-- Document Container (Scrollable Paper) -->
@@ -485,6 +479,16 @@ try {
                                         >
                                             Firmar aquí
                                         </div>
+                                    </div>
+                                    <div class="mt-2 flex justify-end">
+                                        <button
+                                            type="button"
+                                            id="clearSignatureBtn"
+                                            class="text-xs text-red-500 hover:text-red-700 font-medium underline flex items-center gap-1"
+                                        >
+                                            <i class="fa-solid fa-eraser"></i>
+                                            Limpiar firma
+                                        </button>
                                     </div>
                                 </div>
 
@@ -2709,7 +2713,7 @@ try {
                         del.innerHTML =
                             '<i class="fa-solid fa-xmark text-[10px]"></i>';
                         del.className =
-                            "absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow";
+                            "absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors shadow";
                         del.onclick = async () => {
                             if (!confirm("¿Eliminar esta fotografía?")) return;
                             await fetch(
