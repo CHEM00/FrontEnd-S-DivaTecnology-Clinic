@@ -1043,13 +1043,21 @@ try {
 	</script>
 	<!-- Injection Script -->
 	<script
-		define:vars={{ pacientes, empleados, paquetes, servicios, adicionales }}
+		define:vars={{
+			pacientes,
+			empleados,
+			paquetes,
+			servicios,
+			adicionales,
+			backendUrl,
+		}}
 	>
 		window.pacientesData = pacientes;
 		window.empleadosData = empleados;
 		window.paquetesData = paquetes;
 		window.serviciosData = servicios;
 		window.adicionalesData = adicionales;
+		window.backendUrl = backendUrl;
 	</script>
 
 	<!-- Modal Agregar Cita (Importado y adaptado) -->
@@ -1524,7 +1532,7 @@ try {
 			const clientSearchInput = document.getElementById(
 				"appointment-search-client",
 			);
-			const backendUrl = window.location.origin; // O usar variable de entorno si está expuesta
+			const backendUrl = window.backendUrl || window.location.origin;
 
 			// Globals
 			let currentAppointments = [];
