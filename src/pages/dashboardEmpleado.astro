@@ -2707,7 +2707,11 @@ try {
                         img.alt = "Foto de la sesión";
                         img.className =
                             "w-full h-20 object-cover rounded-lg border border-teal-100 cursor-pointer";
-                        img.onclick = () => window.open(url, "_blank");
+                        img.onclick = () =>
+                            (window as any).openPhoto(
+                                photo.path,
+                                "Fotografía de la sesión",
+                            );
                         const del = document.createElement("button");
                         del.type = "button";
                         del.innerHTML =
