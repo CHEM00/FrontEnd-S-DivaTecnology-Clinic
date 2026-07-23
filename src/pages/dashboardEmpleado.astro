@@ -3882,6 +3882,25 @@ try {
                                 `;
                             }
 
+                            let photosHtml = "";
+                            const sessionPhotos = Array.isArray(item.photos)
+                                ? item.photos
+                                : [];
+                            if (sessionPhotos.length > 0) {
+                                const thumbs = sessionPhotos
+                                    .map((p: string) => {
+                                        const src = `${backendUrl}/${String(p).replace(/^\//, "")}`;
+                                        return `<img src="${src}" loading="lazy" alt="Foto de la sesión" class="w-10 h-10 object-cover rounded-md border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity" onclick="openPhoto('${p}', 'Fotografía de la sesión')" />`;
+                                    })
+                                    .join("");
+                                photosHtml = `
+                                    <div class="mt-3 pt-3 border-t border-gray-100/50">
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-1 flex items-center gap-1"><i class="fa-solid fa-camera"></i> Fotografías</p>
+                                        <div class="flex flex-wrap gap-1.5">${thumbs}</div>
+                                    </div>
+                                `;
+                            }
+
                             return `
                                 <div class="relative group rounded-xl shadow-sm border border-gray-100 ${cardStyles.border} ${cardStyles.bg} p-4 transition-all duration-200 hover:shadow-md overflow-hidden">
                                     ${watermark}
@@ -3917,6 +3936,7 @@ try {
                                             
                                             ${valuationHtml}
                                             ${additionalsHtml}
+                                            ${photosHtml}
                                         </div>
                                     </div>
 
