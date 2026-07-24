@@ -55,6 +55,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
             lastname: String(payload.lastname ?? ""),
         };
 
+        const ROLE_PRACTICANTE = 4;
+        const practicanteRoutes = ["/HistorialCita"];
+        const practicanteHome = "/HistorialCita";
+
+        if (userRole === ROLE_PRACTICANTE) {
+            if (practicanteRoutes.some(route => path.startsWith(route))) {
+                return next();
+            }
+            return redirect(practicanteHome);
+        }
+
         // Rutas de Administrador (Rol 2)
         const adminRoutes = ["/dashboardAdmin", "/configuracion", "/Empleado", "/Agenda", "/HistorialCita", "/Pago", "/Paciente", "/ProductoServicio", "/Roles", "/RolesPermiso", "/Permisos", "/GestionHorarios"];
 

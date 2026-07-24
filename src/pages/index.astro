@@ -109,6 +109,8 @@ import Layout from "../layouts/Layout.astro";
           const roleId = Number(data.user?.idrol);
           if (roleId === 3) {
             window.location.href = "/dashboardEmpleado";
+          } else if (roleId === 4) {
+            window.location.href = "/HistorialCita";
           } else if (roleId === 2) {
             window.location.href = "/dashboardAdmin";
           } else {
