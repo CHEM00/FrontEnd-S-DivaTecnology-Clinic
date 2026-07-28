@@ -724,13 +724,24 @@ try {
                                         class="text-teal-500">(0/4)</span
                                     ></label
                                 >
-                                <button
-                                    type="button"
-                                    id="addSessionPhotoBtn"
-                                    class="text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed px-3 py-1.5 rounded-lg transition-colors"
-                                >
-                                    <i class="fa-solid fa-camera mr-1"></i>Agregar
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        id="sessionPhotoCameraBtn"
+                                        class="text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed px-3 py-2 rounded-lg transition-colors"
+                                    >
+                                        <i class="fa-solid fa-camera mr-1"
+                                        ></i>Cámara
+                                    </button>
+                                    <button
+                                        type="button"
+                                        id="sessionPhotoGalleryBtn"
+                                        class="text-xs font-bold text-teal-700 bg-white border border-teal-300 hover:bg-teal-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed px-3 py-2 rounded-lg transition-colors"
+                                    >
+                                        <i class="fa-solid fa-images mr-1"
+                                        ></i>Galería
+                                    </button>
+                                </div>
                             </div>
                             <div
                                 id="sessionPhotosGrid"
@@ -748,12 +759,21 @@ try {
                                 class="hidden text-xs text-red-600 font-semibold mt-2"
                             >
                             </p>
-                            <!-- accept="image/*" (no una lista de MIME) es lo que
-                                 hace que Android ofrezca la cámara además de la
-                                 galería; el filtrado de formatos se hace en el JS. -->
+                            <!-- Dos inputs separados a propósito: Chrome en Android
+                                 saca la cámara del selector en cuanto el input lleva
+                                 `multiple`, así que la toma directa necesita el suyo
+                                 con `capture` y sin `multiple`. El filtrado de
+                                 formatos se hace en el JS. -->
                             <input
                                 type="file"
-                                id="sessionPhotoInput"
+                                id="sessionPhotoCameraInput"
+                                accept="image/*"
+                                capture="environment"
+                                class="hidden"
+                            />
+                            <input
+                                type="file"
+                                id="sessionPhotoGalleryInput"
                                 accept="image/*"
                                 multiple
                                 class="hidden"
@@ -2703,11 +2723,15 @@ try {
                 const grid = document.getElementById("sessionPhotosGrid");
                 const empty = document.getElementById("sessionPhotosEmpty");
                 const count = document.getElementById("sessionPhotosCount");
-                const addBtn = document.getElementById(
-                    "addSessionPhotoBtn",
-                ) as HTMLButtonElement;
+                const addBtns = [
+                    "sessionPhotoCameraBtn",
+                    "sessionPhotoGalleryBtn",
+                ].map(
+                    (id) => document.getElementById(id) as HTMLButtonElement,
+                );
                 const errorEl = document.getElementById("sessionPhotosError");
-                if (!grid || !empty || !count || !addBtn) return;
+                if (!grid || !empty || !count || addBtns.some((b) => !b))
+                    return;
                 errorEl?.classList.add("hidden");
                 grid.innerHTML = "";
                 try {
@@ -2716,7 +2740,10 @@ try {
                     );
                     const photos = res.ok ? await res.json() : [];
                     count.textContent = `(${photos.length}/${MAX_SESSION_PHOTOS})`;
-                    addBtn.disabled = photos.length >= MAX_SESSION_PHOTOS;
+                    addBtns.forEach(
+                        (b) =>
+                            (b.disabled = photos.length >= MAX_SESSION_PHOTOS),
+                    );
                     empty.classList.toggle("hidden", photos.length > 0);
                     photos.forEach((photo: any) => {
                         const url = `${backendUrl}/${String(photo.path).replace(/^\//, "")}`;
@@ -2756,22 +2783,29 @@ try {
                 }
             }
 
-            document
-                .getElementById("addSessionPhotoBtn")
-                ?.addEventListener("click", () =>
-                    document.getElementById("sessionPhotoInput")?.click(),
-                );
-
             const ALLOWED_PHOTO_TYPES = [
                 "image/jpeg",
                 "image/png",
                 "image/webp",
             ];
 
-            document
-                .getElementById("sessionPhotoInput")
-                ?.addEventListener("change", async (e) => {
-                    const input = e.target as HTMLInputElement;
+            [
+                ["sessionPhotoCameraBtn", "sessionPhotoCameraInput"],
+                ["sessionPhotoGalleryBtn", "sessionPhotoGalleryInput"],
+            ].forEach(([btnId, inputId]) => {
+                document
+                    .getElementById(btnId)
+                    ?.addEventListener("click", () =>
+                        document.getElementById(inputId)?.click(),
+                    );
+                document
+                    .getElementById(inputId)
+                    ?.addEventListener("change", (e) =>
+                        uploadSessionPhotos(e.target as HTMLInputElement),
+                    );
+            });
+
+            async function uploadSessionPhotos(input: HTMLInputElement) {
                     const errorEl =
                         document.getElementById("sessionPhotosError");
                     if (
@@ -2819,7 +2853,7 @@ try {
                         }
                     }
                     loadAppointmentPhotos(currentPhotosAppointmentId);
-                });
+            }
 
             async function loadDraft(appointmentId: string) {
                 savedAdditionals.clear();
