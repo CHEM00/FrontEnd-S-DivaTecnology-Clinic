@@ -878,7 +878,7 @@ try {
 			// Time: 'inithour' or 'start_time'
 			const timeRaw = a.inithour || a.start_time || "";
 			document.getElementById("detailTime").textContent =
-				timeRaw.substring(0, 5) || "--";
+				window.formatearHora(timeRaw) || "--";
 
 			// Physio: 'firstname' + 'lastname'
 			const empName =
@@ -1070,9 +1070,8 @@ try {
 
 				// Format Date and Time separately
 				const formattedDate = formatDate(dateRaw, null).trim(); // Just date
-				const formattedTime = timeRaw
-					? timeRaw.substring(0, 5)
-					: "--:--";
+				const formattedTime =
+					window.formatearHora(timeRaw) || "--:--";
 
 				// Enhanced Service Badge
 				let serviceBadgeClass =

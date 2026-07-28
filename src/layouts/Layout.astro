@@ -10,6 +10,21 @@ const { title, description, showSpeedDial = true } = Astro.props;
 import "../styles/global.css";
 
 import SpeedDial from "../components/SpeedDial.astro";
+import {
+	formatearHora,
+	formatearRangoHoras,
+	escribirHoraCampo,
+	leerHoraCampo,
+} from "../utils/hora";
+
+const helpersHora = Object.entries({
+	formatearHora,
+	formatearRangoHoras,
+	escribirHoraCampo,
+	leerHoraCampo,
+})
+	.map(([nombre, fn]) => `window.${nombre} = ${fn.toString()};`)
+	.join("\n");
 ---
 
 <!doctype html>
@@ -33,6 +48,8 @@ import SpeedDial from "../components/SpeedDial.astro";
 		/>
 		<title>{title || "Clínica"}</title>
 		{description && <meta name="description" content={description} />}
+
+		<script is:inline set:html={helpersHora} />
 
 		<!-- GSAP & Axios -->
 		<script

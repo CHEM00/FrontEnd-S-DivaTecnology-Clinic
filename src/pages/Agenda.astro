@@ -398,7 +398,6 @@ try {
                     <select
                         id="agregarIdService"
                         class="bg-white border border-gray-200 w-full rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#2F5D50]/20 outline-none transition-all"
-                        required
                     >
                         <option value="">Seleccionar servicio...</option>
                         {
@@ -644,6 +643,7 @@ try {
                 ) => Promise<void>;
                 openEditModal: (app: any) => void;
                 handlePackageUI: (has: boolean) => void;
+                syncServicioPaqueteUI: () => void;
                 filterPatients: () => void;
                 selectPatient: (id: string, name: string) => void;
             }
@@ -1067,11 +1067,9 @@ try {
                 } else {
                     if (packageOptionContainer)
                         packageOptionContainer.classList.add("hidden");
-                    if (usePackageCheckbox) {
-                        usePackageCheckbox.checked = false;
-                        // Trigger change if needed, though usually manual check
-                    }
+                    if (usePackageCheckbox) usePackageCheckbox.checked = false;
                 }
+                window.syncServicioPaqueteUI();
             }
 
             // --- 1. Buscador de Pacientes ---
@@ -1305,7 +1303,8 @@ try {
                                         const option =
                                             document.createElement("option");
                                         option.value = hora;
-                                        option.textContent = hora;
+                                        option.textContent =
+                                            window.formatearHora(hora);
 
                                         // Metadata from payload
                                         if (item.idemployed) {
@@ -1336,8 +1335,7 @@ try {
                                         const option =
                                             document.createElement("option");
                                         option.value = selectedTime;
-                                        option.textContent =
-                                            selectedTime + " (Actual)";
+                                        option.textContent = `${window.formatearHora(selectedTime)} (Actual)`;
                                         option.selected = true;
                                         horaInicioSelect.appendChild(option);
                                     } else {
@@ -1413,7 +1411,7 @@ try {
                 // 3.2 Calcular Hora Fin (Usar payload o fallback)
                 if (horaFinInput) {
                     if (datasetEndHour) {
-                        horaFinInput.value = datasetEndHour;
+                        window.escribirHoraCampo(horaFinInput, datasetEndHour);
                     } else {
                         // Fallback Calculation
                         const [hours, minutes] = horaInicio
@@ -1424,54 +1422,66 @@ try {
                         fecha.setMinutes(minutes);
                         fecha.setHours(fecha.getHours() + 1);
                         const horaFin = `${String(fecha.getHours()).padStart(2, "0")}:${String(fecha.getMinutes()).padStart(2, "0")}`;
-                        horaFinInput.value = horaFin;
+                        window.escribirHoraCampo(horaFinInput, horaFin);
                     }
                 }
             });
 
             // --- 4. Exclusividad Servicio vs Paquete ---
-            servicioSelect?.addEventListener("change", () => {
-                if (servicioSelect.value && servicioSelect.value !== "") {
-                    if (paqueteSelect) {
-                        paqueteSelect.value = "";
-                        paqueteSelect.disabled = true;
-                        paqueteSelect.classList.add(
-                            "bg-gray-100",
-                            "cursor-not-allowed",
-                        );
-                    }
-                } else {
-                    if (paqueteSelect) {
-                        paqueteSelect.disabled = false;
-                        paqueteSelect.classList.remove(
-                            "bg-gray-100",
-                            "cursor-not-allowed",
-                        );
-                    }
-                }
-            });
+            servicioSelect?.addEventListener("change", () =>
+                window.syncServicioPaqueteUI(),
+            );
+            paqueteSelect?.addEventListener("change", () =>
+                window.syncServicioPaqueteUI(),
+            );
+            usePackageCheckbox?.addEventListener("change", () =>
+                window.syncServicioPaqueteUI(),
+            );
 
-            paqueteSelect?.addEventListener("change", () => {
-                if (paqueteSelect.value && paqueteSelect.value !== "") {
-                    if (servicioSelect) {
-                        servicioSelect.value = "";
-                        servicioSelect.disabled = true;
-                        servicioSelect.classList.add(
-                            "bg-gray-100",
-                            "cursor-not-allowed",
-                        );
-                    }
-                } else {
-                    if (servicioSelect) {
-                        servicioSelect.disabled = false;
-                        servicioSelect.classList.remove(
-                            "bg-gray-100",
-                            "cursor-not-allowed",
-                        );
-                    }
-                }
-            });
+            window.syncServicioPaqueteUI();
         });
+
+        window.syncServicioPaqueteUI = () => {
+            const form = document.getElementById(
+                "formAgregarCita",
+            ) as HTMLFormElement | null;
+            const servicio = document.getElementById(
+                "agregarIdService",
+            ) as HTMLSelectElement | null;
+            const paquete = document.getElementById(
+                "agregarIdPackage",
+            ) as HTMLSelectElement | null;
+            const usarSesion = document.getElementById(
+                "usePackageCheckbox",
+            ) as HTMLInputElement | null;
+            if (!servicio || !paquete) return;
+
+            const bloquear = (el: HTMLElement, off: boolean) => {
+                (el as HTMLSelectElement | HTMLInputElement).disabled = off;
+                el.classList.toggle("bg-gray-100", off);
+                el.classList.toggle("cursor-not-allowed", off);
+            };
+
+            const citaDePaquete = form?.dataset.isPackage === "true";
+            const compraPaquete = !!paquete.value;
+            const usaSesion = !!usarSesion?.checked;
+            const cubiertaPorPaquete =
+                citaDePaquete || compraPaquete || usaSesion;
+
+            if (cubiertaPorPaquete) servicio.value = "";
+            servicio.required = !cubiertaPorPaquete;
+            bloquear(servicio, cubiertaPorPaquete);
+
+            const paqueteBloqueado =
+                citaDePaquete || usaSesion || !!servicio.value;
+            if (paqueteBloqueado && !citaDePaquete && !compraPaquete)
+                paquete.value = "";
+            bloquear(paquete, paqueteBloqueado);
+
+            if (usarSesion) {
+                usarSesion.disabled = citaDePaquete || compraPaquete;
+            }
+        };
 
         async function cargarEmpleados(fecha?: string) {
             const select = document.getElementById(
@@ -1848,12 +1858,8 @@ try {
                 // We use status style here for clarity and "dashboardAdmin" look.
                 card.className = `glass-panel p-4 rounded-xl cursor-pointer transition-all border-y border-r border-white/50 shadow-sm group mb-3 border-l-4 ${config.border.replace("border-", "border-l-")} hover:bg-gray-50`;
 
-                const initHour = cita.inithour
-                    ? cita.inithour.substring(0, 5)
-                    : "--:--";
-                const endHour = cita.endhour
-                    ? cita.endhour.substring(0, 5)
-                    : "--:--";
+                const initHour = window.formatearHora(cita.inithour) || "--:--";
+                const endHour = window.formatearHora(cita.endhour) || "--:--";
 
                 // Resolver Paciente (Nombre y Edad)
                 let patientName = cita.patientname || "Paciente";
@@ -1873,31 +1879,15 @@ try {
 
                 let packInfo = "";
                 if (cita.salepackage) {
-                    const pkgBadgeId = `pkg-badge-${cita.id || cita.idappointment || Math.random()}`;
+                    const etiquetaPaquete = cita.session_number
+                        ? `Paquete: Sesión ${cita.session_number} de ${cita.total_sessions}`
+                        : "Paquete: sesión no consumida";
                     packInfo = `
-                        <div id="${pkgBadgeId}" class="mt-1 flex items-center gap-1 text-[10px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md inline-block border border-purple-100">
+                        <div class="mt-1 flex items-center gap-1 text-[10px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md inline-block border border-purple-100">
                              <i class="fa-solid fa-box-open"></i>
-                             <span>Paquete: Cargando...</span>
+                             <span>${etiquetaPaquete}</span>
                         </div>
                     `;
-                    // Fetch session data async after card renders
-                    setTimeout(async () => {
-                        try {
-                            const res = await fetch(`/api/v1/Pacientes/${cita.idpatient}/paquete/activo`);
-                            if (res.ok) {
-                                const pkgData = await res.json();
-                                const badgeEl = document.getElementById(pkgBadgeId);
-                                if (badgeEl && pkgData) {
-                                    const sessionNum = pkgData.sessions_used != null ? (pkgData.sessions_used + 1) : '?';
-                                    const totalSessions = pkgData.sessions_total || '?';
-                                    const spanEl = badgeEl.querySelector('span');
-                                    if (spanEl) spanEl.textContent = `Paquete: Sesión ${sessionNum} de ${totalSessions}`;
-                                }
-                            }
-                        } catch (e) {
-                            console.warn("Error fetching package info for badge:", e);
-                        }
-                    }, 0);
                 }
 
                 card.innerHTML = `
@@ -2002,12 +1992,10 @@ try {
             };
             sidePanelContentEl.appendChild(editBtn);
 
-            const initHour = appointment.inithour
-                ? appointment.inithour.substring(0, 5)
-                : "--:--";
-            const endHour = appointment.endhour
-                ? appointment.endhour.substring(0, 5)
-                : "--:--";
+            const initHour =
+                window.formatearHora(appointment.inithour) || "--:--";
+            const endHour =
+                window.formatearHora(appointment.endhour) || "--:--";
 
             const content = `
                 <div class="space-y-6 animate-fade-in">
@@ -2191,7 +2179,7 @@ try {
                         idemployed: idEmployedEl.value.toString(), // May be empty
                         currentday: currentDayEl.value,
                         inithour: initHourEl.value,
-                        endhour: endHourEl.value,
+                        endhour: window.leerHoraCampo(endHourEl),
                         status: statusEl?.value || "wait",
                         reason: reasonEl?.value || "",
                     };
@@ -2283,56 +2271,26 @@ try {
                         const payload: any = { ...data };
 
                         if (usePackage) {
-                            // 1. Validar que no haya seleccionado un paquete nuevo a comprar
-                            const idPackage = (
-                                document.getElementById(
-                                    "agregarIdPackage",
-                                ) as HTMLSelectElement
-                            )?.value;
                             if (idPackage) {
-                                alert(
-                                    "No puedes comprar un paquete nuevo y usar uno existente al mismo tiempo.",
+                                throw new Error(
+                                    "No puedes comprar un paquete nuevo y usar una sesión existente al mismo tiempo.",
                                 );
-                                return;
                             }
 
-                            // 2. Obtener el ID del paquete activo (sin consumir aun, o consumir si la logica lo requiere)
-                            // En dashboardEmpleado se consume aparte? No, aqui el endpoint de "consumir" retorna packageId
-                            // PERO el usuario quiere usar el endpoint "/paquete/activo" para obtener el ID y luego la API de Citas consume?
-                            // Re-lectura del usuario: "este es el payload... idpatientpackage: 27" y "se consume este endpoint...activo"
-                            // Si el endpoint 'activo' solo retorna data, entonces la CREACION de la cita debe hacer el consumo o el backend lo hace?
-                            // El endpoint 'POST /api/v1/Pacientes/:id/paquete/consumir' existe y retorna packageId.
-                            // Vamos a mantener la logica original de "consumir" si funciona, PERO si el usuario quiere usar 'activo' para obtener ID
-                            // quizas la cita CREATION se encarga de restar?
-                            // El payload del usuario tiene "idpatientpackage: 27".
-
-                            // Intentemos usar el endpoint 'activo' para obtener el ID, y confiar que el POST Citas lo maneja o que 'consumir' es lo correcto.
-                            // Si 'consumir' funciona, es mejor. Pero el usuario dice "se consume este endpoint ... activo".
-                            // Voy a usar el endpoint 'activo' para obtener ID.
-
-                            try {
-                                const pkgRes = await fetch(
-                                    `/api/v1/Pacientes/${data.idpatient}/paquete/activo`,
-                                );
-                                if (pkgRes.ok) {
-                                    const pkgData = await pkgRes.json();
-                                    if (pkgData && pkgData.id) {
-                                        payload.idpatientpackage = pkgData.id;
-                                    }
-                                } else {
-                                    console.error(
-                                        "Error fetching active package",
-                                    );
-                                }
-                            } catch (e) {
-                                console.error(e);
-                            }
-                        } else if (idPackage) {
-                            // Assign New Package
-                            const pkg = window.paquetesData?.find(
-                                (p: any) => p.id == idPackage,
+                            const pkgRes = await fetch(
+                                `/api/v1/Pacientes/${data.idpatient}/paquete/activo`,
                             );
-                            const total = pkg ? pkg.numsession : 1;
+                            const pkgData = pkgRes.ok
+                                ? await pkgRes.json().catch(() => null)
+                                : null;
+
+                            if (!pkgData?.id) {
+                                throw new Error(
+                                    "El paciente no tiene un paquete con sesiones disponibles. Véndele un paquete o elige un servicio.",
+                                );
+                            }
+                            payload.idpatientpackage = pkgData.id;
+                        } else if (idPackage) {
                             const resAsig = await fetch(
                                 `/api/v1/Pacientes/${data.idpatient}/paquete`,
                                 {
@@ -2345,23 +2303,17 @@ try {
                                     }),
                                 },
                             );
-                            if (resAsig.ok) {
-                                const d = await resAsig.json();
-                                if (d.id) payload.idpatientpackage = d.id;
-                                // Set ACTIVE in Patient
-                                await fetch(
-                                    `/api/v1/Pacientes/${data.idpatient}`,
-                                    {
-                                        method: "PATCH",
-                                        headers: {
-                                            "Content-Type": "application/json",
-                                        },
-                                        body: JSON.stringify({
-                                            havepackage: true,
-                                        }),
-                                    },
-                                ).catch((err) => console.error(err));
+
+                            const asignado = resAsig.ok
+                                ? await resAsig.json().catch(() => null)
+                                : null;
+
+                            if (!asignado?.id) {
+                                throw new Error(
+                                    "No se pudo registrar el paquete del paciente. La cita no se creó.",
+                                );
                             }
+                            payload.idpatientpackage = asignado.id;
                         }
 
                         const response = await fetch("/api/v1/Citas", {
@@ -2423,12 +2375,17 @@ try {
 
                     window.cerrarModal("modalAgregarCita");
                     form.reset();
+                    delete form.dataset.mode;
+                    delete form.dataset.editId;
+                    delete form.dataset.isPackage;
+                    delete form.dataset.idpatientpackage;
+                    window.syncServicioPaqueteUI();
                     if (initHourEl) {
                         initHourEl.innerHTML =
                             '<option value="">Seleccionar fecha primero</option>';
                         initHourEl.disabled = true;
                     }
-                    if (endHourEl) endHourEl.value = "";
+                    if (endHourEl) window.escribirHoraCampo(endHourEl, "");
 
                     // Recargar Agenda (Existing functions)
                     renderCalendario();
@@ -2673,54 +2630,38 @@ try {
                     idpatientpackage: app.idpatientpackage,
                     package: app.package,
                 });
-                if (app.salepackage || app.idpatientpackage || (app.package && app.package.session_number)) {
-                    form.dataset.isPackage = "true";
-                    // Store the patient_package ID for continuity/edit
-                    form.dataset.idpatientpackage = String(app.idpatientpackage || '');
+                const idPatientPackage =
+                    app.idpatientpackage ??
+                    app.package?.idpatientpackage ??
+                    null;
+                const esCitaDePaquete =
+                    !!idPatientPackage ||
+                    app.salepackage === true ||
+                    !!app.package?.total_sessions;
 
-                    // Visual Sync: Check the box
-                    const pkgCheckbox = document.getElementById(
-                        "usePackageCheckbox",
-                    ) as HTMLInputElement;
+                const pkgCheckbox = document.getElementById(
+                    "usePackageCheckbox",
+                ) as HTMLInputElement;
+
+                if (esCitaDePaquete) {
+                    form.dataset.isPackage = "true";
+                    form.dataset.idpatientpackage = String(
+                        idPatientPackage || "",
+                    );
+
                     if (pkgCheckbox) {
                         pkgCheckbox.checked = true;
-                        // Ensure container is visible
-                        const pkgContainer = document.getElementById(
-                            "packageOptionContainer",
-                        );
-                        if (pkgContainer)
-                            pkgContainer.classList.remove("hidden");
-                    }
-
-                    // Lock Service & Package Selects
-                    if (serviceEl) {
-                        serviceEl.value = "";
-                        serviceEl.disabled = true;
-                        serviceEl.classList.add(
-                            "bg-gray-100",
-                            "cursor-not-allowed",
-                        );
-                    }
-                    const pkgSelect = document.getElementById(
-                        "agregarIdPackage",
-                    ) as HTMLSelectElement;
-                    if (pkgSelect) {
-                        pkgSelect.disabled = true;
+                        document
+                            .getElementById("packageOptionContainer")
+                            ?.classList.remove("hidden");
                     }
                 } else {
                     delete form.dataset.isPackage;
-                    if (serviceEl) {
-                        serviceEl.disabled = false;
-                        serviceEl.classList.remove(
-                            "bg-gray-100",
-                            "cursor-not-allowed",
-                        );
-                    }
-                    const pkgCheckbox = document.getElementById(
-                        "usePackageCheckbox",
-                    ) as HTMLInputElement;
+                    delete form.dataset.idpatientpackage;
                     if (pkgCheckbox) pkgCheckbox.checked = false;
                 }
+
+                window.syncServicioPaqueteUI();
 
                 // Populate End Hour
                 const endTimeVal = app.endhour
@@ -2730,7 +2671,7 @@ try {
                     "agregarEndHour",
                 ) as HTMLInputElement;
                 if (endHourEl && endTimeVal) {
-                    endHourEl.value = endTimeVal;
+                    window.escribirHoraCampo(endHourEl, endTimeVal);
                 } else if (endHourEl && timeVal) {
                     // Fallback: Calculate +1 hour if endhour missing but inithour exists
                     const [h, m] = timeVal.split(":").map(Number);
@@ -2738,7 +2679,7 @@ try {
                     date.setHours(h);
                     date.setMinutes(m);
                     date.setHours(date.getHours() + 1);
-                    endHourEl.value = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+                    window.escribirHoraCampo(endHourEl, `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`);
                 }
 
                 window.abrirModalAgregar();
@@ -2778,6 +2719,8 @@ try {
                 form.reset();
                 delete form.dataset.mode;
                 delete form.dataset.editId;
+                delete form.dataset.isPackage;
+                delete form.dataset.idpatientpackage;
             }
             if (title) title.innerText = "NUEVA CITA";
             if (submitBtn) submitBtn.textContent = "GUARDAR";

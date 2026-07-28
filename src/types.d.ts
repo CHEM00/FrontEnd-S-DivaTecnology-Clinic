@@ -5,6 +5,10 @@ declare global {
         abrirModalAgregar: () => void;
         abrirModalAcciones: (id: string, nombre: string) => void;
         cerrarModal: (id: string) => void;
+        formatearHora: (hora?: string | null) => string;
+        formatearRangoHoras: (inicio?: string | null, fin?: string | null) => string;
+        escribirHoraCampo: (campo: HTMLInputElement | HTMLSelectElement | null, hora24?: string | null) => void;
+        leerHoraCampo: (campo: HTMLInputElement | HTMLSelectElement | null) => string;
     }
 
     interface Paciente {

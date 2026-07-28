@@ -283,9 +283,8 @@ try {
                 const initial = item.paciente
                     ? item.paciente.charAt(0).toUpperCase()
                     : "?";
-                const hora = item.hora_inicio
-                    ? item.hora_inicio.substring(0, 5)
-                    : "--:--";
+                const hora =
+                    window.formatearHora(item.hora_inicio) || "--:--";
                 const serviciosTags = item.servicios
                     ? item.servicios
                           .split(",")

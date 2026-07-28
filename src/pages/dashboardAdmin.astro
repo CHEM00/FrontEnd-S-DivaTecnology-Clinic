@@ -1822,7 +1822,7 @@ try {
                         ${pkgBadge}
                         <!-- Row 3: Time + Actions (Historial / Editar) -->
                         <div class="flex items-center justify-between mt-1.5 pt-1 border-t border-black/5">
-                            <span class="text-xs font-bold text-gray-600 font-mono">${app.inithour?.substring(0, 5) || "--:--"}</span>
+                            <span class="text-xs font-bold text-gray-600 font-mono">${window.formatearHora(app.inithour) || "--:--"}</span>
                             <div class="flex items-center gap-1">
                                 <button class="w-6 h-6 rounded-lg bg-white text-gray-400 hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 border border-gray-100"
                                         style="--hover-color: ${pColor}"
@@ -1986,8 +1986,9 @@ try {
 						document.getElementById("agregarCurrentday").value;
 					const inithour =
 						document.getElementById("agregarInitHour").value;
-					const endhour =
-						document.getElementById("agregarEndHour").value; // Opcional
+					const endhour = window.leerHoraCampo(
+						document.getElementById("agregarEndHour"),
+					); // Opcional
 					const idemployed =
 						document.getElementById("agregarIdEmployed").value;
 					const idservice =
@@ -2569,14 +2570,11 @@ try {
 				lista.innerHTML = data
 					.map((c) => {
 						const s = historialStatusInfo(c.status);
-						const hora = c.start_time
-							? String(c.start_time).substring(0, 5)
-							: "--:--";
+						const hora =
+							window.formatearHora(c.start_time) || "--:--";
 						const therapist =
 							String(c.therapist || "").trim() || "Sin asignar";
-						const horaFin = c.end_time
-							? String(c.end_time).substring(0, 5)
-							: "";
+						const horaFin = window.formatearHora(c.end_time);
 						const reasonHtml = c.reason
 							? `<div class="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-500 italic flex items-start gap-1.5">
 										<i class="fa-solid fa-comment-dots text-[10px] mt-0.5 opacity-60"></i>
@@ -2709,7 +2707,7 @@ try {
 							if (time && disponible) {
 								const opt = document.createElement("option");
 								opt.value = time;
-								opt.textContent = time;
+								opt.textContent = window.formatearHora(time);
 
 								// Metadata
 								if (slot.idemployed) {
@@ -2745,7 +2743,7 @@ try {
 							if (!exists) {
 								const opt = document.createElement("option");
 								opt.value = selectedTime;
-								opt.textContent = selectedTime + " (Actual)";
+								opt.textContent = `${window.formatearHora(selectedTime)} (Actual)`;
 								agendaHour.appendChild(opt);
 							}
 							agendaHour.value = selectedTime;
@@ -2807,7 +2805,10 @@ try {
 
 					if (horaInicio && horaFinInput) {
 						if (datasetEndHour) {
-							horaFinInput.value = datasetEndHour;
+							window.escribirHoraCampo(
+								horaFinInput,
+								datasetEndHour,
+							);
 						} else {
 							// Default + 1h
 							const [h, m] = horaInicio.split(":").map(Number);
@@ -2819,7 +2820,7 @@ try {
 								String(d.getHours()).padStart(2, "0") +
 								":" +
 								String(d.getMinutes()).padStart(2, "0");
-							horaFinInput.value = hf;
+							window.escribirHoraCampo(horaFinInput, hf);
 						}
 					}
 				});
@@ -2940,13 +2941,15 @@ try {
 					const endHourInput =
 						document.getElementById("agregarEndHour");
 					if (endHourInput && endTimeVal) {
-						endHourInput.value = endTimeVal;
+						window.escribirHoraCampo(endHourInput, endTimeVal);
 					}
 				} else {
 					document.getElementById("agregarInitHour").value = timeVal;
 					if (endTimeVal)
-						document.getElementById("agregarEndHour").value =
-							endTimeVal;
+						window.escribirHoraCampo(
+							document.getElementById("agregarEndHour"),
+							endTimeVal,
+						);
 				}
 
 				// Show Modal

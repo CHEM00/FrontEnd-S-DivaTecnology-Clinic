@@ -258,10 +258,10 @@ try {
                       ? '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">Clínica</span>'
                       : '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">—</span>';
                 const horario = dia.is_working
-                    ? `${hhmm(dia.openhour)} – ${hhmm(dia.closehour)}`
+                    ? `${window.formatearHora(dia.openhour)} – ${window.formatearHora(dia.closehour)}`
                     : '<span class="text-gray-400">No labora</span>';
                 const descanso = dia.is_working && dia.break_start
-                    ? `${hhmm(dia.break_start)} – ${hhmm(dia.break_end)}`
+                    ? `${window.formatearHora(dia.break_start)} – ${window.formatearHora(dia.break_end)}`
                     : '<span class="text-gray-300">—</span>';
                 const tr = document.createElement("tr");
                 tr.className = "border-b border-[#2F5D50]/5 hover:bg-white/50 transition-colors";
@@ -353,7 +353,7 @@ try {
                 const [y, m, d] = fecha.split("-").map(Number);
                 const fechaTxt = new Date(y, m - 1, d).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
                 const tipo = exc.is_working
-                    ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">Especial ${hhmm(exc.openhour)}–${hhmm(exc.closehour)}</span>`
+                    ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">Especial ${window.formatearHora(exc.openhour)}–${window.formatearHora(exc.closehour)}</span>`
                     : '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600">Ausencia</span>';
                 const row = document.createElement("div");
                 row.className = "p-4 flex items-center justify-between gap-3 hover:bg-white/50 transition-colors";
@@ -434,7 +434,7 @@ try {
                     <div class="p-3 flex items-center justify-between gap-3 text-sm">
                         <div>
                             <p class="font-semibold text-gray-700">${c.patientname}</p>
-                            <p class="text-xs text-gray-400">${c.currentday.substring(0, 10)} · ${hhmm(c.inithour)}–${hhmm(c.endhour)}</p>
+                            <p class="text-xs text-gray-400">${c.currentday.substring(0, 10)} · ${window.formatearHora(c.inithour)}–${window.formatearHora(c.endhour)}</p>
                         </div>
                         <span class="text-xs font-bold text-amber-600 uppercase">${c.status}</span>
                     </div>`)

@@ -819,15 +819,43 @@ try {
 	}
 
 	// --- Event Listeners ---
+	const normalizar = (valor) =>
+		String(valor ?? "")
+			.normalize("NFD")
+			.replace(/[̀-ͯ]/g, "")
+			.toLowerCase()
+			.replace(/\s+/g, " ")
+			.trim();
+
+	const soloDigitos = (valor) => String(valor ?? "").replace(/\D/g, "");
+
+	function buscarPacientes(termino) {
+		const texto = normalizar(termino);
+		if (!texto) return [...allData];
+
+		const digitos = soloDigitos(termino);
+		const palabras = texto.split(" ");
+
+		return allData.filter((p) => {
+			const nombreCompleto = normalizar(
+				`${p.firstname ?? ""} ${p.lastname ?? ""} ${p.motherlastname ?? ""}`,
+			);
+			const email = normalizar(p.email);
+			const telefono = soloDigitos(p.phone);
+
+			const coincideNombre = palabras.every((palabra) =>
+				nombreCompleto.includes(palabra),
+			);
+			const coincideEmail = email.includes(texto);
+			const coincideTelefono =
+				digitos.length > 0 && telefono.includes(digitos);
+
+			return coincideNombre || coincideEmail || coincideTelefono;
+		});
+	}
+
 	searchInput?.addEventListener("input", (e) => {
-		const term = e.target.value.toLowerCase();
-		filteredData = allData.filter(
-			(p) =>
-				(p.firstname && p.firstname.toLowerCase().includes(term)) ||
-				(p.lastname && p.lastname.toLowerCase().includes(term)) ||
-				(p.email && p.email.toLowerCase().includes(term)) ||
-				(p.phone && p.phone.includes(term)),
-		);
+		filteredData = buscarPacientes(e.target.value);
 		currentPage = 1;
 		renderTable();
 	});

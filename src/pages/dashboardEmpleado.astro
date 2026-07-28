@@ -1011,6 +1011,45 @@ try {
             [key: string]: any;
         }
 
+        (window as any).obtenerCargoCita = async (citaId: string | number) => {
+            try {
+                const res = await fetch(`/api/v1/Citas/${citaId}/cargo`);
+                if (!res.ok) return null;
+                return await res.json();
+            } catch (error) {
+                console.error("Error obteniendo el cargo de la cita:", error);
+                return null;
+            }
+        };
+
+        (window as any).renderCargoCita = (
+            container: HTMLElement,
+            cargo: any,
+        ) => {
+            const subtotal = Number(cargo?.subtotal) || 0;
+            let detalle = "";
+
+            if (cargo?.is_package) {
+                const sesion = cargo.session_number ?? "?";
+                const total = cargo.total_sessions ?? "?";
+                detalle = cargo.is_charge_session
+                    ? `Paquete completo · sesión ${sesion} de ${total}`
+                    : `Continuidad de paquete · sesión ${sesion} de ${total}`;
+            }
+            if (Number(cargo?.additionals) > 0) {
+                detalle += `${detalle ? " · " : ""}Adicionales $${Number(cargo.additionals).toFixed(2)}`;
+            }
+
+            container.innerHTML = `
+                <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-tag"></i> Total a Pagar
+                </span>
+                <span class="text-xl font-black text-emerald-700">$${subtotal.toFixed(2)}</span>
+                ${detalle ? `<span class="block w-full text-[11px] text-gray-500 mt-1">${detalle}</span>` : ""}
+            `;
+            container.classList.remove("hidden");
+        };
+
         document.addEventListener("DOMContentLoaded", () => {
             // 1. Data & Elements
             const dataEl = document.getElementById("dashboard-data");
@@ -1371,7 +1410,7 @@ try {
                         if (!exists) {
                             const opt = document.createElement("option");
                             opt.value = time;
-                            opt.textContent = time;
+                            opt.textContent = window.formatearHora(time);
                             initHourEl.appendChild(opt);
                         }
                         initHourEl.value = time;
@@ -1382,7 +1421,7 @@ try {
                             "agregarEndHour",
                         ) as HTMLInputElement;
                         if (endHourEl && app.endhour)
-                            endHourEl.value = app.endhour.substring(0, 5);
+                            window.escribirHoraCampo(endHourEl, app.endhour);
                     }
                 }
 
@@ -1444,11 +1483,11 @@ try {
                             "agregarInitHour",
                         ) as HTMLSelectElement
                     ).value;
-                    const endhour = (
+                    const endhour = window.leerHoraCampo(
                         document.getElementById(
                             "agregarEndHour",
-                        ) as HTMLInputElement
-                    ).value;
+                        ) as HTMLInputElement,
+                    );
                     const reason = (
                         document.getElementById(
                             "agregarReason",
@@ -1554,41 +1593,20 @@ try {
                                 );
                                 return;
                             }
-                            // Fix: Fetch patient details to get package ID without consuming
-                            // Fix: Fetch active package details to get ID
-                            try {
-                                const pkgRes = await fetch(
-                                    `/api/v1/Pacientes/${idpatient}/paquete/activo`,
+                            const pkgRes = await fetch(
+                                `/api/v1/Pacientes/${idpatient}/paquete/activo`,
+                            );
+                            const pkgData = pkgRes.ok
+                                ? await pkgRes.json().catch(() => null)
+                                : null;
+
+                            if (!pkgData?.id) {
+                                alert(
+                                    "El paciente no tiene un paquete con sesiones disponibles. Véndele un paquete o elige un servicio.",
                                 );
-                                if (pkgRes.ok) {
-                                    const pkgData = await pkgRes.json();
-                                    // User confirmed: "se toma el id solamente y es el que se manda en el payload"
-                                    if (pkgData && pkgData.id) {
-                                        payload.idpatientpackage = pkgData.id;
-                                        console.log(
-                                            "Paquete activo encontrado, ID asignado:",
-                                            pkgData.id,
-                                        );
-                                    } else {
-                                        console.warn(
-                                            "El endpoint retornó OK pero sin ID válido:",
-                                            pkgData,
-                                        );
-                                    }
-                                } else {
-                                    console.error(
-                                        "Error fetching active package:",
-                                        pkgRes.status,
-                                    );
-                                    // Optional: Alert user if package was expected but not found?
-                                    // For now, logging error.
-                                }
-                            } catch (e) {
-                                console.error(
-                                    "Error fetching active package details",
-                                    e,
-                                );
+                                return;
                             }
+                            payload.idpatientpackage = pkgData.id;
                         }
 
                         // Handle Package Assignment FIRST (if new appointment and package selected)
@@ -2218,7 +2236,7 @@ try {
                             </div>
                             <!-- Time moved to top-right for compactness -->
                             <div class="flex flex-col items-end">
-                                <span class="text-xs font-bold text-gray-700 font-mono tracking-tight">${app.inithour?.substring(0, 5) || "--:--"}</span>
+                                <span class="text-xs font-bold text-gray-700 font-mono tracking-tight">${window.formatearHora(app.inithour) || "--:--"}</span>
                             </div>
                         </div>
                         
@@ -2336,7 +2354,7 @@ try {
 
                 if (document.getElementById("modalTimeRange"))
                     document.getElementById("modalTimeRange")!.textContent =
-                        `${app.inithour?.substring(0, 5)} - ${app.endhour?.substring(0, 5)}`;
+                        window.formatearRangoHoras(app.inithour, app.endhour);
 
                 if (document.getElementById("modalService")) {
                     // Check for nested services array (from get_appointment_detail)
@@ -2843,77 +2861,21 @@ try {
                                 }
                             }
 
-                            // --- PRICE CALCULATION ---
-                            let totalPrice = 0;
-                            const services =
-                                appData.get_appointment_detail?.services;
-                            const packageInfo =
-                                appData.get_appointment_detail?.package;
-
-                            if (
-                                (services && Array.isArray(services)) ||
-                                packageInfo
-                            ) {
-                                let basePrice = 0;
-                                let additionalsPrice = 0;
-
-                                // 1. Determine Base Price (Package vs Regular)
-                                if (packageInfo && packageInfo.session_number) {
-                                    // Package Logic
-                                    if (packageInfo.session_number === 1) {
-                                        basePrice = parseFloat(
-                                            packageInfo.package_price || 0,
-                                        );
-                                    } else {
-                                        basePrice = 0; // Sessions > 1 are prepaid/free
-                                    }
-                                } else {
-                                    // Regular Appointment Logic (Sum of primary services if no package info)
-                                    // However, usually 'services' contains everything.
-                                    // If no packageInfo, we sum everything normally.
-                                    // But we need to separate this to avoid double counting if logic changes.
-                                }
-
-                                // 2. Calculate Services & Additionals
-                                if (services && Array.isArray(services)) {
-                                    services.forEach((curr: any) => {
-                                        const type = (
-                                            curr.type || ""
-                                        ).toLowerCase();
-                                        const val = parseFloat(
-                                            curr.unit_price || curr.value || 0,
-                                        );
-
-                                        if (packageInfo) {
-                                            // Inside a Package Context
-                                            if (type === "package_session") {
-                                                // Ignore, price handled by basePrice logic above
-                                            } else {
-                                                // Is Additional
-                                                additionalsPrice += val;
-                                            }
-                                        } else {
-                                            // No Package Context -> Sum everything
-                                            basePrice += val;
-                                        }
-                                    });
-                                }
-
-                                totalPrice = basePrice + additionalsPrice;
-                            }
-
-                            // Display Price Label
                             const priceContainer = document.getElementById(
                                 "modalPriceContainer",
                             );
-                            if (priceContainer) {
-                                priceContainer.innerHTML = `
-                                    <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-2">
-                                        <i class="fa-solid fa-tag"></i> Total a Pagar
-                                    </span>
-                                    <span class="text-xl font-black text-emerald-700">$${totalPrice.toFixed(2)}</span>
-                                `;
-                                priceContainer.classList.remove("hidden");
+                            const citaCargoId =
+                                appData.get_appointment_detail?.appointment?.id;
+                            if (priceContainer && citaCargoId) {
+                                const cargo = await (
+                                    window as any
+                                ).obtenerCargoCita(citaCargoId);
+                                if (cargo) {
+                                    (window as any).renderCargoCita(
+                                        priceContainer,
+                                        cargo,
+                                    );
+                                }
                             }
                         } else {
                             if (currentAppointment)
@@ -3233,56 +3195,6 @@ try {
 
                 let detailId = null;
 
-                // --- Calculate Total for Payload ---
-                let total = 0;
-
-                // 1. Base Price (Package Logic)
-                let basePrice = 0;
-                if (
-                    currentAppointmentDetails &&
-                    currentAppointmentDetails.get_appointment_detail
-                ) {
-                    const packageInfo =
-                        currentAppointmentDetails.get_appointment_detail
-                            .package;
-                    const services =
-                        currentAppointmentDetails.get_appointment_detail
-                            .services;
-
-                    if (packageInfo && packageInfo.session_number) {
-                        if (packageInfo.session_number === 1) {
-                            basePrice = parseFloat(
-                                packageInfo.package_price || 0,
-                            );
-                        } else {
-                            basePrice = 0;
-                        }
-                    } else if (services && Array.isArray(services)) {
-                        // Regular Appointment: Sum valid 'service' types
-                        services.forEach((srv: any) => {
-                            if (srv.type === "service") {
-                                basePrice += parseFloat(
-                                    srv.value || srv.unit_price || 0,
-                                );
-                            }
-                        });
-                    }
-                }
-
-                // 2. Additionals Price (From Live DOM)
-                let additionalsPrice = 0;
-                const checkedServices = document.querySelectorAll(
-                    "input[name='additional_service']:checked",
-                );
-                checkedServices.forEach((cb: any) => {
-                    const price = parseFloat(
-                        cb.getAttribute("data-price") || "0",
-                    );
-                    additionalsPrice += price;
-                });
-
-                total = basePrice + additionalsPrice;
-
                 try {
                     if (hasDetails) {
                         const res = await fetch(
@@ -3293,9 +3205,6 @@ try {
                                 body: JSON.stringify({
                                     therapeuticnote: noteElem?.value || "",
                                     pain_intensity: pain_intensity,
-                                    subtotal: total,
-                                    discount: 0,
-                                    total: total,
                                 }),
                             },
                         );
@@ -3309,9 +3218,6 @@ try {
                         const payload = {
                             therapeuticnote: noteElem?.value || "",
                             pain_intensity: pain_intensity,
-                            subtotal: total,
-                            discount: 0,
-                            total: total,
                         };
 
                         let res = await fetch(
@@ -3645,16 +3551,16 @@ try {
                             // Time Helper
                             let formattedTime = "--:--";
                             if (item.appointment_time) {
-                                formattedTime = item.appointment_time.substring(
-                                    0,
-                                    5,
+                                formattedTime = window.formatearHora(
+                                    item.appointment_time,
                                 );
                             } else {
                                 formattedTime = dateObj.toLocaleTimeString(
-                                    "es-ES",
+                                    "es-MX",
                                     {
-                                        hour: "2-digit",
+                                        hour: "numeric",
                                         minute: "2-digit",
+                                        hour12: true,
                                     },
                                 );
                             }
@@ -4454,65 +4360,20 @@ try {
             if (diagInput) diagInput.addEventListener("input", debouncedSave);
             if (noteInput) noteInput.addEventListener("input", debouncedSave);
 
-            // Helper to update UI Price immediately
-            function updateTotalPriceUI() {
+            async function updateTotalPriceUI() {
                 const priceContainer = document.getElementById(
                     "modalPriceContainer",
                 );
                 if (!priceContainer) return;
 
-                let basePrice = 0;
-                if (
-                    currentAppointmentDetails &&
-                    currentAppointmentDetails.get_appointment_detail
-                ) {
-                    const packageInfo =
-                        currentAppointmentDetails.get_appointment_detail
-                            .package;
-                    const services =
-                        currentAppointmentDetails.get_appointment_detail
-                            .services;
+                const citaId =
+                    currentAppointment?.idappointment ?? currentAppointment?.id;
+                if (!citaId) return;
 
-                    if (packageInfo && packageInfo.session_number) {
-                        if (packageInfo.session_number === 1) {
-                            basePrice = parseFloat(
-                                packageInfo.package_price || "0",
-                            );
-                        } else {
-                            basePrice = 0;
-                        }
-                    } else if (services && Array.isArray(services)) {
-                        // Regular Appointment: Sum valid 'service' types
-                        services.forEach((srv: any) => {
-                            if (srv.type === "service") {
-                                basePrice += parseFloat(
-                                    srv.value || srv.unit_price || "0",
-                                );
-                            }
-                        });
-                    }
-                }
+                const cargo = await (window as any).obtenerCargoCita(citaId);
+                if (!cargo) return;
 
-                let additionalsPrice = 0;
-                const checkedServices = document.querySelectorAll(
-                    "input[name='additional_service']:checked",
-                );
-                checkedServices.forEach((cb: any) => {
-                    const price = parseFloat(
-                        cb.getAttribute("data-price") || "0",
-                    );
-                    additionalsPrice += price;
-                });
-
-                const total = basePrice + additionalsPrice;
-
-                priceContainer.innerHTML = `
-                    <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-tag"></i> Total a Pagar
-                    </span>
-                    <span class="text-xl font-black text-emerald-700">$${total.toFixed(2)}</span>
-                `;
-                priceContainer.classList.remove("hidden");
+                (window as any).renderCargoCita(priceContainer, cargo);
             }
 
             // Listen to Additionals checkboxes
@@ -5023,7 +4884,8 @@ try {
                                     const option =
                                         document.createElement("option");
                                     option.value = hora;
-                                    option.textContent = hora;
+                                    option.textContent =
+                                        window.formatearHora(hora);
 
                                     // New Attributes for Auto-Assignment
                                     if (item.idemployed) {
@@ -5156,7 +5018,7 @@ try {
                         selectedOption?.getAttribute("data-endhour");
 
                     if (datasetEndHour && agendaEndHour) {
-                        agendaEndHour.value = datasetEndHour;
+                        window.escribirHoraCampo(agendaEndHour, datasetEndHour);
                         return;
                     }
 
@@ -5178,7 +5040,11 @@ try {
                     const endH = String(dateKey.getHours()).padStart(2, "0");
                     const endM = String(dateKey.getMinutes()).padStart(2, "0");
 
-                    if (agendaEndHour) agendaEndHour.value = `${endH}:${endM}`;
+                    if (agendaEndHour)
+                        window.escribirHoraCampo(
+                            agendaEndHour,
+                            `${endH}:${endM}`,
+                        );
                 };
 
                 agendaHour.addEventListener("change", updateEndHour);
