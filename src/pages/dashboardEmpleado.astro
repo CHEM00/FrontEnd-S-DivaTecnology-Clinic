@@ -748,10 +748,13 @@ try {
                                 class="hidden text-xs text-red-600 font-semibold mt-2"
                             >
                             </p>
+                            <!-- accept="image/*" (no una lista de MIME) es lo que
+                                 hace que Android ofrezca la cámara además de la
+                                 galería; el filtrado de formatos se hace en el JS. -->
                             <input
                                 type="file"
                                 id="sessionPhotoInput"
-                                accept="image/jpeg,image/png,image/webp"
+                                accept="image/*"
                                 multiple
                                 class="hidden"
                             />
@@ -2759,6 +2762,12 @@ try {
                     document.getElementById("sessionPhotoInput")?.click(),
                 );
 
+            const ALLOWED_PHOTO_TYPES = [
+                "image/jpeg",
+                "image/png",
+                "image/webp",
+            ];
+
             document
                 .getElementById("sessionPhotoInput")
                 ?.addEventListener("change", async (e) => {
@@ -2770,11 +2779,28 @@ try {
                         !currentPhotosAppointmentId
                     )
                         return;
+
+                    const selected = [...input.files];
+                    const valid = selected.filter((file) =>
+                        ALLOWED_PHOTO_TYPES.includes(file.type),
+                    );
+                    const rejected = selected.length - valid.length;
+                    input.value = "";
+
+                    if (errorEl) {
+                        errorEl.textContent = "";
+                        errorEl.classList.add("hidden");
+                    }
+                    if (rejected > 0 && errorEl) {
+                        errorEl.textContent = `Se omitieron ${rejected} archivo(s): solo se admiten fotos JPG, PNG o WebP`;
+                        errorEl.classList.remove("hidden");
+                    }
+                    if (!valid.length) return;
+
                     const formData = new FormData();
-                    [...input.files].forEach((file) =>
+                    valid.forEach((file) =>
                         formData.append("photos", file),
                     );
-                    input.value = "";
                     try {
                         const res = await fetch(
                             `/api/v1/Citas/${currentPhotosAppointmentId}/photos`,
