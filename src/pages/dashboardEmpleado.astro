@@ -1394,20 +1394,35 @@ try {
                 }
 
                 // Detect package appointment and store idpatientpackage
+                const formEl = document.getElementById(
+                    "formAgregarCita",
+                ) as HTMLElement;
+                const pkgCheckbox = document.getElementById(
+                    "usePackageCheckbox",
+                ) as HTMLInputElement;
                 if (app.salepackage || app.idpatientpackage) {
-                    // Store on form dataset for PATCH payload
-                    const formEl = document.getElementById("formAgregarCita");
                     if (formEl) {
-                        (formEl as HTMLElement).dataset.isPackage = "true";
-                        (formEl as HTMLElement).dataset.idpatientpackage = String(app.idpatientpackage || '');
+                        formEl.dataset.isPackage = "true";
+                        formEl.dataset.idpatientpackage = String(app.idpatientpackage || '');
                     }
-                    // Visual: check the usePackage checkbox
-                    const pkgCheckbox = document.getElementById("usePackageCheckbox") as HTMLInputElement;
                     if (pkgCheckbox) pkgCheckbox.checked = true;
                     const pkgContainer = document.getElementById("packageOptionContainer");
                     if (pkgContainer) pkgContainer.classList.remove("hidden");
                     // Disable package/service selects when editing a package appointment
                     if (packageSelect) packageSelect.disabled = true;
+                    if (serviceSelect) {
+                        serviceSelect.value = "";
+                        serviceSelect.required = false;
+                        serviceSelect.disabled = true;
+                    }
+                } else {
+                    if (formEl) {
+                        delete formEl.dataset.isPackage;
+                        delete formEl.dataset.idpatientpackage;
+                    }
+                    if (pkgCheckbox) pkgCheckbox.checked = false;
+                    if (packageSelect) packageSelect.disabled = false;
+                    if (serviceSelect) serviceSelect.disabled = false;
                 }
 
                 // Time (Complex part: needs to fetch available slots OR just inject the current time as a valid option)
@@ -1477,6 +1492,18 @@ try {
                         formAgregarCita.removeAttribute(
                             "data-original-service-id",
                         ); // Clear Original Service ID
+                        delete (formAgregarCita as HTMLElement).dataset
+                            .isPackage;
+                        delete (formAgregarCita as HTMLElement).dataset
+                            .idpatientpackage;
+                        const svcSel = document.getElementById(
+                            "agregarIdService",
+                        ) as HTMLSelectElement;
+                        const pkgSel = document.getElementById(
+                            "agregarIdPackage",
+                        ) as HTMLSelectElement;
+                        if (svcSel) svcSel.disabled = false;
+                        if (pkgSel) pkgSel.disabled = false;
 
                         const modalTitle = document.querySelector(
                             "#modalAgregarCita h2",
@@ -1567,6 +1594,21 @@ try {
                             "Debe seleccionar un Servicio, un Paquete o usar una sesión de paquete.",
                         );
                         return;
+                    }
+
+                    if (formAgregarCita.dataset.submitting === "true") return;
+                    formAgregarCita.dataset.submitting = "true";
+                    const submitBtn = (document.querySelector(
+                        'button[type="submit"][form="formAgregarCita"]',
+                    ) ??
+                        formAgregarCita.querySelector(
+                            'button[type="submit"]',
+                        )) as HTMLButtonElement;
+                    const originalBtnHtml = submitBtn?.innerHTML;
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML =
+                            '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
                     }
 
                     try {
@@ -1805,13 +1847,6 @@ try {
                                     `draft_consultation_${currentAppointment.idappointment || currentAppointment.id}`,
                                 );
                             }
-
-                            // --- Draft Cleanup ---
-                            if (currentAppointment) {
-                                localStorage.removeItem(
-                                    `draft_consultation_${currentAppointment.idappointment || currentAppointment.id}`,
-                                );
-                            }
                         } else {
                             const err = await res.text();
                             console.error(err);
@@ -1820,6 +1855,13 @@ try {
                     } catch (error) {
                         console.error(error);
                         alert("Error de conexión");
+                    } finally {
+                        delete formAgregarCita.dataset.submitting;
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML =
+                                originalBtnHtml || "GUARDAR";
+                        }
                     }
                 });
             }
@@ -2471,7 +2513,7 @@ try {
                         errorMsg.textContent = `Consulta ${app.status}`;
                         errorMsg.classList.remove("hidden");
                     }
-                    loadDraft(app.id);
+                    loadDraft(app.idappointment || app.id);
                     if (consultationFields)
                         consultationFields.classList.remove("hidden");
                     const diag = document.getElementById(
@@ -2855,18 +2897,65 @@ try {
                     loadAppointmentPhotos(currentPhotosAppointmentId);
             }
 
+            function resetConsultationFields() {
+                const diag = document.getElementById(
+                    "consultationDiagnosis",
+                ) as HTMLInputElement;
+                const note = document.getElementById(
+                    "consultationNote",
+                ) as HTMLTextAreaElement;
+                if (diag) diag.value = "";
+                if (note) note.value = "";
+
+                const evaInput = document.getElementById(
+                    "evaScaleInput",
+                ) as HTMLInputElement;
+                const evaDisplay = document.getElementById("evaScaleDisplay");
+                if (evaInput) evaInput.value = "0";
+                if (evaDisplay) evaDisplay.innerText = "0";
+                if (typeof (window as any).updateEvaColor === "function") {
+                    (window as any).updateEvaColor(0);
+                }
+
+                [
+                    "evalDiagnostic",
+                    "evalInjuryMechanism",
+                    "evalPainOnset",
+                    "evalPainIntensity",
+                    "evalAggravating",
+                    "evalRelief",
+                    "evalPreviousReason",
+                ].forEach((id) => {
+                    const el = document.getElementById(id) as HTMLInputElement;
+                    if (el) el.value = "";
+                });
+                const prevTherapy = document.getElementById(
+                    "evalPreviousTherapy",
+                ) as HTMLInputElement;
+                if (prevTherapy) prevTherapy.checked = false;
+
+                const priceContainer = document.getElementById(
+                    "modalPriceContainer",
+                );
+                if (priceContainer) priceContainer.classList.add("hidden");
+            }
+
             async function loadDraft(appointmentId: string) {
                 savedAdditionals.clear();
                 hasDetails = false;
+                if (currentAppointment)
+                    (currentAppointment as any).detailId = null;
                 loadAppointmentPhotos(appointmentId);
                 // Reset checkboxes
                 const checkboxes = document.querySelectorAll(
                     "input[name='additional_service']",
                 );
                 checkboxes.forEach((cb: any) => (cb.checked = false));
+                resetConsultationFields();
 
                 try {
                     const res = await fetch(`/api/v1/Agenda/${appointmentId}`);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     if (res.ok) {
                         const data = await res.json();
                         let appData = data;
@@ -3078,6 +3167,10 @@ try {
                     }
                 } catch (e) {
                     console.error(e);
+                    alert(
+                        "No se pudo cargar la información de la cita. Ciérrala y vuelve a abrirla; si persiste, revisa la conexión o vuelve a iniciar sesión.",
+                    );
+                    closeModal();
                 }
             }
 
@@ -3268,6 +3361,10 @@ try {
                                 }),
                             },
                         );
+                        if (res.status === 404) {
+                            hasDetails = false;
+                            return saveDraft();
+                        }
                         if (!res.ok) throw new Error("Failed to patch detail");
                         // Try to get ID from response if available, otherwise we might validly lack it if backend doesn't return it
                         try {
@@ -4506,11 +4603,19 @@ try {
                                     } else {
                                         console.error(
                                             "Error adding additional",
+                                            serviceResponse.status,
                                         );
                                         target.checked = false; // Revert
-                                        alert(
-                                            "Error al guardar adicional. Intente guardar manualmente o contacte soporte.",
-                                        );
+                                        if (serviceResponse.status === 401) {
+                                            alert(
+                                                "Tu sesión expiró. Vuelve a iniciar sesión.",
+                                            );
+                                            window.location.href = "/";
+                                        } else {
+                                            alert(
+                                                `No se pudo guardar el adicional (error ${serviceResponse.status}). Inténtalo de nuevo.`,
+                                            );
+                                        }
                                     }
                                 } catch (err) {
                                     console.error(err);
@@ -4559,6 +4664,7 @@ try {
                                     } else {
                                         console.error(
                                             "Error deleting additional",
+                                            delRes.status,
                                         );
                                         target.checked = true; // Revert
                                         alert(
@@ -4580,6 +4686,50 @@ try {
                     }
                 });
             }
+
+            async function repoblarAdicionales() {
+                const cont = addContainer?.querySelector("div");
+                if (
+                    !cont ||
+                    cont.querySelector("input[name='additional_service']")
+                )
+                    return;
+                try {
+                    const res = await fetch(
+                        "/api/v1/Product_Service/additional",
+                    );
+                    if (!res.ok) return;
+                    const items = await res.json();
+                    if (!Array.isArray(items) || items.length === 0) return;
+                    const esc = (s: any) =>
+                        String(s).replace(
+                            /[&<>"']/g,
+                            (c) =>
+                                ({
+                                    "&": "&amp;",
+                                    "<": "&lt;",
+                                    ">": "&gt;",
+                                    '"': "&quot;",
+                                    "'": "&#39;",
+                                })[c] || c,
+                        );
+                    cont.innerHTML = items
+                        .map(
+                            (a: any) => `
+                        <label class="flex items-center gap-2 p-2 hover:bg-indigo-50 rounded-lg cursor-pointer transition-colors border-b border-gray-50 last:border-0">
+                            <input type="checkbox" value="${esc(a.id)}" data-price="${esc(a.value)}" name="additional_service" class="w-4 h-4 rounded text-[#2F5D50] focus:ring-[#2F5D50] border-gray-300" />
+                            <div class="flex flex-col">
+                                <span class="font-medium text-gray-700 text-xs">${esc(a.name)}</span>
+                                <span class="text-[10px] text-gray-500 font-bold">$${esc(a.value)}</span>
+                            </div>
+                        </label>`,
+                        )
+                        .join("");
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            repoblarAdicionales();
 
             // --- Teclado virtual (móvil): mantener visible el campo enfocado ---
             // En pantallas pequeñas el teclado tapa el input/textarea activo; al recibir

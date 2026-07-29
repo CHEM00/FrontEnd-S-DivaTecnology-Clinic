@@ -800,6 +800,8 @@ try {
                     form.reset();
                     delete form.dataset.mode;
                     delete form.dataset.editId;
+                    delete form.dataset.isPackage;
+                    delete form.dataset.idpatientpackage;
                     const submitBtn = form.querySelector(
                         'button[type="submit"]',
                     );
@@ -809,6 +811,7 @@ try {
                         ?.querySelector("h2");
                     if (title) title.innerText = "NUEVA CITA";
                     if (window.handlePackageUI) window.handlePackageUI(false);
+                    window.syncServicioPaqueteUI();
                 }
                 window.abrirModalAgregar();
             };
@@ -2251,13 +2254,27 @@ try {
 
                         // 2. Update Service (Separate Endpoint)
                         if (serviceId) {
-                            await fetch(`/api/v1/Agenda/${editId}/services`, {
-                                method: "PATCH",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                    serviceId: serviceId,
-                                }),
-                            });
+                            const svcRes = await fetch(
+                                `/api/v1/Agenda/${editId}/services`,
+                                {
+                                    method: "PATCH",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                        serviceId: serviceId,
+                                    }),
+                                },
+                            );
+                            if (!svcRes.ok) {
+                                const err = await svcRes
+                                    .json()
+                                    .catch(() => ({}));
+                                throw new Error(
+                                    err.error ||
+                                        "La cita se actualizó pero el cambio de servicio falló. Revísala.",
+                                );
+                            }
                         }
 
                         (window as any).mostrarAviso(
@@ -2725,6 +2742,7 @@ try {
             if (title) title.innerText = "NUEVA CITA";
             if (submitBtn) submitBtn.textContent = "GUARDAR";
             window.handlePackageUI(false);
+            window.syncServicioPaqueteUI();
 
             // Reset date picker if needed or kept empty
             const dateInput = document.getElementById(
