@@ -4,6 +4,7 @@ import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
+import ConfirmModal from "../components/modals/ConfirmModal.astro";
 
 interface Paciente {
 	id: number;
@@ -500,6 +501,27 @@ try {
 					Detalles del Paquete
 				</h4>
 
+				<!-- Catálogo (solo al asignar un paquete nuevo) -->
+				<div id="packageCatalogWrapper" class="hidden mb-4">
+					<label
+						class="text-xs font-bold text-blue-600 mb-1 ml-1 uppercase tracking-wide block"
+						>Paquete a asignar</label
+					>
+					<div class="relative">
+						<select
+							id="packageCatalogSelect"
+							class="glass-input w-full rounded-xl px-4 py-2.5 appearance-none cursor-pointer bg-white focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+						>
+							<option value="">Seleccionar paquete...</option>
+						</select>
+						<div
+							class="absolute right-4 top-1/2 -translate-y-1/2 text-blue-600 pointer-events-none"
+						>
+							<i class="fa-solid fa-chevron-down text-xs"></i>
+						</div>
+					</div>
+				</div>
+
 				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 					<!-- Total Sessions (Read-only) -->
 					<div class="flex flex-col">
@@ -586,6 +608,8 @@ try {
 		</div>
 	</FormModal>
 </Layout>
+
+<ConfirmModal />
 
 <!-- Modal Confirmación Eliminación -->
 <div id="modalEliminar" class="fixed inset-0 z-50 hidden">
@@ -897,9 +921,9 @@ try {
 			}, 10);
 		}
 
-		// Cargar empleados si es el formulario
+		// Cargar empleados y catálogo de paquetes si es el formulario
 		if (id === "modalFormulario") {
-			await cargarEmpleados();
+			await Promise.all([cargarEmpleados(), cargarPaquetes()]);
 			const title = document.getElementById(
 				"modal-title-modalFormulario",
 			); // ID generado por FormModal
@@ -919,6 +943,12 @@ try {
 				togglePackageDetails(false);
 
 				// Reset package inputs
+				paqueteOriginal = { active: false, used: 0 };
+				quitarPaqueteConfirmado = false;
+				const catalogSelect = document.getElementById(
+					"packageCatalogSelect",
+				);
+				if (catalogSelect) catalogSelect.value = "";
 				document.getElementById("packageSessionsTotal").value = 0;
 				document.getElementById("packageSessionsUsed").value = 0;
 				document.getElementById("packageSessionsRemaining").value = 0;
@@ -989,8 +1019,19 @@ try {
 				p.is_active_package === true || p.is_active_package === 1;
 
 			// Package Details Population
-			const total = p.sesiones_de_paquete || 0;
-			const used = p.sesiones_usadas || 0;
+			paqueteOriginal = {
+				active: p.is_active_package === true,
+				used: Number(p.sesiones_usadas) || 0,
+			};
+			quitarPaqueteConfirmado = false;
+			const catalogSelect = document.getElementById(
+				"packageCatalogSelect",
+			);
+			if (catalogSelect) catalogSelect.value = "";
+			const total = paqueteOriginal.active
+				? p.sesiones_de_paquete || 0
+				: 0;
+			const used = paqueteOriginal.active ? paqueteOriginal.used : 0;
 			const remaining = total - used;
 
 			document.getElementById("packageSessionsTotal").value = total;
@@ -1081,6 +1122,10 @@ try {
 
 	// --- Package & Sessions Logic ---
 
+	// Estado al abrir el modal: decide si el guardado crea, ajusta o quita el paquete
+	let paqueteOriginal = { active: false, used: 0 };
+	let quitarPaqueteConfirmado = false;
+
 	function togglePackageDetails(show) {
 		const details = document.getElementById("packageDetails");
 		if (show) {
@@ -1088,10 +1133,39 @@ try {
 		} else {
 			details.classList.add("hidden");
 		}
+		const catalogWrapper = document.getElementById(
+			"packageCatalogWrapper",
+		);
+		if (catalogWrapper) {
+			catalogWrapper.classList.toggle(
+				"hidden",
+				!show || paqueteOriginal.active,
+			);
+		}
 	}
 
-	// Listen for package switch changes
 	document.getElementById("havepackage")?.addEventListener("change", (e) => {
+		if (
+			!e.target.checked &&
+			paqueteOriginal.active &&
+			!quitarPaqueteConfirmado
+		) {
+			e.target.checked = true;
+			window.mostrarConfirmacion({
+				title: "Quitar Paquete",
+				message:
+					"Se le quitará el paquete al paciente al guardar los cambios y ya no podrá usarse en nuevas citas. Las citas ya registradas con este paquete conservan su historial de sesiones y cargos.",
+				confirmText: "Quitar paquete",
+				icon: "fa-box-open",
+				onConfirm: () => {
+					quitarPaqueteConfirmado = true;
+					document.getElementById("havepackage").checked = false;
+					togglePackageDetails(false);
+				},
+			});
+			return;
+		}
+		if (e.target.checked) quitarPaqueteConfirmado = false;
 		togglePackageDetails(e.target.checked);
 	});
 
@@ -1156,6 +1230,38 @@ try {
 		}
 	}
 
+	async function cargarPaquetes() {
+		const select = document.getElementById("packageCatalogSelect");
+		if (!select || select.children.length > 1) return; // Ya cargados
+
+		try {
+			const response = await fetch(`/api/v1/Package`);
+			if (response.ok) {
+				const data = await response.json();
+				const paquetes = Array.isArray(data) ? data : data.body || [];
+
+				paquetes.forEach((pkg) => {
+					const option = document.createElement("option");
+					option.value = pkg.id;
+					option.dataset.numsession = pkg.numsession;
+					option.textContent = `${pkg.numsession} Sesiones - $${pkg.value}`;
+					select.appendChild(option);
+				});
+			}
+		} catch (error) {
+			console.error("Error cargando paquetes:", error);
+		}
+	}
+
+	document
+		.getElementById("packageCatalogSelect")
+		?.addEventListener("change", (e) => {
+			const opt = e.target.selectedOptions[0];
+			document.getElementById("packageSessionsTotal").value =
+				opt?.dataset.numsession || 0;
+			updateRemainingSessions();
+		});
+
 	// Manejar envío del formulario
 	document
 		.getElementById("pacienteForm")
@@ -1168,9 +1274,27 @@ try {
 
 			const havePackageActive = formData.get("havepackage") === "on";
 			const sesionesUsadas = havePackageActive
-				? parseInt(formData.get("sesiones_usadas"))
+				? parseInt(formData.get("sesiones_usadas")) || 0
+				: null;
+			const crearPaquete = havePackageActive && !paqueteOriginal.active;
+			const ajustarSesiones =
+				havePackageActive &&
+				paqueteOriginal.active &&
+				sesionesUsadas !== paqueteOriginal.used;
+			const quitarPaquete =
+				!havePackageActive &&
+				paqueteOriginal.active &&
+				quitarPaqueteConfirmado;
+			const idPackageNuevo = crearPaquete
+				? document.getElementById("packageCatalogSelect")?.value
 				: null;
 
+			if (crearPaquete && !idPackageNuevo) {
+				alert("Selecciona el paquete que se le asignará al paciente");
+				return;
+			}
+
+			// havepackage lo administran los endpoints de paquete (POST/DELETE)
 			const data = {
 				firstname: formData.get("firstname"),
 				lastname: formData.get("lastname"),
@@ -1180,9 +1304,9 @@ try {
 				email: formData.get("email"),
 				idemployed: formData.get("idEmpleado") || null,
 				sanction: formData.get("sanction") === "on",
-				havepackage: havePackageActive,
 				is_active: true,
 			};
+			if (!isEdit) data.havepackage = false;
 
 			// Vía el proxy /api del front: reenvía la cookie auth_token para que
 			// la API valide la sesión (directo al backend iba sin credenciales).
@@ -1227,23 +1351,91 @@ try {
 						}
 					}
 
-					// Step 3: Update Package Sessions if active
-					if (havePackageActive && sesionesUsadas !== null) {
+					// Step 3: Sincronizar paquete (crear / ajustar sesiones / quitar)
+					const packageErrors = [];
+					const leerError = async (res, fallback) => {
 						try {
-							await fetch(
+							const body = await res.json();
+							return body.error || body.message || fallback;
+						} catch {
+							return fallback;
+						}
+					};
+
+					try {
+						if (crearPaquete) {
+							const pkgRes = await fetch(
+								`/api/v1/Pacientes/${patientId}/paquete`,
+								{
+									method: "POST",
+									headers: { "Content-Type": "application/json" },
+									body: JSON.stringify({ idpackage: Number(idPackageNuevo) }),
+								},
+							);
+							if (!pkgRes.ok) {
+								packageErrors.push(
+									await leerError(pkgRes, "No se pudo crear el paquete"),
+								);
+							} else if (sesionesUsadas > 0) {
+								const sesRes = await fetch(
+									`/api/v1/Pacientes/${patientId}/paquete/sesiones`,
+									{
+										method: "PATCH",
+										headers: { "Content-Type": "application/json" },
+										body: JSON.stringify({ sessions_used: sesionesUsadas }),
+									},
+								);
+								if (!sesRes.ok) {
+									packageErrors.push(
+										await leerError(
+											sesRes,
+											"No se pudieron registrar las sesiones ya tomadas",
+										),
+									);
+								}
+							}
+						} else if (ajustarSesiones) {
+							const sesRes = await fetch(
 								`/api/v1/Pacientes/${patientId}/paquete/sesiones`,
 								{
 									method: "PATCH",
 									headers: { "Content-Type": "application/json" },
 									body: JSON.stringify({ sessions_used: sesionesUsadas }),
-								}
+								},
 							);
-						} catch (pkgErr) {
-							console.error("Error updating package sessions:", pkgErr);
+							if (!sesRes.ok) {
+								packageErrors.push(
+									await leerError(
+										sesRes,
+										"No se pudieron actualizar las sesiones",
+									),
+								);
+							}
+						} else if (quitarPaquete) {
+							const delRes = await fetch(
+								`/api/v1/Pacientes/${patientId}/paquete`,
+								{ method: "DELETE" },
+							);
+							if (!delRes.ok) {
+								packageErrors.push(
+									await leerError(delRes, "No se pudo quitar el paquete"),
+								);
+							}
 						}
+					} catch (pkgErr) {
+						console.error("Error sincronizando paquete:", pkgErr);
+						packageErrors.push("Error de conexión al sincronizar el paquete");
 					}
 
-					alert(isEdit ? "Paciente actualizado" : "Paciente creado");
+					if (packageErrors.length > 0) {
+						alert(
+							(isEdit ? "Paciente actualizado" : "Paciente creado") +
+								", pero el paquete tuvo un problema:\n- " +
+								packageErrors.join("\n- "),
+						);
+					} else {
+						alert(isEdit ? "Paciente actualizado" : "Paciente creado");
+					}
 					window.location.reload();
 				} else {
 					const err = await response.json();
@@ -1282,8 +1474,6 @@ try {
 		}
 	};
 
-	// Init
-	renderTable();
 	// Init
 	renderTable();
 </script>
