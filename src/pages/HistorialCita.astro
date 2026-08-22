@@ -4,37 +4,15 @@ import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
 
-let historial = [];
-
 import { SERVER_BACKEND_URL } from "../config";
 const backendUrl = SERVER_BACKEND_URL;
-const token = Astro.cookies.get("auth_token")?.value;
-const headers = {
-	"Content-Type": "application/json",
-	...(token && { Cookie: `auth_token=${token}` }),
-};
 
-const { Agent } = await import("node:https");
-const agent = new Agent({ rejectUnauthorized: false });
-
-try {
-	// @ts-ignore
-	// @ts-ignore
-	const response = await fetch(`${backendUrl}/api/v1/HistorialClinico`, {
-		headers,
-		agent,
-	} as any);
-	if (response.ok) {
-		historial = await response.json();
-	} else {
-		console.error("Error fetching historial:", response.status);
-	}
-} catch (error) {
-	console.error("Error fetching historial:", error);
-}
+// El listado ya no se embebe en el HTML: se pide por página al abrir la vista.
+// Antes viajaban al navegador todas las citas de todos los pacientes —con
+// teléfono y motivo de consulta— aunque en pantalla solo se vieran diez.
 ---
 
-<Layout title="Historial de Citas">
+<Layout title="Registro de Citas">
 	<div
 		class="flex h-screen overflow-hidden bg-gradient-to-br from-[#F0F4F8] via-[#E6F0EA] to-[#F0F4F8]"
 	>
@@ -51,7 +29,7 @@ try {
 			>
 			</div>
 
-			<TopTag titulo="Historial Clínico" nombreUsuario="Administrador" />
+			<TopTag titulo="Registro de Citas" nombreUsuario="Administrador" />
 
 			<main
 				class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-[#2F5D50]/20 scrollbar-track-transparent relative z-10"
@@ -60,22 +38,17 @@ try {
 				<div
 					class="glass-panel rounded-3xl overflow-hidden animate-fade-in-up stagger-2 border border-white/40 shadow-xl flex flex-col h-full max-h-[calc(100vh-140px)]"
 				>
-					<!-- Header de la tabla con Filtros -->
+					<!-- Header de la tabla con Filtros. Sin título propio: el
+					     encabezado de la página ya nombra la vista, y repetirlo a
+					     60px de distancia solo le quita ancho al buscador. -->
 					<div
-						class="p-6 border-b border-[#2F5D50]/10 bg-white/40 flex flex-col sm:flex-row justify-between items-center gap-4"
+						class="p-6 border-b border-[#2F5D50]/10 bg-white/40 flex flex-col sm:flex-row justify-end items-center gap-4"
 					>
-						<h2
-							class="text-xl font-bold text-[#2F5D50] flex items-center gap-2"
-						>
-							<i class="fa-solid fa-file-medical"></i>
-							Registros
-						</h2>
-
 						<div
 							class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
 						>
 							<!-- Buscador -->
-							<div class="relative group w-full sm:w-64">
+							<div class="relative group w-full sm:w-80">
 								<input
 									type="text"
 									id="searchInput"
@@ -99,11 +72,56 @@ try {
 									id="rowsPerPage"
 									class="bg-transparent text-sm font-bold text-[#2F5D50] outline-none cursor-pointer"
 								>
-									<option value="5">5</option>
-									<option value="10" selected>10</option>
+									<option value="10">10</option>
+									<option value="25" selected>25</option>
+									<option value="50">50</option>
 								</select>
 							</div>
 						</div>
+					</div>
+
+					<!-- Rango de fechas: el recorte por defecto se muestra en
+					     pantalla, nunca se aplica de forma invisible -->
+					<div
+						class="px-6 py-3 border-b border-[#2F5D50]/10 bg-white/30 flex flex-wrap items-center gap-3"
+					>
+						<span
+							class="text-xs font-bold text-gray-500 flex items-center gap-2 whitespace-nowrap"
+						>
+							<i class="fa-solid fa-calendar-days"></i>
+							Periodo:
+						</span>
+						<div
+							id="rangePresets"
+							role="group"
+							aria-label="Rango de fechas"
+							class="flex gap-2 overflow-x-auto custom-scrollbar"
+						>
+						</div>
+						<div class="flex items-center gap-2 ml-auto">
+							<input
+								type="date"
+								id="dateFrom"
+								aria-label="Desde"
+								class="glass-input rounded-xl px-3 py-1.5 text-xs font-semibold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20"
+							/>
+							<span class="text-xs text-gray-400">a</span>
+							<input
+								type="date"
+								id="dateTo"
+								aria-label="Hasta"
+								class="glass-input rounded-xl px-3 py-1.5 text-xs font-semibold text-[#2F5D50] outline-none focus:ring-2 focus:ring-[#2F5D50]/20"
+							/>
+						</div>
+					</div>
+
+					<!-- Filtro por estatus (los chips se generan desde STATUS_META) -->
+					<div
+						id="statusFilters"
+						role="group"
+						aria-label="Filtrar por estatus"
+						class="px-6 py-3 border-b border-[#2F5D50]/10 bg-white/25 flex gap-2 overflow-x-auto custom-scrollbar"
+					>
 					</div>
 
 					<!-- Tabla -->
@@ -155,6 +173,36 @@ try {
 								class="fa-regular fa-folder-open text-4xl mb-2 opacity-50"
 							></i>
 							<p>No se encontraron registros</p>
+						</div>
+
+						<!-- Carga y error: cada página se pide al servidor -->
+						<div
+							id="loadingState"
+							role="status"
+							aria-live="polite"
+							class="hidden absolute inset-0 flex flex-col items-center justify-center text-[#2F5D50] bg-white/60 backdrop-blur-sm"
+						>
+							<i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"
+							></i>
+							<p class="text-sm font-semibold">Cargando registros...</p>
+						</div>
+
+						<div
+							id="errorState"
+							role="alert"
+							class="hidden absolute inset-0 flex flex-col items-center justify-center text-red-600 bg-white/70 backdrop-blur-sm gap-3"
+						>
+							<i class="fa-solid fa-triangle-exclamation text-3xl"></i>
+							<p id="errorMessage" class="text-sm font-semibold">
+								No se pudo cargar el historial
+							</p>
+							<button
+								type="button"
+								id="retryBtn"
+								class="px-4 py-2 rounded-xl bg-[#2F5D50] text-white text-xs font-bold hover:bg-[#24473d] transition-colors"
+							>
+								Reintentar
+							</button>
 						</div>
 					</div>
 
@@ -620,25 +668,113 @@ try {
 	</div>
 
 	<!-- Script Cliente para Paginación y Filtro -->
-	<script define:vars={{ historial, backendUrl }}>
-		// Datos iniciales desde el servidor
-		let allData = historial || [];
-		// Ensure allData is an array
-		if (!Array.isArray(allData) && allData.body) {
-			allData = allData.body;
-		} else if (!Array.isArray(allData)) {
-			allData = [];
+	<script define:vars={{ backendUrl }}>
+		// Página actual devuelta por el servidor. El filtrado, la búsqueda y la
+		// paginación viven en la base: aquí solo se pinta lo que llega.
+		let pageRows = [];
+		let totalRecordsCount = 0;
+		let countsByStatus = {};
+
+		// Fuente única de los estatus: alimenta el badge de la tabla y los chips
+		// del filtro, para que nunca se desincronicen.
+		const STATUS_META = {
+			wait: {
+				label: "En Espera",
+				badge: "bg-yellow-50 text-yellow-700 border-yellow-200",
+				dot: "bg-yellow-400",
+				active: "bg-yellow-500 text-white border-yellow-500",
+			},
+			confirmed: {
+				label: "Confirmada",
+				badge: "bg-blue-50 text-blue-700 border-blue-200",
+				dot: "bg-blue-400",
+				active: "bg-blue-600 text-white border-blue-600",
+			},
+			concluded: {
+				label: "Concluida",
+				badge: "bg-green-50 text-green-700 border-green-200",
+				dot: "bg-green-500",
+				active: "bg-green-600 text-white border-green-600",
+			},
+			canceled: {
+				label: "Cancelada",
+				badge: "bg-red-50 text-red-700 border-red-200",
+				dot: "bg-red-500",
+				active: "bg-red-600 text-white border-red-600",
+			},
+			// Naranja, no rojo: cancelar y no presentarse son cosas distintas y
+			// antes compartían color, así que no se distinguían de un vistazo.
+			"no assisted": {
+				label: "No Asistió",
+				badge: "bg-orange-50 text-orange-700 border-orange-200",
+				dot: "bg-orange-400",
+				active: "bg-orange-500 text-white border-orange-500",
+			},
+		};
+		const STATUS_FALLBACK = {
+			label: "Desconocido",
+			badge: "bg-gray-100 text-gray-600 border-gray-200",
+			dot: "bg-gray-400",
+			active: "bg-gray-600 text-white border-gray-600",
+		};
+
+		const ALL_STATUSES = "all";
+		const DEFAULT_ROWS_PER_PAGE = 25;
+		const SEARCH_DEBOUNCE_MS = 350;
+
+		// Presets del periodo. `months: null` = sin recorte de fechas.
+		const RANGE_PRESETS = [
+			{ id: "30d", label: "30 días", months: 1 },
+			{ id: "6m", label: "6 meses", months: 6 },
+			{ id: "1y", label: "1 año", months: 12 },
+			{ id: "all", label: "Todo", months: null },
+		];
+		const DEFAULT_RANGE_PRESET = "6m";
+
+		// Estado de la consulta. Es lo único que decide qué se le pide al servidor.
+		const state = {
+			page: 1,
+			limit: DEFAULT_ROWS_PER_PAGE,
+			status: ALL_STATUSES,
+			from: "",
+			to: "",
+			search: "",
+		};
+
+		const toISODate = (date) => date.toISOString().slice(0, 10);
+
+		function rangeFromPreset(presetId) {
+			const preset = RANGE_PRESETS.find((p) => p.id === presetId);
+			if (!preset || preset.months === null) return { from: "", to: "" };
+			const to = new Date();
+			const from = new Date();
+			from.setMonth(from.getMonth() - preset.months);
+			return { from: toISODate(from), to: toISODate(to) };
 		}
 
-		let filteredData = [...allData];
-
-		// Estado de la paginación
-		let currentPage = 1;
-		let rowsPerPage = 10;
+		// Qué preset corresponde al rango actual, para marcar el chip activo
+		// cuando el rango llegó por URL o por los campos de fecha manuales.
+		function matchingPreset() {
+			if (!state.from && !state.to) return "all";
+			const found = RANGE_PRESETS.find((preset) => {
+				if (preset.months === null) return false;
+				const range = rangeFromPreset(preset.id);
+				return range.from === state.from && range.to === state.to;
+			});
+			return found ? found.id : null;
+		}
 
 		// Elementos DOM
 		const tableBody = document.getElementById("tableBody");
 		const emptyState = document.getElementById("emptyState");
+		const loadingState = document.getElementById("loadingState");
+		const errorState = document.getElementById("errorState");
+		const errorMessage = document.getElementById("errorMessage");
+		const retryBtn = document.getElementById("retryBtn");
+		const statusFilters = document.getElementById("statusFilters");
+		const rangePresets = document.getElementById("rangePresets");
+		const dateFrom = document.getElementById("dateFrom");
+		const dateTo = document.getElementById("dateTo");
 		const searchInput = document.getElementById("searchInput");
 		const rowsPerPageSelect = document.getElementById("rowsPerPage");
 		const prevBtn = document.getElementById("prevBtn");
@@ -1010,13 +1146,8 @@ try {
 
 		// Función Principal de Renderizado
 		function renderTable() {
-			// Calcular índices
-			const startIndex = (currentPage - 1) * rowsPerPage;
-			const endIndex = Math.min(
-				startIndex + rowsPerPage,
-				filteredData.length,
-			);
-			const pageData = filteredData.slice(startIndex, endIndex);
+			// La página ya viene recortada por el servidor: aquí no se corta nada.
+			const pageData = pageRows;
 
 			// Limpiar tabla
 			tableBody.innerHTML = "";
@@ -1025,7 +1156,7 @@ try {
 				emptyState.classList.remove("hidden");
 				showingStart.textContent = 0;
 				showingEnd.textContent = 0;
-				totalRecords.textContent = 0;
+				totalRecords.textContent = totalRecordsCount;
 				updatePaginationControls();
 				return;
 			}
@@ -1038,7 +1169,9 @@ try {
 				const patientName = item.patientname || "Desconocido";
 				const dateRaw = item.currentday; // ISO String
 				const timeRaw = item.inithour;
-				const serviceName = item.name || "Servicio General";
+				// El servicio se asigna al cobrar la cita: las que aún no pasan por
+				// caja (en espera, confirmadas) llegan sin nombre.
+				const serviceName = item.name || "Sin asignar";
 				const reason = item.reason || "";
 				const status = item.status;
 				const hasPackage =
@@ -1102,33 +1235,11 @@ try {
                 `;
 
 				// Status Badge
-				let statusBadge = "";
-				let statusColor = "bg-gray-100 text-gray-600 border-gray-200";
-				let statusLabel = status || "Desconocido";
-
-				if (status === "wait") {
-					statusLabel = "En Espera";
-					statusColor =
-						"bg-yellow-50 text-yellow-700 border-yellow-200";
-				}
-				if (status === "confirmed") {
-					statusLabel = "Confirmada";
-					statusColor = "bg-blue-50 text-blue-700 border-blue-200";
-				}
-				if (status === "concluded") {
-					statusLabel = "Concluida";
-					statusColor = "bg-green-50 text-green-700 border-green-200";
-				}
-				if (status === "canceled") {
-					statusLabel = "Cancelada";
-					statusColor = "bg-red-50 text-red-700 border-red-200";
-				}
-				if (status === "no assisted") {
-					statusLabel = "No Asistió";
-					statusColor = "bg-red-50 text-red-700 border-red-200";
-				}
-
-				statusBadge = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${statusColor}">${statusLabel}</span>`;
+				const statusMeta = STATUS_META[status] || {
+					...STATUS_FALLBACK,
+					label: status || STATUS_FALLBACK.label,
+				};
+				const statusBadge = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${statusMeta.badge}">${statusMeta.label}</span>`;
 
 				// Package Cell
 				const packageCell = hasPackage
@@ -1191,70 +1302,262 @@ try {
 			});
 
 			// Actualizar contadores
-			showingStart.textContent =
-				filteredData.length > 0 ? startIndex + 1 : 0;
-			showingEnd.textContent = endIndex;
-			totalRecords.textContent = filteredData.length;
+			const startIndex = (state.page - 1) * state.limit;
+			showingStart.textContent = startIndex + 1;
+			showingEnd.textContent = startIndex + pageData.length;
+			totalRecords.textContent = totalRecordsCount;
 
 			updatePaginationControls();
 		}
 
 		function updatePaginationControls() {
-			const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+			const totalPages = Math.ceil(totalRecordsCount / state.limit);
 
-			prevBtn.disabled = currentPage === 1;
-			nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+			prevBtn.disabled = state.page === 1;
+			nextBtn.disabled = state.page >= totalPages || totalPages === 0;
 		}
 
-		// Event Listeners
-		searchInput.addEventListener("input", (e) => {
-			const term = e.target.value.trim().toLowerCase();
-			// Solo dígitos del término, para comparar contra teléfonos sin
-			// importar el formato (espacios, guiones, paréntesis, etc.)
-			const digits = term.replace(/\D/g, "");
+		// El estado del filtro vive en la URL: recargar no lo pierde, el botón
+		// atrás funciona y se puede compartir el link de lo que se está viendo.
+		function syncUrl() {
+			const params = new URLSearchParams();
+			if (state.status !== ALL_STATUSES) params.set("status", state.status);
+			if (state.from) params.set("from", state.from);
+			if (state.to) params.set("to", state.to);
+			// Sin rango la URL quedaría igual que una visita nueva y al recargar
+			// se reaplicaría el preset por defecto: "Todo" tiene que ser explícito.
+			if (!state.from && !state.to) params.set("range", "all");
+			if (state.search) params.set("search", state.search);
+			if (state.page > 1) params.set("page", String(state.page));
+			if (state.limit !== DEFAULT_ROWS_PER_PAGE) {
+				params.set("limit", String(state.limit));
+			}
+			const query = params.toString();
+			history.replaceState(
+				null,
+				"",
+				query ? `${location.pathname}?${query}` : location.pathname,
+			);
+		}
 
-			filteredData = allData.filter((item) => {
-				const patient = (item.patientname || "").toLowerCase();
-				const service = (item.name || "").toLowerCase();
-				const phone = String(
-					item.patientphone ||
-						item.phone ||
-						item.patient?.phone ||
-						"",
-				).replace(/\D/g, "");
+		function readUrl() {
+			const params = new URLSearchParams(location.search);
+			const status = params.get("status");
+			if (status && STATUS_META[status]) state.status = status;
 
-				const coincidePatient = patient.includes(term);
-				const coincideService = service.includes(term);
-				const coincidePhone = digits.length > 0 && phone.includes(digits);
+			const hasRange =
+				params.get("range") === "all" ||
+				params.has("from") ||
+				params.has("to");
+			if (hasRange) {
+				state.from = params.get("from") || "";
+				state.to = params.get("to") || "";
+			} else {
+				// Sin rango en la URL se aplica el preset por defecto, y el chip
+				// correspondiente queda marcado: el recorte siempre se ve.
+				const range = rangeFromPreset(DEFAULT_RANGE_PRESET);
+				state.from = range.from;
+				state.to = range.to;
+			}
 
-				return coincidePatient || coincideService || coincidePhone;
+			state.search = params.get("search") || "";
+			state.page = Math.max(1, Number(params.get("page")) || 1);
+			state.limit = Number(params.get("limit")) || DEFAULT_ROWS_PER_PAGE;
+		}
+
+		function setBusy(isLoading) {
+			loadingState.classList.toggle("hidden", !isLoading);
+		}
+
+		async function loadPage() {
+			setBusy(true);
+			errorState.classList.add("hidden");
+
+			const params = new URLSearchParams({
+				page: String(state.page),
+				limit: String(state.limit),
 			});
-			currentPage = 1; // Resetear a primera página
-			renderTable();
+			if (state.status !== ALL_STATUSES) params.set("status", state.status);
+			if (state.from) params.set("from", state.from);
+			if (state.to) params.set("to", state.to);
+			if (state.search) params.set("search", state.search);
+
+			try {
+				// Vía el proxy /api del front para que viaje la cookie de sesión.
+				const response = await fetch(
+					`/api/v1/HistorialClinico?${params.toString()}`,
+				);
+				const payload = await response.json();
+				if (!response.ok) {
+					throw new Error(payload?.error || "No se pudo cargar el historial");
+				}
+
+				pageRows = payload.rows || [];
+				totalRecordsCount = payload.total || 0;
+				countsByStatus = payload.counts_by_status || {};
+
+				// Borrar el filtro puede dejar la página actual fuera de rango.
+				const totalPages = Math.ceil(totalRecordsCount / state.limit);
+				if (state.page > 1 && state.page > totalPages) {
+					state.page = 1;
+					setBusy(false);
+					return loadPage();
+				}
+
+				renderStatusFilters();
+				renderRangePresets();
+				renderTable();
+				syncUrl();
+			} catch (error) {
+				console.error("Error cargando el historial:", error);
+				pageRows = [];
+				errorMessage.textContent = error.message;
+				errorState.classList.remove("hidden");
+				tableBody.innerHTML = "";
+				emptyState.classList.add("hidden");
+			} finally {
+				setBusy(false);
+			}
+		}
+
+		function renderRangePresets() {
+			const active = matchingPreset();
+			rangePresets.innerHTML = RANGE_PRESETS.map((preset) => {
+				const isActive = preset.id === active;
+				const style = isActive
+					? "bg-[#2F5D50] text-white border-[#2F5D50] shadow-sm"
+					: "bg-white/70 text-gray-600 border-gray-200 hover:border-[#2F5D50]/40 hover:text-[#2F5D50]";
+				return `
+					<button
+						type="button"
+						data-preset="${preset.id}"
+						aria-pressed="${isActive}"
+						class="px-3 py-1.5 rounded-full border text-xs font-bold whitespace-nowrap transition-all ${style}"
+					>${preset.label}</button>
+				`;
+			}).join("");
+
+			dateFrom.value = state.from;
+			dateTo.value = state.to;
+		}
+
+		function renderStatusFilters() {
+			const counts = countsByStatus;
+			const totalAll = Object.values(counts).reduce((sum, n) => sum + n, 0);
+
+			const chips = [
+				{ value: ALL_STATUSES, label: "Todas", total: totalAll, meta: null },
+				// Solo los estatus con citas: un chip en cero no aporta y roba espacio.
+				// El estatus activo se conserva aunque su conteo llegue en cero, para
+				// no dejar la vista filtrada por un chip que desapareció.
+				...Object.entries(STATUS_META)
+					.filter(([value]) => counts[value] || value === state.status)
+					.map(([value, meta]) => ({
+						value,
+						label: meta.label,
+						total: counts[value] || 0,
+						meta,
+					})),
+			];
+
+			statusFilters.innerHTML = chips
+				.map(({ value, label, total, meta }) => {
+					const isActive = value === state.status;
+					const activeClass = meta
+						? meta.active
+						: "bg-[#2F5D50] text-white border-[#2F5D50]";
+					const shape =
+						"px-3 py-1.5 rounded-full border text-xs font-bold whitespace-nowrap flex items-center gap-2 transition-all";
+					const style = isActive
+						? `${activeClass} shadow-sm`
+						: "bg-white/70 text-gray-600 border-gray-200 hover:border-[#2F5D50]/40 hover:text-[#2F5D50]";
+					// El punto de color repite el del badge de la tabla: relaciona
+					// el chip con la fila sin depender solo del relleno.
+					const dot = meta
+						? `<span class="w-2 h-2 rounded-full ${isActive ? "bg-white/80" : meta.dot}"></span>`
+						: "";
+					const countStyle = isActive
+						? "bg-white/25"
+						: "bg-gray-100 text-gray-500";
+
+					return `
+						<button
+							type="button"
+							data-status="${value}"
+							aria-pressed="${isActive}"
+							class="${shape} ${style}"
+						>
+							${dot}${label}
+							<span class="px-1.5 py-0.5 rounded-md text-[10px] ${countStyle}">${total}</span>
+						</button>
+					`;
+				})
+				.join("");
+		}
+
+		// Cualquier cambio de filtro vuelve a la página 1: quedarse en la 7 de un
+		// resultado que ahora tiene 2 páginas deja la tabla vacía sin explicación.
+		function applyFilterChange(changes) {
+			Object.assign(state, changes, { page: 1 });
+			loadPage();
+		}
+
+		statusFilters.addEventListener("click", (e) => {
+			const button = e.target.closest("button[data-status]");
+			if (!button) return;
+			applyFilterChange({ status: button.dataset.status });
+		});
+
+		rangePresets.addEventListener("click", (e) => {
+			const button = e.target.closest("button[data-preset]");
+			if (!button) return;
+			applyFilterChange(rangeFromPreset(button.dataset.preset));
+		});
+
+		dateFrom.addEventListener("change", () => {
+			applyFilterChange({ from: dateFrom.value });
+		});
+
+		dateTo.addEventListener("change", () => {
+			applyFilterChange({ to: dateTo.value });
+		});
+
+		// Debounce: sin él, cada tecla dispara una consulta a la base.
+		let searchTimer;
+		searchInput.addEventListener("input", (e) => {
+			const term = e.target.value.trim();
+			clearTimeout(searchTimer);
+			searchTimer = setTimeout(() => {
+				applyFilterChange({ search: term });
+			}, SEARCH_DEBOUNCE_MS);
 		});
 
 		rowsPerPageSelect.addEventListener("change", (e) => {
-			rowsPerPage = parseInt(e.target.value);
-			currentPage = 1;
-			renderTable();
+			applyFilterChange({ limit: parseInt(e.target.value) });
 		});
 
+		retryBtn.addEventListener("click", () => loadPage());
+
 		prevBtn.addEventListener("click", () => {
-			if (currentPage > 1) {
-				currentPage--;
-				renderTable();
+			if (state.page > 1) {
+				state.page--;
+				loadPage();
 			}
 		});
 
 		nextBtn.addEventListener("click", () => {
-			const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-			if (currentPage < totalPages) {
-				currentPage++;
-				renderTable();
+			const totalPages = Math.ceil(totalRecordsCount / state.limit);
+			if (state.page < totalPages) {
+				state.page++;
+				loadPage();
 			}
 		});
 
 		// Inicializar
-		renderTable();
+		readUrl();
+		searchInput.value = state.search;
+		rowsPerPageSelect.value = String(state.limit);
+		renderRangePresets();
+		loadPage();
 	</script>
 </Layout>

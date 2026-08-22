@@ -54,3 +54,17 @@ export const getImageUrl = (path: string) => {
 
 // Export backend URL constant for cases where raw access is strictly needed server-side
 export const SERVER_BACKEND_URL = PRODUCTION_API_URL;
+
+/**
+ * URL del WebSocket, que el NAVEGADOR necesita resolver.
+ *
+ * No puede salir de SERVER_BACKEND_URL: `BACKEND_URL` no lleva el prefijo PUBLIC_,
+ * así que Astro no la expone al cliente y en el navegador queda undefined,
+ * cayendo al default de producción. Resultado: en local la agenda escuchaba los
+ * eventos del servidor real de la clínica en vez de los del backend local.
+ *
+ * Con PUBLIC_ el valor sí viaja al navegador. Sin definir, mantiene el default
+ * de producción, que es el correcto para el despliegue.
+ */
+export const SOCKET_URL =
+    import.meta.env.PUBLIC_SOCKET_URL || DEFAULT_BACKEND_URL;
