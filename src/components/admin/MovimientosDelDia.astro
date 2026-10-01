@@ -1,0 +1,424 @@
+---
+// "Detalle de Movimientos" del dashboard admin: citas concluidas del día, su cobro y
+// el corte de caja por método. Los pagos se registran en <PaymentModal />.
+import { methodDotClass, type PaymentType } from "../../utils/payments";
+
+interface Props {
+	appointmentStatus: { citas: Record<string, number> }[];
+	paymentTypes: PaymentType[];
+}
+
+const { appointmentStatus, paymentTypes } = Astro.props;
+const citas = appointmentStatus?.[0]?.citas ?? {};
+
+const statusIndicators = [
+	{ label: "Concluidas", count: citas.concluida || 0, color: "green", id: "account-appointment-concluidas" },
+	{ label: "Confirmadas", count: citas.confirmada || 0, color: "blue", id: "account-appointment-confirmadas" },
+	{ label: "Pendientes", count: citas.espera || 0, color: "yellow", id: "account-appointment-pendientes" },
+	{ label: "Canceladas", count: citas.cancelada || 0, color: "red", id: "account-appointment-canceladas" },
+];
+---
+
+<div
+	class="glass-panel rounded-3xl p-6 border border-white/60 !bg-white shadow-lg min-h-[18rem] flex flex-col flex-1"
+>
+	<div class="flex flex-wrap justify-between items-center mb-4 gap-4 flex-shrink-0">
+		<div>
+			<h2 class="text-xl font-bold text-[#2F5D50] flex items-center gap-2">
+				<i class="fa-solid fa-table-list"></i>
+				Detalle de Movimientos
+			</h2>
+			<p class="text-xs text-gray-500 ml-7">Transacciones del día</p>
+		</div>
+
+		<div class="flex flex-wrap gap-3">
+			{
+				statusIndicators.map((item) => (
+					<div class={`px-3 py-1.5 rounded-lg bg-${item.color}-50 border border-${item.color}-100 flex items-center gap-2`}>
+						<div class={`w-2 h-2 rounded-full bg-${item.color}-500`} />
+						<div class={`text-xs font-bold text-${item.color}-700 flex gap-1`}>
+							<span>{item.label}:</span>
+							<span id={item.id}>{item.count}</span>
+						</div>
+					</div>
+				))
+			}
+
+			<div class="h-6 w-px bg-gray-200 mx-1"></div>
+
+			<div
+				class="px-2 py-0.5 rounded-lg bg-gray-50 border border-gray-200 flex items-center gap-2 shadow-sm focus-within:ring-2 focus-within:ring-[#2F5D50]/20 transition-all"
+			>
+				<i class="fa-regular fa-calendar text-xs text-gray-400"></i>
+				<input
+					type="date"
+					id="filter-date-stats"
+					class="bg-transparent border-none outline-none text-xs font-bold text-gray-700 w-24 p-0 cursor-pointer"
+				/>
+			</div>
+		</div>
+	</div>
+
+	<!-- Corte del día: siempre del día completo, sin importar el filtro de la tabla -->
+	<section aria-label="Corte del día" class="mb-4">
+		<div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2" aria-live="polite">
+			<div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+				<p class="text-[10px] font-bold uppercase tracking-wide text-gray-500">Vendido</p>
+				<p id="corte-vendido" class="text-base font-bold text-gray-800 font-mono">$0.00</p>
+			</div>
+			<div class="rounded-xl border border-[#2F5D50]/20 bg-[#2F5D50]/5 px-3 py-2">
+				<p class="text-[10px] font-bold uppercase tracking-wide text-[#2F5D50]">Cobrado</p>
+				<p id="corte-cobrado" class="text-base font-bold text-[#2F5D50] font-mono">$0.00</p>
+			</div>
+			<div id="corte-por-cobrar-card" class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+				<p class="text-[10px] font-bold uppercase tracking-wide opacity-80">
+					Por cobrar <span id="corte-por-cobrar-count" class="normal-case font-medium"></span>
+				</p>
+				<p id="corte-por-cobrar" class="text-base font-bold font-mono">$0.00</p>
+			</div>
+			{
+				paymentTypes.map((type) => (
+					<div class="rounded-xl border border-gray-200 bg-white px-3 py-2" data-corte-method={type.name}>
+						<p class="text-[10px] font-bold uppercase tracking-wide text-gray-500 flex items-center gap-1.5">
+							<span class={`w-2 h-2 rounded-full ${methodDotClass(type.name)}`} />
+							{type.name}
+						</p>
+						<p class="text-base font-bold text-gray-800 font-mono" data-corte-value>$0.00</p>
+					</div>
+				))
+			}
+		</div>
+	</section>
+
+	<div class="flex justify-end mb-3">
+		<label
+			class="px-2 py-1 rounded-lg bg-gray-50 border border-gray-200 flex items-center gap-2 shadow-sm focus-within:ring-2 focus-within:ring-[#2F5D50]/20 transition-all"
+		>
+			<i class="fa-solid fa-filter text-xs text-gray-400"></i>
+			<span class="sr-only">Filtrar movimientos</span>
+			<select
+				id="filter-payment-method"
+				class="bg-transparent border-none outline-none text-xs font-bold text-gray-700 p-0 cursor-pointer pr-1 min-h-[32px]"
+			>
+				<option value="">Todos</option>
+				<option value="status:due">Por cobrar</option>
+				<option value="status:overpaid">Con excedente</option>
+				{paymentTypes.map((type) => <option value={`method:${type.name}`}>Pagado con {type.name}</option>)}
+			</select>
+		</label>
+	</div>
+
+	<div class="overflow-x-auto custom-scrollbar rounded-2xl border border-[#2F5D50]/10">
+		<table class="w-full text-left border-collapse">
+			<thead>
+				<tr class="bg-[#2F5D50]/5 text-[#2F5D50] border-b border-[#2F5D50]/10 text-xs uppercase">
+					<th class="p-3 font-bold">Paciente</th>
+					<th class="p-3 font-bold">Servicio</th>
+					<th class="p-3 font-bold">Adicionales</th>
+					<th class="p-3 font-bold">Fisio</th>
+					<th class="p-3 font-bold text-right">Subtotal</th>
+					<th class="p-3 font-bold text-right">Desc.</th>
+					<th class="p-3 font-bold text-right">Total</th>
+					<th class="p-3 font-bold text-center">Pago</th>
+				</tr>
+			</thead>
+			<tbody id="transaction-table-body" class="divide-y divide-[#2F5D50]/5 text-sm text-gray-600"></tbody>
+		</table>
+	</div>
+</div>
+
+<script>
+	import {
+		PAYMENT_STATUS_UI,
+		PAYMENTS_OPEN_EVENT,
+		PAYMENTS_UPDATED_EVENT,
+		escapeHtml,
+		formatMoney,
+		fromCents,
+		methodDotClass,
+		readApiError,
+		toCents,
+		type AppointmentPaymentsView,
+		type PaymentLine,
+		type PaymentStatus,
+		type PaymentsOpenDetail,
+	} from "../../utils/payments";
+
+	interface MovementRow {
+		appointment_id: number | string;
+		patient_name: string;
+		service_name: string | null;
+		additional_services: string | null;
+		physio_name: string;
+		subtotal: number | string | null;
+		discount: number | string | null;
+		total: number | string | null;
+		paid: number | string;
+		balance: number | string;
+		payment_status: PaymentStatus;
+		payments: PaymentLine[];
+	}
+
+	const FILTER_DUE = "status:due";
+	const FILTER_OVERPAID = "status:overpaid";
+	const FILTER_METHOD_PREFIX = "method:";
+	const DUE_STATUSES: readonly PaymentStatus[] = ["pending", "partial"];
+	const COLUMN_COUNT = 8;
+	const SAVE_FEEDBACK_MS = 2000;
+	const DUE_CARD_ACTIVE = ["border-amber-200", "bg-amber-50", "text-amber-800"];
+	const DUE_CARD_IDLE = ["border-gray-200", "bg-gray-50", "text-gray-500"];
+
+	const tbody = document.getElementById("transaction-table-body") as HTMLTableSectionElement | null;
+	const dateInput = document.getElementById("filter-date-stats") as HTMLInputElement | null;
+	const filterSelect = document.getElementById("filter-payment-method") as HTMLSelectElement | null;
+
+	let rows: MovementRow[] = [];
+
+	const num = (value: number | string | null | undefined): number => Number(value ?? 0) || 0;
+	const sameId = (a: number | string, b: number | string) => String(a) === String(b);
+	const localToday = () =>
+		new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0];
+
+	function matchesFilter(row: MovementRow): boolean {
+		const filter = filterSelect?.value ?? "";
+		if (!filter) return true;
+		if (filter === FILTER_DUE) return DUE_STATUSES.includes(row.payment_status);
+		if (filter === FILTER_OVERPAID) return row.payment_status === "overpaid";
+		if (filter.startsWith(FILTER_METHOD_PREFIX)) {
+			const method = filter.slice(FILTER_METHOD_PREFIX.length);
+			return row.payments.some((p) => p.method === method);
+		}
+		return true;
+	}
+
+	function setText(id: string, text: string) {
+		const el = document.getElementById(id);
+		if (el) el.textContent = text;
+	}
+
+	function renderCorte() {
+		let soldCents = 0;
+		let paidCents = 0;
+		let dueCents = 0;
+		let dueCount = 0;
+		const byMethod = new Map<string, number>();
+
+		for (const row of rows) {
+			soldCents += toCents(num(row.total));
+			paidCents += toCents(num(row.paid));
+			if (DUE_STATUSES.includes(row.payment_status)) {
+				dueCents += Math.max(toCents(num(row.balance)), 0);
+				dueCount++;
+			}
+			for (const p of row.payments) {
+				byMethod.set(p.method, (byMethod.get(p.method) ?? 0) + toCents(p.amount));
+			}
+		}
+
+		setText("corte-vendido", formatMoney(fromCents(soldCents)));
+		setText("corte-cobrado", formatMoney(fromCents(paidCents)));
+		setText("corte-por-cobrar", formatMoney(fromCents(dueCents)));
+		setText("corte-por-cobrar-count", dueCount ? `(${dueCount})` : "");
+
+		const dueCard = document.getElementById("corte-por-cobrar-card");
+		if (dueCard) {
+			dueCard.classList.remove(...(dueCents > 0 ? DUE_CARD_IDLE : DUE_CARD_ACTIVE));
+			dueCard.classList.add(...(dueCents > 0 ? DUE_CARD_ACTIVE : DUE_CARD_IDLE));
+		}
+
+		document.querySelectorAll<HTMLElement>("[data-corte-method]").forEach((card) => {
+			const value = card.querySelector("[data-corte-value]");
+			if (value) value.textContent = formatMoney(fromCents(byMethod.get(card.dataset.corteMethod ?? "") ?? 0));
+		});
+	}
+
+	function payCellHtml(row: MovementRow): string {
+		const ui = PAYMENT_STATUS_UI[row.payment_status] ?? PAYMENT_STATUS_UI.pending;
+		if (row.payment_status === "no_charge") {
+			return `<span class="inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold ${ui.chip}">
+				<i class="fa-solid ${ui.icon}"></i>${ui.label}</span>`;
+		}
+
+		const lines = row.payments
+			.map((p) => `<span class="flex items-center gap-1.5">
+				<span class="w-1.5 h-1.5 rounded-full shrink-0 ${methodDotClass(p.method)}"></span>
+				${escapeHtml(p.method)} <span class="font-mono">${formatMoney(p.amount)}</span></span>`)
+			.join("");
+		const balance = num(row.balance);
+		const extra = {
+			pending: `<span>Tocar para cobrar</span>`,
+			partial: `<span class="font-bold">Saldo ${formatMoney(balance)}</span>`,
+			paid: "",
+			overpaid: `<span class="font-bold">Excede ${formatMoney(-balance)}</span>`,
+		}[row.payment_status] ?? "";
+
+		return `<button type="button" data-pay="${escapeHtml(row.appointment_id)}"
+			class="w-full min-h-[44px] rounded-xl border px-3 py-1.5 text-left transition-all active:scale-[0.98] hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2F5D50]/30 ${ui.chip}"
+			aria-label="Cobro de ${escapeHtml(row.patient_name)}: ${ui.label}">
+			<span class="flex items-center gap-1.5 text-xs font-bold"><i class="fa-solid ${ui.icon}"></i>${ui.label}</span>
+			<span class="flex flex-col gap-0.5 text-[11px] leading-tight mt-0.5">${lines}${extra}</span>
+		</button>`;
+	}
+
+	function buildRow(row: MovementRow): HTMLTableRowElement {
+		const tr = document.createElement("tr");
+		tr.className = "group hover:bg-gray-50 transition-colors";
+		tr.dataset.appointmentId = String(row.appointment_id);
+
+		const subtotal = num(row.subtotal ?? row.total);
+		const discount = num(row.discount);
+		tr.innerHTML = `
+			<td class="p-3 font-bold text-gray-800">${escapeHtml(row.patient_name)}</td>
+			<td class="p-3">${escapeHtml(row.service_name || "-")}</td>
+			<td class="p-3 text-xs">${escapeHtml(row.additional_services || "-")}</td>
+			<td class="p-3 text-[#2F5D50] font-medium">${escapeHtml(row.physio_name)}</td>
+			<td class="p-3 text-right font-mono">${formatMoney(subtotal)}</td>
+			<td class="p-3 text-right">
+				<div class="relative w-24 ml-auto">
+					<input type="text" inputmode="decimal" data-discount
+						value="${discount.toFixed(2)}" aria-label="Descuento de ${escapeHtml(row.patient_name)}"
+						class="w-full text-right bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-[#2F5D50]/20 focus:border-[#2F5D50] outline-none transition-all" />
+					<div class="save-indicator absolute -right-4 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity"></div>
+				</div>
+			</td>
+			<td class="p-3 text-right font-bold text-gray-800 font-mono">${formatMoney(num(row.total))}</td>
+			<td class="p-3 text-center w-48 min-w-[11rem]">${payCellHtml(row)}</td>
+		`;
+		return tr;
+	}
+
+	function render() {
+		if (!tbody) return;
+		renderCorte();
+		const visible = rows.filter(matchesFilter);
+		if (!visible.length) {
+			tbody.innerHTML = `<tr><td colspan="${COLUMN_COUNT}" class="p-4 text-center text-gray-400">No hay movimientos registrados</td></tr>`;
+			return;
+		}
+		tbody.replaceChildren(...visible.map(buildRow));
+	}
+
+	// Redibuja solo esa fila: un render completo le quitaría el foco al campo de
+	// descuento que el usuario esté editando en otra fila.
+	function rerenderRow(row: MovementRow) {
+		renderCorte();
+		const current = tbody?.querySelector<HTMLTableRowElement>(`tr[data-appointment-id="${CSS.escape(String(row.appointment_id))}"]`);
+		if (!current) return;
+		if (matchesFilter(row)) current.replaceWith(buildRow(row));
+		else current.remove();
+	}
+
+	function applyView(view: AppointmentPaymentsView): MovementRow | null {
+		const row = rows.find((r) => sameId(r.appointment_id, view.idappointment));
+		if (!row) return null;
+		row.paid = view.paid;
+		row.balance = view.balance;
+		row.payment_status = view.payment_status;
+		row.payments = view.payments
+			.filter((p) => !p.voided_at)
+			.map((p) => ({ method: p.method, amount: p.amount }));
+		return row;
+	}
+
+	async function load(date: string) {
+		if (!tbody) return;
+		tbody.innerHTML = `<tr><td colspan="${COLUMN_COUNT}" class="p-4 text-center"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-[#2F5D50]"></i></td></tr>`;
+		try {
+			const res = await fetch(`/api/v1/DashboardAdmin/DetailAppointments?date=${encodeURIComponent(date)}`);
+			if (!res.ok) throw new Error(await readApiError(res, "Error al cargar movimientos"));
+			const data = await res.json();
+			// Otra fecha pudo seleccionarse mientras esta respuesta viajaba.
+			if (dateInput && dateInput.value !== date) return;
+			rows = Array.isArray(data) ? data : [];
+			render();
+		} catch (error) {
+			console.error("[Movimientos] Error:", error);
+			rows = [];
+			renderCorte();
+			tbody.innerHTML = `<tr><td colspan="${COLUMN_COUNT}" class="p-4 text-center text-red-400">Error al cargar datos</td></tr>`;
+		}
+	}
+
+	function flashIndicator(input: HTMLInputElement, ok: boolean) {
+		const indicator = input.parentElement?.querySelector(".save-indicator");
+		if (!indicator) return;
+		indicator.innerHTML = ok
+			? '<i class="fa-solid fa-check text-green-500"></i>'
+			: '<i class="fa-solid fa-xmark text-red-500"></i>';
+		indicator.classList.remove("opacity-0");
+		setTimeout(() => indicator.classList.add("opacity-0"), SAVE_FEEDBACK_MS);
+	}
+
+	async function saveDiscount(input: HTMLInputElement, row: MovementRow) {
+		const previous = num(row.discount);
+		const discount = Number(input.value.replace(",", "."));
+		if (!Number.isFinite(discount) || discount < 0) {
+			input.value = previous.toFixed(2);
+			flashIndicator(input, false);
+			return;
+		}
+		const subtotal = num(row.subtotal ?? row.total);
+		const total = Math.max(0, subtotal - discount);
+
+		try {
+			const res = await fetch(`/api/v1/Citas/detalle/${row.appointment_id}`, {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ discount, total }),
+			});
+			if (!res.ok) throw new Error(await readApiError(res, "Error al guardar el descuento"));
+			row.discount = discount;
+			row.total = total;
+
+			// El saldo y el estado los calcula el backend (vista appointment_balance).
+			const balanceRes = await fetch(`/api/v1/Citas/${row.appointment_id}/pagos`);
+			if (balanceRes.ok) applyView(await balanceRes.json());
+			rerenderRow(row);
+			const fresh = tbody?.querySelector<HTMLInputElement>(
+				`tr[data-appointment-id="${CSS.escape(String(row.appointment_id))}"] [data-discount]`,
+			);
+			if (fresh) flashIndicator(fresh, true);
+		} catch (error) {
+			console.error("[Movimientos] Descuento:", error);
+			input.value = previous.toFixed(2);
+			flashIndicator(input, false);
+		}
+	}
+
+	function findRow(id: string | undefined): MovementRow | undefined {
+		return id === undefined ? undefined : rows.find((r) => sameId(r.appointment_id, id));
+	}
+
+	tbody?.addEventListener("click", (event) => {
+		const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-pay]");
+		const row = findRow(button?.dataset.pay);
+		if (!row) return;
+		const detail: PaymentsOpenDetail = {
+			appointmentId: Number(row.appointment_id),
+			patientName: row.patient_name,
+			serviceName: row.service_name || "",
+		};
+		window.dispatchEvent(new CustomEvent(PAYMENTS_OPEN_EVENT, { detail }));
+	});
+
+	// "change" y no "blur": solo guarda si el valor cambió.
+	tbody?.addEventListener("change", (event) => {
+		const input = event.target as HTMLInputElement;
+		if (!input.matches("[data-discount]")) return;
+		const row = findRow(input.closest("tr")?.dataset.appointmentId);
+		if (row) saveDiscount(input, row);
+	});
+
+	window.addEventListener(PAYMENTS_UPDATED_EVENT, (event) => {
+		const row = applyView((event as CustomEvent<AppointmentPaymentsView>).detail);
+		if (row) rerenderRow(row);
+	});
+
+	filterSelect?.addEventListener("change", render);
+
+	if (dateInput) {
+		dateInput.value ||= localToday();
+		dateInput.addEventListener("change", () => load(dateInput.value));
+		load(dateInput.value);
+	}
+</script>

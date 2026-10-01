@@ -1,0 +1,381 @@
+---
+// Cobro de una cita en uno o varios pagos (ej. $500 efectivo + $160 tarjeta).
+// Se abre con el evento PAYMENTS_OPEN_EVENT y avisa cada cambio con
+// PAYMENTS_UPDATED_EVENT. Requiere <ConfirmModal /> en la página para anular.
+import { methodDotClass, type PaymentType } from "../../utils/payments";
+
+interface Props {
+	paymentTypes: PaymentType[];
+	// Solo decide qué se muestra; el backend valida el rol al anular.
+	canVoid: boolean;
+}
+
+const { paymentTypes, canVoid } = Astro.props;
+---
+
+<div
+	id="modalPagos"
+	class="fixed inset-0 z-[10000] hidden"
+	role="dialog"
+	aria-modal="true"
+	aria-labelledby="pagosTitulo"
+	data-can-void={canVoid ? "true" : "false"}
+>
+	<div class="fixed inset-0 bg-black/40 backdrop-blur-sm" data-pagos-cerrar></div>
+
+	<!-- Hoja inferior en teléfono (alcance del pulgar), centrado en tablet y escritorio -->
+	<div class="flex min-h-full items-end sm:items-center justify-center sm:p-4 pointer-events-none">
+		<div
+			class="relative w-full sm:max-w-lg bg-white pointer-events-auto rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+			style="max-height: 95dvh;"
+		>
+			<div class="flex justify-between items-start gap-3 px-5 py-4 border-b border-[#2F5D50]/10">
+				<div class="min-w-0">
+					<h3 id="pagosTitulo" class="text-lg font-bold text-[#2F5D50] m-0">Cobro de cita</h3>
+					<p id="pagosPaciente" class="text-sm font-bold text-gray-800 truncate"></p>
+					<p id="pagosServicio" class="text-xs text-gray-500 truncate"></p>
+				</div>
+				<button
+					type="button"
+					class="w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2F5D50] hover:bg-[#2F5D50]/10 transition-colors"
+					aria-label="Cerrar"
+					data-pagos-cerrar
+				>
+					<i class="fa-solid fa-xmark text-lg"></i>
+				</button>
+			</div>
+
+			<div class="p-5 overflow-y-auto flex-1 min-h-0 custom-scrollbar space-y-5">
+				<div id="pagosCargando" class="py-8 text-center">
+					<i class="fa-solid fa-circle-notch fa-spin text-2xl text-[#2F5D50]"></i>
+				</div>
+
+				<div id="pagosContenido" class="hidden space-y-5">
+					<div class="grid grid-cols-3 gap-2 text-center" aria-live="polite">
+						<div class="rounded-xl bg-gray-50 border border-gray-200 py-2">
+							<p class="text-[10px] font-bold uppercase text-gray-500">Total</p>
+							<p id="pagosTotal" class="font-mono font-bold text-gray-800"></p>
+						</div>
+						<div class="rounded-xl bg-gray-50 border border-gray-200 py-2">
+							<p class="text-[10px] font-bold uppercase text-gray-500">Pagado</p>
+							<p id="pagosPagado" class="font-mono font-bold text-gray-800"></p>
+						</div>
+						<div id="pagosSaldoCard" class="rounded-xl border py-2">
+							<p class="text-[10px] font-bold uppercase opacity-80">Saldo</p>
+							<p id="pagosSaldo" class="font-mono font-bold text-lg leading-tight"></p>
+						</div>
+					</div>
+
+					<p id="pagosAviso" class="hidden rounded-xl border px-3 py-2 text-sm font-medium"></p>
+
+					<div>
+						<h4 class="text-xs font-bold uppercase !text-gray-500 mb-1">Pagos registrados</h4>
+						<ul id="pagosLista" class="divide-y divide-gray-100"></ul>
+					</div>
+
+					<form id="pagosForm" class="space-y-3" novalidate>
+						<fieldset>
+							<legend class="text-xs font-bold uppercase text-gray-500 mb-2">Método</legend>
+							<div class="grid grid-cols-3 gap-2">
+								{
+									paymentTypes.map((type) => (
+										<button
+											type="button"
+											data-metodo-id={type.id}
+											aria-pressed="false"
+											class="min-h-[52px] rounded-xl border-2 border-gray-200 bg-white px-1 py-1.5 text-xs sm:text-sm font-bold leading-tight text-gray-700 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 [overflow-wrap:anywhere] transition-all aria-pressed:border-[#2F5D50] aria-pressed:bg-[#2F5D50]/10 aria-pressed:text-[#2F5D50]"
+										>
+											<span class={`w-2.5 h-2.5 shrink-0 rounded-full ${methodDotClass(type.name)}`} />
+											{type.name}
+										</button>
+									))
+								}
+							</div>
+						</fieldset>
+
+						<div>
+							<label for="pagosMonto" class="text-xs font-bold uppercase text-gray-500 mb-2 block">Monto</label>
+							<div class="flex gap-2">
+								<div class="relative flex-1">
+									<span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
+									<input
+										id="pagosMonto"
+										type="text"
+										inputmode="decimal"
+										autocomplete="off"
+										class="w-full min-h-[48px] rounded-xl border border-gray-200 bg-gray-50 pl-7 pr-3 font-mono text-lg font-bold text-gray-800 outline-none focus:ring-2 focus:ring-[#2F5D50]/20 focus:border-[#2F5D50]"
+									/>
+								</div>
+								<button
+									type="button"
+									id="pagosSaldoCompleto"
+									class="min-h-[48px] shrink-0 rounded-xl border border-[#2F5D50]/30 px-3 text-xs font-bold text-[#2F5D50] hover:bg-[#2F5D50]/5"
+								>
+									Todo el saldo
+								</button>
+							</div>
+						</div>
+
+						<p id="pagosError" role="alert" class="hidden text-sm font-medium text-red-600"></p>
+
+						<button
+							type="submit"
+							id="pagosRegistrar"
+							class="w-full min-h-[52px] rounded-xl bg-[#2F5D50] text-white font-bold shadow-lg shadow-[#2F5D50]/20 transition-all hover:bg-[#234a40] disabled:opacity-50 disabled:cursor-not-allowed"
+						>
+							Registrar pago
+						</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	import {
+		PAYMENTS_OPEN_EVENT,
+		PAYMENTS_UPDATED_EVENT,
+		escapeHtml,
+		formatMoney,
+		methodDotClass,
+		readApiError,
+		toCents,
+		type AppointmentPaymentsView,
+		type PaymentRecord,
+		type PaymentsOpenDetail,
+	} from "../../utils/payments";
+
+	const NOTICE_STYLES = {
+		overpaid: "border-red-200 bg-red-50 text-red-800",
+		paid: "border-emerald-200 bg-emerald-50 text-emerald-800",
+		info: "border-gray-200 bg-gray-50 text-gray-600",
+	} as const;
+	const BALANCE_DUE = ["border-amber-200", "bg-amber-50", "text-amber-800"];
+	const BALANCE_CLEAR = ["border-emerald-200", "bg-emerald-50", "text-emerald-800"];
+
+	const modal = document.getElementById("modalPagos");
+	if (modal) setupPaymentModal(modal);
+
+	function setupPaymentModal(modal: HTMLElement) {
+		const canVoid = modal.dataset.canVoid === "true";
+		const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+		const loading = $("pagosCargando");
+		const content = $("pagosContenido");
+		const list = $("pagosLista");
+		const form = $<HTMLFormElement>("pagosForm");
+		const amountInput = $<HTMLInputElement>("pagosMonto");
+		const submitButton = $<HTMLButtonElement>("pagosRegistrar");
+		const errorBox = $("pagosError");
+		const notice = $("pagosAviso");
+		const balanceCard = $("pagosSaldoCard");
+		const methodButtons = Array.from(modal.querySelectorAll<HTMLButtonElement>("[data-metodo-id]"));
+
+		let appointmentId: number | null = null;
+		let view: AppointmentPaymentsView | null = null;
+		let selectedMethodId: number | null = null;
+		let busy = false;
+		let returnFocus: HTMLElement | null = null;
+
+		function showError(message: string) {
+			errorBox.textContent = message;
+			errorBox.classList.toggle("hidden", !message);
+		}
+
+		function setBusy(value: boolean) {
+			busy = value;
+			submitButton.disabled = value;
+			submitButton.textContent = value ? "Guardando…" : "Registrar pago";
+		}
+
+		function selectMethod(id: number | null) {
+			selectedMethodId = id;
+			methodButtons.forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.metodoId) === id)));
+		}
+
+		function paymentItemHtml(p: PaymentRecord): string {
+			const voided = Boolean(p.voided_at);
+			const time = new Date(p.paid_at).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+			const author = p.created_by_name ? escapeHtml(p.created_by_name) : "Registro anterior";
+			const voidInfo = voided
+				? ` · <span class="text-red-600 font-medium">Anulado${p.voided_by_name ? ` por ${escapeHtml(p.voided_by_name)}` : ""}</span>`
+				: "";
+			const voidButton = canVoid && !voided
+				? `<button type="button" data-anular-id="${p.id}" class="min-h-[40px] shrink-0 px-3 rounded-lg text-xs font-bold text-red-600 border border-red-200 hover:bg-red-50">Anular</button>`
+				: "";
+			return `<li class="flex items-center justify-between gap-3 py-2.5 ${voided ? "opacity-60" : ""}">
+				<div class="min-w-0">
+					<p class="flex items-center gap-2 text-sm font-bold text-gray-800 ${voided ? "line-through" : ""}">
+						<span class="w-2 h-2 rounded-full shrink-0 ${methodDotClass(p.method)}"></span>
+						${escapeHtml(p.method)} <span class="font-mono">${formatMoney(p.amount)}</span>
+					</p>
+					<p class="text-[11px] text-gray-500">${time} · ${author}${voidInfo}</p>
+				</div>
+				${voidButton}
+			</li>`;
+		}
+
+		function renderNotice(v: AppointmentPaymentsView) {
+			const messages: Partial<Record<typeof v.payment_status, [keyof typeof NOTICE_STYLES, string]>> = {
+				overpaid: ["overpaid", `Los pagos exceden el total por ${formatMoney(-v.balance)}. ${canVoid ? "Anula el pago incorrecto." : "Pide a un administrador que anule el pago incorrecto."}`],
+				paid: ["paid", "Cita pagada por completo."],
+				no_charge: ["info", "Esta cita no tiene cargo."],
+			};
+			const entry = messages[v.payment_status];
+			notice.className = `rounded-xl border px-3 py-2 text-sm font-medium ${entry ? NOTICE_STYLES[entry[0]] : "hidden"}`;
+			notice.textContent = entry ? entry[1] : "";
+		}
+
+		function render(v: AppointmentPaymentsView) {
+			view = v;
+			$("pagosTotal").textContent = formatMoney(v.total);
+			$("pagosPagado").textContent = formatMoney(v.paid);
+			$("pagosSaldo").textContent = formatMoney(Math.max(v.balance, 0));
+			balanceCard.classList.remove(...BALANCE_DUE, ...BALANCE_CLEAR);
+			balanceCard.classList.add(...(v.balance > 0 ? BALANCE_DUE : BALANCE_CLEAR));
+			renderNotice(v);
+
+			list.innerHTML = v.payments.length
+				? v.payments.map(paymentItemHtml).join("")
+				: `<li class="py-3 text-sm text-gray-400">Sin pagos todavía.</li>`;
+
+			const canPay = v.balance > 0;
+			form.classList.toggle("hidden", !canPay);
+			if (canPay) {
+				amountInput.value = v.balance.toFixed(2);
+				// Sin método preseleccionado: un default equivocado es justo el error que
+				// hacía que el corte no cuadrara.
+				selectMethod(null);
+			}
+			loading.classList.add("hidden");
+			content.classList.remove("hidden");
+		}
+
+		function publish(v: AppointmentPaymentsView) {
+			window.dispatchEvent(new CustomEvent(PAYMENTS_UPDATED_EVENT, { detail: v }));
+		}
+
+		async function load(id: number) {
+			loading.classList.remove("hidden");
+			content.classList.add("hidden");
+			try {
+				const res = await fetch(`/api/v1/Citas/${id}/pagos`);
+				if (!res.ok) throw new Error(await readApiError(res, "No se pudieron cargar los pagos."));
+				const data: AppointmentPaymentsView = await res.json();
+				if (appointmentId === id) render(data);
+			} catch (error) {
+				if (appointmentId !== id) return;
+				loading.classList.add("hidden");
+				content.classList.remove("hidden");
+				form.classList.add("hidden");
+				list.innerHTML = "";
+				showError("");
+				notice.className = `rounded-xl border px-3 py-2 text-sm font-medium ${NOTICE_STYLES.overpaid}`;
+				notice.textContent = error instanceof Error ? error.message : "No se pudieron cargar los pagos.";
+			}
+		}
+
+		function open(detail: PaymentsOpenDetail) {
+			returnFocus = document.activeElement as HTMLElement | null;
+			appointmentId = detail.appointmentId;
+			view = null;
+			$("pagosPaciente").textContent = detail.patientName;
+			$("pagosServicio").textContent = detail.serviceName;
+			showError("");
+			setBusy(false);
+			modal.classList.remove("hidden");
+			load(detail.appointmentId);
+		}
+
+		function close() {
+			modal.classList.add("hidden");
+			appointmentId = null;
+			view = null;
+			returnFocus?.focus?.();
+		}
+
+		async function submit(event: Event) {
+			event.preventDefault();
+			if (busy || appointmentId === null || !view) return;
+
+			if (selectedMethodId === null) return showError("Elige el método de pago.");
+			const amountCents = toCents(amountInput.value.replace(",", "."));
+			if (!Number.isFinite(amountCents) || amountCents <= 0) return showError("Escribe un monto mayor a 0.");
+			if (amountCents > toCents(view.balance)) {
+				return showError(`El monto excede el saldo de ${formatMoney(view.balance)}.`);
+			}
+
+			const id = appointmentId;
+			showError("");
+			setBusy(true);
+			try {
+				const res = await fetch(`/api/v1/Citas/${id}/pagos`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ idpayment_type: selectedMethodId, amount: amountCents / 100 }),
+				});
+				if (!res.ok) throw new Error(await readApiError(res, "No se pudo registrar el pago."));
+				const data: AppointmentPaymentsView = await res.json();
+				publish(data);
+				if (appointmentId !== id) return;
+				// Liquidada: se cierra sola; con saldo queda abierta para el siguiente método.
+				if (data.balance <= 0) close();
+				else render(data);
+			} catch (error) {
+				showError(error instanceof Error ? error.message : "No se pudo registrar el pago.");
+			} finally {
+				setBusy(false);
+			}
+		}
+
+		async function voidPayment(paymentId: number) {
+			const id = appointmentId;
+			if (id === null) return;
+			try {
+				const res = await fetch(`/api/v1/Citas/${id}/pagos/${paymentId}/anular`, { method: "PATCH" });
+				if (!res.ok) throw new Error(await readApiError(res, "No se pudo anular el pago."));
+				const data: AppointmentPaymentsView = await res.json();
+				publish(data);
+				if (appointmentId === id) render(data);
+			} catch (error) {
+				showError(error instanceof Error ? error.message : "No se pudo anular el pago.");
+			}
+		}
+
+		function confirmVoid(paymentId: number) {
+			const payment = view?.payments.find((p) => p.id === paymentId);
+			if (!payment) return;
+			const message = `Se anulará el pago de ${payment.method} por ${formatMoney(payment.amount)}. Seguirá visible como anulado, con tu nombre.`;
+			const confirmFn = (window as unknown as { mostrarConfirmacion?: (opts: object) => void }).mostrarConfirmacion;
+			if (!confirmFn) return;
+			confirmFn({
+				title: "Anular pago",
+				message,
+				confirmText: "Anular",
+				variant: "danger",
+				icon: "fa-ban",
+				onConfirm: () => voidPayment(paymentId),
+			});
+		}
+
+		window.addEventListener(PAYMENTS_OPEN_EVENT, (event) => open((event as CustomEvent<PaymentsOpenDetail>).detail));
+		modal.querySelectorAll("[data-pagos-cerrar]").forEach((el) => el.addEventListener("click", close));
+		document.addEventListener("keydown", (event) => {
+			// El modal de confirmación va encima; Escape no debe cerrar los dos.
+			const confirmOpen = !document.getElementById("modalConfirmacion")?.classList.contains("hidden");
+			if (event.key === "Escape" && !modal.classList.contains("hidden") && !confirmOpen) close();
+		});
+		methodButtons.forEach((b) => b.addEventListener("click", () => {
+			selectMethod(Number(b.dataset.metodoId));
+			showError("");
+		}));
+		$("pagosSaldoCompleto").addEventListener("click", () => {
+			if (view) amountInput.value = Math.max(view.balance, 0).toFixed(2);
+		});
+		list.addEventListener("click", (event) => {
+			const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-anular-id]");
+			if (button) confirmVoid(Number(button.dataset.anularId));
+		});
+		form.addEventListener("submit", submit);
+	}
+</script>

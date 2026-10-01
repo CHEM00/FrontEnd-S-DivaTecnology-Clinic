@@ -4,6 +4,11 @@ import Layout from "../layouts/Layout.astro";
 import NavBar from "../components/NavBar.astro";
 import TopTag from "../components/TopTag.astro";
 import FormModal from "../components/modals/FormModal.astro";
+import ConfirmModal from "../components/modals/ConfirmModal.astro";
+import PaymentModal from "../components/modals/PaymentModal.astro";
+import MovimientosDelDia from "../components/admin/MovimientosDelDia.astro";
+import { ROLE } from "../utils/roles";
+import type { PaymentType } from "../utils/payments";
 import { SERVER_BACKEND_URL } from "../config";
 const today = new Date().toISOString().split("T")[0];
 const backendUrl = SERVER_BACKEND_URL;
@@ -30,6 +35,8 @@ const agent = new Agent({ rejectUnauthorized: false });
 
 let benefit = [];
 let appointmentStatus = [{ citas: {} }];
+let paymentTypes: PaymentType[] = [];
+const canVoidPayments = userRole === ROLE.ADMIN;
 
 // Fetch Data for Appointment Modal (Searchable Patient, etc.)
 let pacientes = [];
@@ -47,6 +54,7 @@ try {
 		adicionalesRes,
 		resBenefit,
 		resStatus,
+		paymentTypesRes,
 	] = await Promise.all([
 		fetch(`${backendUrl}/api/v1/Pacientes`, { headers, agent }).then(
 			(res) => (res.ok ? res.json() : []),
@@ -73,6 +81,9 @@ try {
 			headers,
 			agent,
 		}).then((res) => (res.ok ? res.json() : [{ citas: {} }])),
+		fetch(`${backendUrl}/api/v1/TiposPago`, { headers, agent }).then(
+			(res) => (res.ok ? res.json() : []),
+		),
 	]);
 
 	pacientes = pacientesRes || [];
@@ -82,6 +93,7 @@ try {
 	adicionales = adicionalesRes || [];
 	benefit = resBenefit || [];
 	appointmentStatus = resStatus || [{ citas: {} }];
+	paymentTypes = paymentTypesRes || [];
 } catch (error) {
 	console.error("Error fetching dashboard data:", error);
 }
@@ -206,440 +218,12 @@ try {
 							</div>
 						</div>
 
-						<!-- Nueva Sección: Tabla de Transacciones -->
-						<div
-							class="glass-panel rounded-3xl p-6 border border-white/60 !bg-white shadow-lg min-h-[18rem] flex flex-col flex-1"
-						>
-							<!-- Header with Stats -->
-							<div
-								class="flex flex-wrap justify-between items-center mb-6 gap-4 flex-shrink-0"
-							>
-								<div>
-									<h2
-										class="text-xl font-bold text-[#2F5D50] flex items-center gap-2"
-									>
-										<i class="fa-solid fa-table-list"></i>
-										Detalle de Movimientos
-									</h2>
-									<p class="text-xs text-gray-500 ml-7">
-										Transacciones del día
-									</p>
-								</div>
-
-								<!-- Status Indicators (moved from Resumen) -->
-								<div class="flex flex-wrap gap-3">
-									{
-										[
-											{
-												label: "Concluidas",
-												count:
-													appointmentStatus[0].citas
-														.concluida || 0,
-												color: "green",
-												icon: "fa-check",
-												id: "account-appointment-concluidas",
-											},
-											{
-												label: "Confirmadas",
-												count:
-													appointmentStatus[0].citas
-														.confirmada || 0,
-												color: "blue",
-												icon: "fa-thumbs-up",
-												id: "account-appointment-confirmadas",
-											},
-											{
-												label: "Pendientes",
-												count:
-													appointmentStatus[0].citas
-														.espera || 0,
-												color: "yellow",
-												icon: "fa-clock",
-												id: "account-appointment-pendientes",
-											},
-											{
-												label: "Canceladas",
-												count:
-													appointmentStatus[0].citas
-														.cancelada || 0,
-												color: "red",
-												icon: "fa-xmark",
-												id: "account-appointment-canceladas",
-											},
-										].map((item) => (
-											<div
-												class={`px-3 py-1.5 rounded-lg bg-${item.color}-50 border border-${item.color}-100 flex items-center gap-2`}
-											>
-												<div
-													class={`w-2 h-2 rounded-full bg-${item.color}-500`}
-												/>
-												<div
-													class={`text-xs font-bold text-${item.color}-700 flex gap-1`}
-												>
-													<span>{item.label}:</span>
-													<span id={item.id}>
-														{item.count}
-													</span>
-												</div>
-											</div>
-										))
-									}
-
-									<!-- Vertical Divider -->
-									<div class="h-6 w-px bg-gray-200 mx-1">
-									</div>
-
-									<!-- Total del Día Badge -->
-									<div
-										class="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center gap-2"
-									>
-										<div
-											class="w-2 h-2 rounded-full bg-emerald-500"
-										>
-										</div>
-										<div
-											class="text-xs font-bold text-emerald-700 flex gap-1"
-										>
-											<span>Total:</span>
-											<span id="total-income-display"
-												>$0.00</span
-											>
-										</div>
-									</div>
-
-									<!-- Filtro Método de Pago -->
-									<div
-										class="px-2 py-0.5 rounded-lg bg-gray-50 border border-gray-200 flex items-center gap-2 shadow-sm focus-within:ring-2 focus-within:ring-[#2F5D50]/20 transition-all"
-									>
-										<i
-											class="fa-solid fa-credit-card text-xs text-gray-400"
-										></i>
-										<select
-											id="filter-payment-method"
-											class="bg-transparent border-none outline-none text-xs font-bold text-gray-700 p-0 cursor-pointer pr-1"
-											title="Filtrar por método de pago"
-										>
-											<option value="">Todos</option>
-											<option value="Tarjeta">Tarjeta</option>
-											<option value="Efectivo">Efectivo</option>
-											<option value="Transferencia">Transferencia</option>
-											<option value="Pendiente">Pendiente</option>
-										</select>
-									</div>
-
-									<!-- Date Filter Input Replacement -->
-									<div
-										class="px-2 py-0.5 rounded-lg bg-gray-50 border border-gray-200 flex items-center gap-2 shadow-sm focus-within:ring-2 focus-within:ring-[#2F5D50]/20 transition-all"
-									>
-										<i
-											class="fa-regular fa-calendar text-xs text-gray-400"
-										></i>
-										<input
-											type="date"
-											id="filter-date-stats"
-											class="bg-transparent border-none outline-none text-xs font-bold text-gray-700 w-24 p-0 cursor-pointer"
-										/>
-									</div>
-								</div>
-							</div>
-
-							<!-- Table -->
-							<div
-								class="overflow-x-auto custom-scrollbar rounded-2xl border border-[#2F5D50]/10"
-							>
-								<table class="w-full text-left border-collapse">
-									<thead>
-										<tr
-											class="bg-[#2F5D50]/5 text-[#2F5D50] border-b border-[#2F5D50]/10 text-xs uppercase"
-										>
-											<th class="p-3 font-bold"
-												>Paciente</th
-											>
-											<th class="p-3 font-bold"
-												>Servicio</th
-											>
-											<th class="p-3 font-bold"
-												>Adicionales</th
-											>
-											<th class="p-3 font-bold">Fisio</th>
-											<th class="p-3 font-bold text-right"
-												>Subtotal</th
-											>
-											<th class="p-3 font-bold text-right"
-												>Desc.</th
-											>
-											<th class="p-3 font-bold text-right"
-												>Total</th
-											>
-											<th
-												class="p-3 font-bold text-center"
-												>Pago</th
-											>
-										</tr>
-									</thead>
-									<tbody
-										id="transaction-table-body"
-										class="divide-y divide-[#2F5D50]/5 text-sm text-gray-600"
-									>
-										<!-- Content will be injected via JS -->
-									</tbody>
-								</table>
-							</div>
-						</div>
+						<MovimientosDelDia
+							appointmentStatus={appointmentStatus}
+							paymentTypes={paymentTypes}
+						/>
 					</div>
 
-					<script is:inline>
-						// Global function to save transaction (called from inline onchange)
-						function saveTransaction(element, field, id) {
-							const container = element.parentElement;
-							const indicator = container.querySelector(".save-indicator");
-							const row = element.closest("tr");
-
-							if (indicator) {
-								indicator.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-gray-400"></i>';
-								indicator.classList.remove("opacity-0");
-							}
-
-							let url, body;
-
-							if (field === "discount") {
-								const discountVal = parseFloat(element.value) || 0;
-								const subtotalVal = parseFloat(row ? row.dataset.subtotal : "0") || 0;
-								const newTotal    = Math.max(0, subtotalVal - discountVal);
-
-								url  = `/api/v1/Citas/detalle/${id}`;
-								body = { discount: discountVal, total: newTotal };
-
-								// Actualizar celda total en la misma fila
-								if (row) {
-									const totalCell = row.querySelector(".total-cell");
-									if (totalCell) totalCell.textContent = `$${newTotal.toFixed(2)}`;
-								}
-
-								// Sincronizar cache para que el filtro siga consistente
-								if (Array.isArray(window._transactionsCache)) {
-									const cached = window._transactionsCache.find(
-										(it) => String(it.appointment_id) === String(id)
-									);
-									if (cached) {
-										cached.discount = discountVal;
-										cached.total    = newTotal;
-									}
-								}
-
-								// Recalcular total del día (solo filas visibles → respeta filtro)
-								const allTotalCells = document.querySelectorAll(".total-cell");
-								let dayTotal = 0;
-								allTotalCells.forEach(function(cell) {
-									dayTotal += parseFloat(cell.textContent.replace("$", "")) || 0;
-								});
-								const totalDisplayEl = document.getElementById("total-income-display");
-								if (totalDisplayEl) totalDisplayEl.textContent = `$${dayTotal.toFixed(2)}`;
-
-							} else if (field === "payment_type") {
-								url  = `/api/v1/Citas/${id}/payment`;
-								body = { payment_type_name: element.value };
-
-								// Sincronizar cache: si el filtro está activo y ya no coincide, ocultar la fila
-								if (Array.isArray(window._transactionsCache)) {
-									const cached = window._transactionsCache.find(
-										(it) => String(it.appointment_id) === String(id)
-									);
-									if (cached) {
-										cached.payment_method = element.value === "Pendiente" ? null : element.value;
-									}
-								}
-							} else {
-								return;
-							}
-
-							fetch(url, {
-								method: "PATCH",
-								headers: { "Content-Type": "application/json" },
-								body: JSON.stringify(body),
-							})
-							.then(function(res) {
-								if (!res.ok) throw new Error("Error al guardar");
-								if (indicator) {
-									indicator.innerHTML = '<i class="fa-solid fa-check text-green-500"></i>';
-									setTimeout(function() { indicator.classList.add("opacity-0"); }, 2000);
-								}
-								if (field === "payment_type") {
-									updateSelectStyle(element);
-									// Si hay filtro activo, re-renderizar para que la lista refleje el cambio
-									const pmFilter = document.getElementById("filter-payment-method");
-									if (pmFilter && pmFilter.value && typeof window.renderTransactions === "function") {
-										window.renderTransactions();
-									}
-								}
-							})
-							.catch(function(err) {
-								console.error("[Admin Save] Error:", err);
-								if (indicator) {
-									indicator.innerHTML = '<i class="fa-solid fa-xmark text-red-500"></i>';
-									setTimeout(function() { indicator.classList.add("opacity-0"); }, 3000);
-								}
-							});
-						}
-
-						function updateSelectStyle(select) {
-							// Remove old color classes
-							select.className = select.className.replace(
-								/bg-\w+-50 text-\w+-700 border-\w+-100/g,
-								"",
-							);
-
-							// Add new based on value
-							let color = "gray";
-							switch (select.value) {
-								case "Tarjeta":
-									color = "blue";
-									break;
-								case "Efectivo":
-									color = "green";
-									break;
-								case "Transferencia":
-									color = "purple";
-									break;
-								case "Pendiente":
-									color = "yellow";
-									break;
-							}
-
-							select.classList.add(
-								`bg-${color}-50`,
-								`text-${color}-700`,
-								`border-${color}-100`,
-							);
-						}
-
-						// Cache of last fetched transactions for current date
-						window._transactionsCache = [];
-						
-						function getPaymentMethodFilter() {
-							const el = document.getElementById("filter-payment-method");
-							return el ? el.value : "";
-						}
-						
-						function applyPaymentMethodFilter(data) {
-							const pmFilter = getPaymentMethodFilter();
-							if (!pmFilter) return data;
-							if (pmFilter === "Pendiente") {
-								return data.filter((it) => !it.payment_method);
-							}
-							return data.filter((it) => it.payment_method === pmFilter);
-						}
-						
-						window.renderTransactions = function () {
-							const tbody = document.getElementById("transaction-table-body");
-							if (!tbody) return;
-							const totalDisplayEl = document.getElementById("total-income-display");
-							const data = applyPaymentMethodFilter(window._transactionsCache || []);
-							
-							tbody.innerHTML = "";
-							
-							if (!data.length) {
-								tbody.innerHTML =
-									'<tr><td colspan="8" class="p-4 text-center text-gray-400">No hay movimientos registrados</td></tr>';
-								if (totalDisplayEl) totalDisplayEl.textContent = `$0.00`;
-								return;
-							}
-							
-							const totalDay = data.reduce(
-								(acc, item) => acc + parseFloat(item.total || 0),
-								0,
-							);
-							if (totalDisplayEl)
-								totalDisplayEl.textContent = `$${totalDay.toFixed(2)}`;
-							
-							data.forEach((item) => {
-								const tr = document.createElement("tr");
-								tr.className = "group hover:bg-gray-50 transition-colors";
-								
-								const subtotalNum  = parseFloat(item.subtotal ?? item.total ?? 0);
-								const discountNum  = parseFloat(item.discount ?? 0);
-								const totalNum     = parseFloat(item.total    ?? 0);
-								const subtotalDisplay = subtotalNum.toFixed(2);
-								const discountDisplay = discountNum.toFixed(2);
-								const totalDisplay    = totalNum.toFixed(2);
-								
-								tr.dataset.subtotal = subtotalNum.toFixed(2);
-								tr.dataset.appointmentId = item.appointment_id;
-								
-								const pm = item.payment_method || "";
-								
-								tr.innerHTML = `
-									<td class="p-3 font-bold text-gray-800">${item.patient_name}</td>
-									<td class="p-3">${item.service_name || "-"}</td>
-									<td class="p-3 text-xs">${item.additional_services || "-"}</td>
-									<td class="p-3 text-[#2F5D50] font-medium">${item.physio_name}</td>
-									<td class="p-3 text-right font-mono">$${subtotalDisplay}</td>
-									<td class="p-3 text-right">
-										<div class="relative w-24 ml-auto">
-											<input
-												type="text"
-												value="${discountDisplay}"
-												class="w-full text-right bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-[#2F5D50]/20 focus:border-[#2F5D50] outline-none transition-all"
-												onblur="saveTransaction(this, 'discount', '${item.appointment_id}')"
-											/>
-											<div class="save-indicator absolute -right-4 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity">
-												<i class="fa-solid fa-check text-green-500"></i>
-											</div>
-										</div>
-									</td>
-									<td class="p-3 text-right font-bold text-gray-800 font-mono total-cell">$${totalDisplay}</td>
-									<td class="p-3 text-center">
-										<div class="relative w-32 mx-auto">
-											<select
-												class="w-full bg-yellow-50 text-yellow-700 border border-yellow-100 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-yellow-500/20 outline-none appearance-none text-center cursor-pointer transition-all hover:bg-yellow-100"
-												onchange="saveTransaction(this, 'payment_type', '${item.appointment_id}')"
-											>
-											<option value="Tarjeta"       ${pm === "Tarjeta"       ? "selected" : ""}>Tarjeta</option>
-											<option value="Efectivo"      ${pm === "Efectivo"      ? "selected" : ""}>Efectivo</option>
-											<option value="Transferencia" ${pm === "Transferencia" ? "selected" : ""}>Transferencia</option>
-											<option value="Pendiente"     ${!pm                       ? "selected" : ""}>Pendiente</option>
-											</select>
-											<div class="save-indicator absolute -right-5 top-1/2 -translate-y-1/2 text-xs opacity-0 transition-opacity">
-												<i class="fa-solid fa-check text-green-500"></i>
-											</div>
-										</div>
-									</td>
-								`;
-								
-								// Aplicar color al select recién creado
-								const sel = tr.querySelector("select");
-								if (sel) updateSelectStyle(sel);
-								
-								tbody.appendChild(tr);
-							});
-						};
-						
-						// Function to update the table
-						window.updateTransactionTable = async (date) => {
-							const tbody = document.getElementById("transaction-table-body");
-							if (!tbody) return;
-							
-							tbody.innerHTML =
-								'<tr><td colspan="8" class="p-4 text-center"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-[#2F5D50]"></i></td></tr>';
-							
-							try {
-								const res = await fetch(
-									`/api/v1/DashboardAdmin/DetailAppointments?date=${date}`,
-								);
-								if (!res.ok) throw new Error("Failed to fetch transactions");
-								const data = await res.json();
-								window._transactionsCache = Array.isArray(data) ? data : [];
-								window.renderTransactions();
-							} catch (error) {
-								console.error("Error loading transactions:", error);
-								window._transactionsCache = [];
-								tbody.innerHTML =
-									'<tr><td colspan="8" class="p-4 text-center text-red-400">Error al cargar datos</td></tr>';
-								const totalDisplayEl = document.getElementById("total-income-display");
-								if (totalDisplayEl) totalDisplayEl.textContent = `$0.00`;
-							}
-						};
-					</script>
 
 					<!-- Columna Derecha: Citas en Curso (3 columnas) -->
 					<div class="lg:col-span-3 h-full min-h-[600px]">
@@ -998,45 +582,17 @@ try {
 				}
 			};
 
-			// Hook into the NEW Stats Date Filter
+			// La fecha es compartida con MovimientosDelDia, que carga su tabla por su cuenta.
 			const statsDateInput = document.getElementById("filter-date-stats");
-			const paymentMethodFilter = document.getElementById("filter-payment-method");
-			if (paymentMethodFilter) {
-				paymentMethodFilter.addEventListener("change", () => {
-					if (typeof window.renderTransactions === "function") {
-						window.renderTransactions();
-					}
-				});
-			}
-			if (statsDateInput) {
-				// Initialize with Today
-				const today = new Date(
-					Date.now() - new Date().getTimezoneOffset() * 60000,
-				)
-					.toISOString()
-					.split("T")[0];
-
-				statsDateInput.value = today;
-
-				// Initial Load
-				window.updateAppointmentStats(today);
-				window.updateTransactionTable(today);
-
-				// Listener
-				statsDateInput.addEventListener("change", (e) => {
-					window.updateAppointmentStats(e.target.value);
-					window.updateTransactionTable(e.target.value);
-				});
-			} else {
-				// Fallback if element not found (shouldn't happen)
-				const today = new Date(
-					Date.now() - new Date().getTimezoneOffset() * 60000,
-				)
-					.toISOString()
-					.split("T")[0];
-				window.updateAppointmentStats(today);
-				window.updateTransactionTable(today);
-			}
+			const today = new Date(
+				Date.now() - new Date().getTimezoneOffset() * 60000,
+			)
+				.toISOString()
+				.split("T")[0];
+			window.updateAppointmentStats(statsDateInput?.value || today);
+			statsDateInput?.addEventListener("change", (e) => {
+				window.updateAppointmentStats(e.target.value);
+			});
 
 			// Removed hook into chart-date-start for stats
 		});
@@ -1059,6 +615,9 @@ try {
 		window.adicionalesData = adicionales;
 		window.backendUrl = backendUrl;
 	</script>
+
+	<PaymentModal paymentTypes={paymentTypes} canVoid={canVoidPayments} />
+	<ConfirmModal />
 
 	<!-- Modal Agregar Cita (Importado y adaptado) -->
 	<FormModal
